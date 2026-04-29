@@ -1,0 +1,24 @@
+name: Format
+
+on:
+  pull_request:
+    branches: [main]
+
+jobs:
+  check-format:
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup .NET
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: "10.0.x"
+          dotnet-quality: "preview"
+
+      - name: Install tool
+        run: dotnet tool restore
+
+      - name: Check format
+        run: dotnet csharpier check .
