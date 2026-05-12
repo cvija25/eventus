@@ -1,0 +1,16 @@
+﻿services:
+  account:
+    image: account
+    build:
+      context: .
+      dockerfile: Account/Dockerfile
+    ports:
+      - "8080:8080"
+
+  catalog.api:
+    image: catalog.api
+    build:
+      context: .
+      dockerfile: Catalog/Catalog.API/Dockerfile
+    ports:
+      - "8081:8080"
