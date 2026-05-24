@@ -33,3 +33,5 @@
       - "15672:15672"
     volumes:
       - rabbitmq_data:/var/lib/rabbitmq
+volumes:
+  rabbitmq_data:

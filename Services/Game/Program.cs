@@ -1,9 +1,18 @@
 var builder = WebApplication.CreateBuilder(args);
 
+builder.Services.AddControllers();
 var app = builder.Build();
-
-app.MapGet("/game", () =>
+if (app.Environment.IsDevelopment())
 {
-    return "hello game";
-});
+    app.MapOpenApi();
+}
+
+app.MapGet(
+    "/",
+    () =>
+    {
+        return "Hello world!";
+    }
+);
+app.MapControllers();
 app.Run();
