@@ -70,10 +70,9 @@ public class AccountController : ControllerBase
             var json = JsonSerializer.Serialize(evt);
             var body = Encoding.UTF8.GetBytes(json);
 
-            // ✅ In 7.x, BasicProperties is a struct passed directly — no CreateBasicProperties()
             var props = new BasicProperties
             {
-                Persistent = true,          // ✅ This alone sets DeliveryMode = 2 internally
+                Persistent = true,          
                 ContentType = "application/json"
             };
 
@@ -81,7 +80,7 @@ public class AccountController : ControllerBase
                 exchange: "",
                 routingKey: "bet-placed",
                 mandatory: false,
-                basicProperties: props,     // ✅ Accepts BasicProperties struct directly
+                basicProperties: props,
                 body: body
             );
         }
