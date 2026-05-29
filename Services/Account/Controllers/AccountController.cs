@@ -1,7 +1,9 @@
 using Microsoft.AspNetCore.Mvc;
 using RabbitMQ.Client;
+using Microsoft.Extensions.Options;
 using System.Text;
 using System.Text.Json;
+using Account.Services;
 
 namespace Account.Controllers;
 
@@ -9,6 +11,12 @@ namespace Account.Controllers;
 [Route("/api/v1/account")]
 public class AccountController : ControllerBase
 {
+    private readonly RabbitMqPublisher _publisher;
+
+    public AccountController(RabbitMqPublisher publisher)
+    {
+        _publisher = publisher;
+    }
     [HttpGet]
     public ActionResult<string> GetGreeting()
     {
@@ -18,8 +26,6 @@ public class AccountController : ControllerBase
     [HttpPost]
     public async Task<ActionResult<string>> PublishBet()
     {
-        await using var publisher = await RabbitMqPublisher.CreateAsync();
-
         var evt = new BetPlacedEvent
         {
             BetId = Guid.NewGuid(),
@@ -27,7 +33,7 @@ public class AccountController : ControllerBase
             Stake = 100
         };
 
-        await publisher.PublishBetPlacedAsync(evt);
+        await _publisher.PublishBetPlacedAsync(evt);
 
         return Ok("Bet event published");
     }
@@ -37,32 +43,27 @@ public class AccountController : ControllerBase
         private readonly IConnection _connection;
         private readonly IChannel _channel;
 
-        private RabbitMqPublisher(IConnection connection, IChannel channel)
+        public RabbitMqPublisher(IOptions<RabbitMqOptions> options)
         {
-            _connection = connection;
-            _channel = channel;
-        }
+            var rabbitOptions = options.Value;
 
-        public static async Task<RabbitMqPublisher> CreateAsync()
-        {
             var factory = new ConnectionFactory
             {
-                HostName = "rabbitmq",
-                UserName = "guest",
-                Password = "guest"
+                HostName = rabbitOptions.HostName,
+                Port = rabbitOptions.Port,
+                UserName = rabbitOptions.UserName,
+                Password = rabbitOptions.Password
             };
 
-            var connection = await factory.CreateConnectionAsync();
-            var channel = await connection.CreateChannelAsync();
+            _connection = factory.CreateConnectionAsync().Result;
+            _channel = _connection.CreateChannelAsync().Result;
 
-            await channel.QueueDeclareAsync(
+            _channel.QueueDeclareAsync(
                 queue: "bet-placed",
                 durable: true,
                 exclusive: false,
                 autoDelete: false
-            );
-
-            return new RabbitMqPublisher(connection, channel);
+            ).GetAwaiter().GetResult();
         }
 
         public async Task PublishBetPlacedAsync(BetPlacedEvent evt)

@@ -6,6 +6,9 @@
       dockerfile: Account/Dockerfile
     ports:
       - "8080:8080"
+    depends_on:
+      rabbitmq:
+        condition: service_healthy
 
   catalog.api:
     image: catalog.api
@@ -22,6 +25,9 @@
       dockerfile: Game/Dockerfile
     ports:
       - "8082:8080"
+    depends_on:
+      rabbitmq:
+        condition: service_healthy
 #        
 #  gameDB:
 #  accountDB:
@@ -33,5 +39,10 @@
       - "15672:15672"
     volumes:
       - rabbitmq_data:/var/lib/rabbitmq
+    healthcheck:
+      test: [ "CMD", "rabbitmq-diagnostics", "ping" ]
+      interval: 10s
+      timeout: 5s
+      retries: 5
 volumes:
   rabbitmq_data:
