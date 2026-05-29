@@ -24,13 +24,13 @@ public class AccountController : ControllerBase
     }
 
     [HttpPost]
-    public async Task<ActionResult<string>> PublishBet()
+    public async Task<ActionResult<string>> PublishBet([FromBody] BetPlacedRequest request)
     {
         var evt = new BetPlacedEvent
         {
             BetId = Guid.NewGuid(),
             UserId = Guid.NewGuid(),
-            Stake = 100
+            Stake = request.Stake
         };
 
         await _publisher.PublishBetPlacedAsync(evt);
@@ -100,6 +100,11 @@ public class AccountController : ControllerBase
     {
         public Guid BetId { get; set; }
         public Guid UserId { get; set; }
+        public decimal Stake { get; set; }
+    }
+
+    public class BetPlacedRequest
+    {
         public decimal Stake { get; set; }
     }
 }
