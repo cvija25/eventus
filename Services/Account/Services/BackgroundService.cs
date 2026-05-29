@@ -3,12 +3,14 @@ using RabbitMQ.Client;
 using RabbitMQ.Client.Events;
 using System.Text;
 using System.Text.Json;
+using Microsoft.Extensions.Options;
 
 namespace Account.Services;
 
 public class BetApprovedConsumer(
     ILogger<BetApprovedConsumer> logger,
-    IServiceScopeFactory scopeFactory) : BackgroundService
+    IServiceScopeFactory scopeFactory,
+    IOptions<RabbitMqOptions> rabbitOptions) : BackgroundService
 {
     private IConnection? _connection;
     private IChannel? _channel;
@@ -31,11 +33,22 @@ public class BetApprovedConsumer(
 
     private async Task StartConsumingAsync(CancellationToken stoppingToken)
     {
+        var options = rabbitOptions.Value;
+
         var factory = new ConnectionFactory
+
         {
-            HostName = "rabbitmq",
-            UserName = "guest",
-            Password = "guest"
+
+            HostName = options.HostName,
+
+            Port = options.Port,
+
+            UserName = options.UserName,
+
+            Password = options.Password,
+
+            VirtualHost = options.VirtualHost
+
         };
 
         _connection = await factory.CreateConnectionAsync(stoppingToken);
