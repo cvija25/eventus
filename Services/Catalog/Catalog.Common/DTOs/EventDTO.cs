@@ -1,8 +1,8 @@
-namespace Catalog.Common.Entities;
+namespace Catalog.Common.DTOs;
 
-public class Event
+public class EventDTO
 {
-    public int Id { get; set; }
+    public required int Id { get; set; }
     public required string Name { get; set; }
     public required int OwnerId { get; set; }
     public required int PriceYes { get; set; }

@@ -1,10 +1,9 @@
-namespace Catalog.Common.Entities;
+namespace Catalog.Common.DTOs;
 
-public class Event
+public record UpdateEventDTO
 {
-    public int Id { get; set; }
+    public required int Id { get; set; }
     public required string Name { get; set; }
-    public required int OwnerId { get; set; }
     public required int PriceYes { get; set; }
     public required int PriceNo { get; set; }
     public required int PotSize { get; set; }
