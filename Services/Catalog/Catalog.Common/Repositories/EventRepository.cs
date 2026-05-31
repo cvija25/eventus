@@ -20,7 +20,7 @@ public class EventRepository : IEventRepository
         _mapper = mapper ?? throw new ArgumentNullException(nameof(mapper));
     }
 
-    public async Task<EventDTO> CreateEventAsync(CreateEventDTO createEventDto, int ownerId)
+    public async Task<EventDto> CreateEventAsync(CreateEventDto createEventDto, int ownerId)
     {
         var newEvent = new Event
         {
@@ -32,19 +32,19 @@ public class EventRepository : IEventRepository
         };
         _context.Events.Add(newEvent);
         await _context.SaveChangesAsync();
-        return _mapper.Map<EventDTO>(newEvent);
+        return _mapper.Map<EventDto>(newEvent);
     }
 
-    public async Task<EventDTO?> GetEventByIdAsync(int id)
+    public async Task<EventDto?> GetEventByIdAsync(int id)
     {
         var ev = await _context.Events.FindAsync(id);
-        return _mapper.Map<EventDTO?>(ev);
+        return _mapper.Map<EventDto?>(ev);
     }
 
-    public async Task<List<EventDTO>> GetEventsAsync() =>
-        await _context.Events.ProjectTo<EventDTO>(_mapper.ConfigurationProvider).ToListAsync();
+    public async Task<List<EventDto>> GetEventsAsync() =>
+        await _context.Events.ProjectTo<EventDto>(_mapper.ConfigurationProvider).ToListAsync();
 
-    public async Task<bool> UpdateEventAsync(UpdateEventDTO updateEventDto)
+    public async Task<bool> UpdateEventAsync(UpdateEventDto updateEventDto)
     {
         var ev = await _context.Events.FindAsync(updateEventDto.Id);
         if (ev is null)

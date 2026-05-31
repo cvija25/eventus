@@ -8,6 +8,6 @@ public class EventMappingProfile : Profile
 {
     public EventMappingProfile()
     {
-        CreateMap<Event, EventDTO>();
+        CreateMap<Event, EventDto>();
     }
 }
