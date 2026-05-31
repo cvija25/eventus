@@ -17,12 +17,12 @@ public class EventRepository : IEventRepository
     public EventRepository(IEventContext context, IMapper mapper)
     {
         _context = context ?? throw new ArgumentNullException(nameof(context));
-        _mapper = mapper ??  throw new ArgumentNullException(nameof(mapper));
+        _mapper = mapper ?? throw new ArgumentNullException(nameof(mapper));
     }
 
     public async Task<EventDTO> CreateEventAsync(CreateEventDTO createEventDto, int ownerId)
     {
-        var  newEvent = new Event
+        var newEvent = new Event
         {
             Name = createEventDto.Name,
             OwnerId = ownerId,
@@ -30,9 +30,9 @@ public class EventRepository : IEventRepository
             PriceNo = InitialPrice,
             PotSize = InitialPotSize,
         };
-        _context.Events.Add( newEvent);
+        _context.Events.Add(newEvent);
         await _context.SaveChangesAsync();
-        return _mapper.Map<EventDTO>( newEvent);
+        return _mapper.Map<EventDTO>(newEvent);
     }
 
     public async Task<EventDTO?> GetEventByIdAsync(int id)
@@ -42,9 +42,7 @@ public class EventRepository : IEventRepository
     }
 
     public async Task<List<EventDTO>> GetEventsAsync() =>
-        await _context.Events
-            .ProjectTo<EventDTO>(_mapper.ConfigurationProvider)
-            .ToListAsync();
+        await _context.Events.ProjectTo<EventDTO>(_mapper.ConfigurationProvider).ToListAsync();
 
     public async Task<bool> UpdateEventAsync(UpdateEventDTO updateEventDto)
     {

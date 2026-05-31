@@ -15,7 +15,8 @@ public static class ServiceCollectionExtensions
     )
     {
         services.AddDbContext<EventContext>(options =>
-            options.UseNpgsql(configuration.GetConnectionString("DefaultConnection")));
+            options.UseNpgsql(configuration.GetConnectionString("DefaultConnection"))
+        );
         services.AddScoped<IEventContext>(sp => sp.GetRequiredService<EventContext>());
         services.AddScoped<IEventRepository, EventRepository>();
         services.AddAutoMapper(cfg => cfg.AddProfile<EventMappingProfile>());
