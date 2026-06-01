@@ -1,3 +1,3 @@
 namespace Catalog.Common.DTOs;
 
-public record EventDto(int Id, string Name, int OwnerId, int PriceYes, int PriceNo, int PotSize);
+public record EventDto(Guid Id, string Name, Guid OwnerId, int PriceYes, int PriceNo, int PotSize);
