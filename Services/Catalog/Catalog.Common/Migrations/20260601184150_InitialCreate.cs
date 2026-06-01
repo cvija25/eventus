@@ -20,19 +20,19 @@ namespace Catalog.Common.Migrations
                     OwnerId = table.Column<Guid>(type: "uuid", nullable: false),
                     PriceYes = table.Column<int>(type: "integer", nullable: false),
                     PriceNo = table.Column<int>(type: "integer", nullable: false),
-                    PotSize = table.Column<int>(type: "integer", nullable: false)
+                    PotSize = table.Column<int>(type: "integer", nullable: false),
                 },
                 constraints: table =>
                 {
                     table.PrimaryKey("PK_Events", x => x.Id);
-                });
+                }
+            );
         }
 
         /// <inheritdoc />
         protected override void Down(MigrationBuilder migrationBuilder)
         {
-            migrationBuilder.DropTable(
-                name: "Events");
+            migrationBuilder.DropTable(name: "Events");
         }
     }
 }
