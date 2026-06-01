@@ -8,17 +8,16 @@ namespace Catalog.API.Controllers;
 [Route("/api/v1/catalog/events")]
 public class CatalogController : ControllerBase
 {
-
     [HttpGet("{id}")]
     [ProducesResponseType(typeof(EventDto), StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status404NotFound)]
     [ProducesResponseType(StatusCodes.Status500InternalServerError)]
-    public async Task<ActionResult<EventDto>> GetEvent(int id)
+    public async Task<ActionResult<EventDto>> GetEvent(Guid id)
     {
         var ev = await _eventRepository.GetEventByIdAsync(id);
         return ev is null ? NotFound() : Ok(ev);
     }
-    
+
     [HttpGet]
     [ProducesResponseType(typeof(IEnumerable<EventDto>), StatusCodes.Status200OK)]
     public async Task<ActionResult<List<EventDto>>> GetAllEvents()
@@ -28,9 +27,12 @@ public class CatalogController : ControllerBase
     }
 
     [HttpPost]
+    [ProducesResponseType(typeof(EventDto), StatusCodes.Status201Created)]
     public async Task<ActionResult<EventDto>> CreateEvent([FromBody] CreateEventDto dto)
     {
-        
+        var ownerId = Guid.NewGuid(); // temporary until auth is implemented
+        var ev = await _eventRepository.CreateEventAsync(dto, ownerId);
+        return Created($"/api/v1/catalog/events/{ev.Id}", ev);
     }
 
     private readonly IEventRepository _eventRepository;
