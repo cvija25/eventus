@@ -1,4 +1,4 @@
-﻿services:
+services:
   account:
     image: account
     build:
@@ -7,6 +7,8 @@
     ports:
       - "8080:8080"
     depends_on:
+      postgres:
+        condition: service_healthy
       rabbitmq:
         condition: service_healthy
 
@@ -17,6 +19,35 @@
       dockerfile: Catalog/Catalog.API/Dockerfile
     ports:
       - "8081:8080"
+    depends_on:
+      postgres:
+        condition: service_healthy
+
+  postgres:
+    image: postgres:17-alpine
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+      POSTGRES_DB: eventus_catalog
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+  pgadmin:
+    image: dpage/pgadmin4:latest
+    environment:
+      PGADMIN_DEFAULT_EMAIL: admin@admin.com
+      PGADMIN_DEFAULT_PASSWORD: admin
+    ports:
+      - "5050:80"
+    depends_on:
+      - postgres
 
   game:
     image: game
@@ -28,10 +59,7 @@
     depends_on:
       rabbitmq:
         condition: service_healthy
-#        
-#  gameDB:
-#  accountDB:
-#  accountGameMQ:
+
   rabbitmq:
     image: rabbitmq:4-management-alpine
     ports:
@@ -44,5 +72,7 @@
       interval: 10s
       timeout: 5s
       retries: 5
+
 volumes:
+  postgres_data:
   rabbitmq_data:

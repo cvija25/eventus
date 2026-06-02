@@ -4,6 +4,8 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Account", "Account\Account.
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Catalog.API", "Catalog\Catalog.API\Catalog.API.csproj", "{D9EE0C59-091E-4FCA-A8EA-EAC2850D11A5}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Catalog.Common", "Catalog\Catalog.Common\Catalog.Common.csproj", "{EF1EB576-01F7-4A6D-8102-A4D81ED1BE5B}"
+EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Solution Items", "Solution Items", "{0126F8A6-9985-4D6E-A291-D4634131A472}"
 	ProjectSection(SolutionItems) = preProject
 		compose.yaml = compose.yaml
@@ -27,6 +29,10 @@ Global
 		{D9EE0C59-091E-4FCA-A8EA-EAC2850D11A5}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{D9EE0C59-091E-4FCA-A8EA-EAC2850D11A5}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{D9EE0C59-091E-4FCA-A8EA-EAC2850D11A5}.Release|Any CPU.Build.0 = Release|Any CPU
+		{EF1EB576-01F7-4A6D-8102-A4D81ED1BE5B}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{EF1EB576-01F7-4A6D-8102-A4D81ED1BE5B}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{EF1EB576-01F7-4A6D-8102-A4D81ED1BE5B}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{EF1EB576-01F7-4A6D-8102-A4D81ED1BE5B}.Release|Any CPU.Build.0 = Release|Any CPU
 		{A1B63B7C-7707-4323-BABC-3A31C1F0C200}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
 		{A1B63B7C-7707-4323-BABC-3A31C1F0C200}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{A1B63B7C-7707-4323-BABC-3A31C1F0C200}.Release|Any CPU.ActiveCfg = Release|Any CPU
