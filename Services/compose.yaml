@@ -1,4 +1,4 @@
-﻿services:
+services:
   account:
     image: account
     build:
@@ -8,6 +8,8 @@
       - "8080:8080"
     depends_on:
       postgres:
+        condition: service_healthy
+      rabbitmq:
         condition: service_healthy
 
   catalog.api:
@@ -47,5 +49,30 @@
     depends_on:
       - postgres
 
+  game:
+    image: game
+    build:
+      context: .
+      dockerfile: Game/Dockerfile
+    ports:
+      - "8082:8080"
+    depends_on:
+      rabbitmq:
+        condition: service_healthy
+
+  rabbitmq:
+    image: rabbitmq:4-management-alpine
+    ports:
+      - "5672:5672"
+      - "15672:15672"
+    volumes:
+      - rabbitmq_data:/var/lib/rabbitmq
+    healthcheck:
+      test: [ "CMD", "rabbitmq-diagnostics", "ping" ]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
 volumes:
   postgres_data:
+  rabbitmq_data:
