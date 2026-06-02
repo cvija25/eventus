@@ -99,10 +99,12 @@ public class BetPlacedConsumer(
         {
             var body = eventArgs.Body.ToArray();
             var json = Encoding.UTF8.GetString(body);
-            var betPlaced = JsonSerializer.Deserialize<BetPlacedEvent>(json);
+            var betPlaced = JsonSerializer.Deserialize<BetPlacedEvent>(json)
+                ?? throw new JsonException("Failed to deserialize BetPlacedEvent");
 
-            logger.LogInformation("Received bet: {BetId}", betPlaced?.BetId);
-            _handler?.ProcessBetPlacedAsync(betPlaced);
+            logger.LogInformation("Received bet: {BetId}", betPlaced.BetId);
+
+            await _handler!.ProcessBetPlacedAsync(betPlaced);
 
             await _channel!.BasicAckAsync(eventArgs.DeliveryTag, false, CancellationToken.None);
         }
