@@ -1,19 +1,21 @@
-using Microsoft.Extensions.Hosting;
+using Game.Handlers;
+using Game.Messaging;
+using Game.Publishers;
+
+namespace Game.Consumers;
+
 using RabbitMQ.Client;
 using RabbitMQ.Client.Events;
 using System.Text;
 using System.Text.Json;
+using Contracts;
 using Microsoft.Extensions.Options;
 
-namespace Account.Services;
-
-public class BetApprovedConsumer(
-    ILogger<BetApprovedConsumer> logger,
-    IServiceScopeFactory scopeFactory,
-    IOptions<RabbitMqOptions> rabbitOptions) : BackgroundService
+public class BetPlacedConsumer(ILogger<BetPlacedConsumer> logger, IOptions<RabbitMqOptions> rabbitOptions) : BackgroundService
 {
     private IConnection? _connection;
     private IChannel? _channel;
+    private BetPlacedHandler? _handler;
 
     protected override async Task ExecuteAsync(CancellationToken stoppingToken)
     {
@@ -25,7 +27,7 @@ public class BetApprovedConsumer(
             }
             catch (Exception ex) when (!stoppingToken.IsCancellationRequested)
             {
-                logger.LogError(ex, "RabbitMQ consumer failed. Retrying in 5s...");
+                logger.LogError(ex, "BetPlacedConsumer failed. Retrying in 5s...");
                 await Task.Delay(TimeSpan.FromSeconds(5), stoppingToken);
             }
         }
@@ -53,11 +55,20 @@ public class BetApprovedConsumer(
 
         _connection = await factory.CreateConnectionAsync(stoppingToken);
         _channel = await _connection.CreateChannelAsync(cancellationToken: stoppingToken);
+        _handler = new BetPlacedHandler(new BetApprovedPublisher(rabbitOptions));
 
         await _channel.BasicQosAsync(
             prefetchSize: 0,
             prefetchCount: 10,
             global: false,
+            cancellationToken: stoppingToken
+        );
+
+        await _channel.QueueDeclareAsync(
+            queue: "bet-placed",
+            durable: true,
+            exclusive: false,
+            autoDelete: false,
             cancellationToken: stoppingToken
         );
 
@@ -73,13 +84,13 @@ public class BetApprovedConsumer(
         consumer.ReceivedAsync += OnMessageReceivedAsync;
 
         await _channel.BasicConsumeAsync(
-            queue: "bet-approved",
+            queue: "bet-placed",
             autoAck: false,
             consumer: consumer,
             cancellationToken: stoppingToken
         );
 
-        logger.LogInformation("RabbitMQ consumer started.");
+        logger.LogInformation("BetPlacedConsumer started.");
 
         var tcs = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
 
@@ -97,19 +108,15 @@ public class BetApprovedConsumer(
 
     private async Task OnMessageReceivedAsync(object sender, BasicDeliverEventArgs ea)
     {
-        await using var scope = scopeFactory.CreateAsyncScope();
-        // var handler = scope.ServiceProvider.GetRequiredService<IBetApprovedHandler>();
-
         try
         {
             var body = ea.Body.ToArray();
             var json = Encoding.UTF8.GetString(body);
-            var evt = JsonSerializer.Deserialize<BetApprovedEvent>(json);
+            var betPlaced = JsonSerializer.Deserialize<BetPlacedEvent>(json);
 
-            logger.LogInformation("Bet approved: {BetId}", evt?.BetId);
-
-            // TODO: await handler.HandleAsync(evt, CancellationToken.None);
-
+            logger.LogInformation("Received bet: {BetId}", betPlaced?.BetId);
+            _handler?.ProcessBetPlacedAsync(betPlaced);
+            
             await _channel!.BasicAckAsync(
                 deliveryTag: ea.DeliveryTag,
                 multiple: false,
@@ -118,7 +125,6 @@ public class BetApprovedConsumer(
         }
         catch (JsonException ex)
         {
-            // Bad message — don't requeue, send to dead letter
             logger.LogError(ex, "Invalid message format. Discarding.");
             await _channel!.BasicNackAsync(
                 deliveryTag: ea.DeliveryTag,
@@ -129,7 +135,6 @@ public class BetApprovedConsumer(
         }
         catch (Exception ex)
         {
-            // Transient failure — requeue with delay
             logger.LogError(ex, "Failed to process message. Requeuing.");
             await Task.Delay(TimeSpan.FromSeconds(5));
             await _channel!.BasicNackAsync(
@@ -157,11 +162,4 @@ public class BetApprovedConsumer(
 
         await base.StopAsync(cancellationToken);
     }
-}
-
-public class BetApprovedEvent
-{
-    public Guid BetId { get; set; }
-    public Guid UserId { get; set; }
-    public decimal ApprovedStake { get; set; }
 }

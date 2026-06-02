@@ -1,9 +1,7 @@
 using Microsoft.AspNetCore.Mvc;
-using RabbitMQ.Client;
-using Microsoft.Extensions.Options;
-using System.Text;
-using System.Text.Json;
-using Account.Services;
+using Account.DTOs;
+using Account.Publishers;
+using Contracts;
 
 namespace Account.Controllers;
 
@@ -11,9 +9,9 @@ namespace Account.Controllers;
 [Route("/api/v1/account")]
 public class AccountController : ControllerBase
 {
-    private readonly RabbitMqPublisher _publisher;
+    private readonly BetPlacedPublisher _publisher;
 
-    public AccountController(RabbitMqPublisher publisher)
+    public AccountController(BetPlacedPublisher publisher)
     {
         _publisher = publisher;
     }
@@ -36,75 +34,5 @@ public class AccountController : ControllerBase
         await _publisher.PublishBetPlacedAsync(evt);
 
         return Ok("Bet event published");
-    }
-
-    public class RabbitMqPublisher : IAsyncDisposable
-    {
-        private readonly IConnection _connection;
-        private readonly IChannel _channel;
-
-        public RabbitMqPublisher(IOptions<RabbitMqOptions> options)
-        {
-            var rabbitOptions = options.Value;
-
-            var factory = new ConnectionFactory
-            {
-                HostName = rabbitOptions.HostName,
-                Port = rabbitOptions.Port,
-                UserName = rabbitOptions.UserName,
-                Password = rabbitOptions.Password
-            };
-
-            _connection = factory.CreateConnectionAsync().Result;
-            _channel = _connection.CreateChannelAsync().Result;
-
-            _channel.QueueDeclareAsync(
-                queue: "bet-placed",
-                durable: true,
-                exclusive: false,
-                autoDelete: false
-            ).GetAwaiter().GetResult();
-        }
-
-        public async Task PublishBetPlacedAsync(BetPlacedEvent evt)
-        {
-            var json = JsonSerializer.Serialize(evt);
-            var body = Encoding.UTF8.GetBytes(json);
-
-            var props = new BasicProperties
-            {
-                Persistent = true,          
-                ContentType = "application/json"
-            };
-
-            await _channel.BasicPublishAsync(
-                exchange: "",
-                routingKey: "bet-placed",
-                mandatory: false,
-                basicProperties: props,
-                body: body
-            );
-        }
-
-        public async ValueTask DisposeAsync()
-        {
-            await _channel.CloseAsync();
-            await _connection.CloseAsync();
-
-            await _channel.DisposeAsync();
-            await _connection.DisposeAsync();
-        }
-    }
-
-    public class BetPlacedEvent
-    {
-        public Guid BetId { get; set; }
-        public Guid UserId { get; set; }
-        public decimal Stake { get; set; }
-    }
-
-    public class BetPlacedRequest
-    {
-        public decimal Stake { get; set; }
     }
 }

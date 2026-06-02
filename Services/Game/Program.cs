@@ -1,4 +1,5 @@
-using Game.Services;
+using Game.Consumers;
+using Game.Messaging;
 
 var builder = WebApplication.CreateBuilder(args);
 

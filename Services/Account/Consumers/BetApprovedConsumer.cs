@@ -2,11 +2,16 @@ using RabbitMQ.Client;
 using RabbitMQ.Client.Events;
 using System.Text;
 using System.Text.Json;
+using Account.Messaging;
+using Contracts;
 using Microsoft.Extensions.Options;
 
-namespace Game.Services;
+namespace Account.Consumers;
 
-public class BetPlacedConsumer(ILogger<BetPlacedConsumer> logger, IOptions<RabbitMqOptions> rabbitOptions) : BackgroundService
+public class BetApprovedConsumer(
+    ILogger<BetApprovedConsumer> logger,
+    IServiceScopeFactory scopeFactory,
+    IOptions<RabbitMqOptions> rabbitOptions) : BackgroundService
 {
     private IConnection? _connection;
     private IChannel? _channel;
@@ -21,7 +26,7 @@ public class BetPlacedConsumer(ILogger<BetPlacedConsumer> logger, IOptions<Rabbi
             }
             catch (Exception ex) when (!stoppingToken.IsCancellationRequested)
             {
-                logger.LogError(ex, "BetPlacedConsumer failed. Retrying in 5s...");
+                logger.LogError(ex, "RabbitMQ consumer failed. Retrying in 5s...");
                 await Task.Delay(TimeSpan.FromSeconds(5), stoppingToken);
             }
         }
@@ -50,23 +55,18 @@ public class BetPlacedConsumer(ILogger<BetPlacedConsumer> logger, IOptions<Rabbi
         _connection = await factory.CreateConnectionAsync(stoppingToken);
         _channel = await _connection.CreateChannelAsync(cancellationToken: stoppingToken);
 
+        const int prefetchCount = 10, prefetchSize = 0;
+        const string queue = "bet-approved";
+        
         await _channel.BasicQosAsync(
-            prefetchSize: 0,
-            prefetchCount: 10,
+            prefetchSize: prefetchSize,
+            prefetchCount: prefetchCount,
             global: false,
             cancellationToken: stoppingToken
         );
 
         await _channel.QueueDeclareAsync(
-            queue: "bet-placed",
-            durable: true,
-            exclusive: false,
-            autoDelete: false,
-            cancellationToken: stoppingToken
-        );
-
-        await _channel.QueueDeclareAsync(
-            queue: "bet-approved",
+            queue: queue,
             durable: true,
             exclusive: false,
             autoDelete: false,
@@ -77,13 +77,13 @@ public class BetPlacedConsumer(ILogger<BetPlacedConsumer> logger, IOptions<Rabbi
         consumer.ReceivedAsync += OnMessageReceivedAsync;
 
         await _channel.BasicConsumeAsync(
-            queue: "bet-placed",
+            queue: queue,
             autoAck: false,
             consumer: consumer,
             cancellationToken: stoppingToken
         );
 
-        logger.LogInformation("BetPlacedConsumer started.");
+        logger.LogInformation("RabbitMQ consumer started.");
 
         var tcs = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
 
@@ -101,38 +101,15 @@ public class BetPlacedConsumer(ILogger<BetPlacedConsumer> logger, IOptions<Rabbi
 
     private async Task OnMessageReceivedAsync(object sender, BasicDeliverEventArgs ea)
     {
+        await using var scope = scopeFactory.CreateAsyncScope();
         try
         {
             var body = ea.Body.ToArray();
             var json = Encoding.UTF8.GetString(body);
-            var betPlaced = JsonSerializer.Deserialize<BetPlacedEvent>(json);
+            var evt = JsonSerializer.Deserialize<BetApprovedEvent>(json);
 
-            logger.LogInformation("Received bet: {BetId}", betPlaced?.BetId);
-
-            // business logic
-            var approved = true;
-
-            if (approved)
-            {
-                var approvedEvent = new BetApprovedEvent
-                {
-                    BetId = betPlaced!.BetId,
-                    UserId = betPlaced.UserId,
-                    ApprovedAt = DateTime.UtcNow
-                };
-
-                var approvedBody = Encoding.UTF8.GetBytes(JsonSerializer.Serialize(approvedEvent));
-
-                await _channel!.BasicPublishAsync(
-                    exchange: "",
-                    routingKey: "bet-approved",
-                    body: approvedBody,
-                    cancellationToken: CancellationToken.None
-                );
-
-                logger.LogInformation("Published approved event: {BetId}", approvedEvent.BetId);
-            }
-
+            logger.LogInformation("Bet approved: {BetId}", evt?.BetId);
+            
             await _channel!.BasicAckAsync(
                 deliveryTag: ea.DeliveryTag,
                 multiple: false,
@@ -141,6 +118,7 @@ public class BetPlacedConsumer(ILogger<BetPlacedConsumer> logger, IOptions<Rabbi
         }
         catch (JsonException ex)
         {
+            // Bad message — don't requeue, send to dead letter
             logger.LogError(ex, "Invalid message format. Discarding.");
             await _channel!.BasicNackAsync(
                 deliveryTag: ea.DeliveryTag,
@@ -151,6 +129,7 @@ public class BetPlacedConsumer(ILogger<BetPlacedConsumer> logger, IOptions<Rabbi
         }
         catch (Exception ex)
         {
+            // Transient failure — requeue with delay
             logger.LogError(ex, "Failed to process message. Requeuing.");
             await Task.Delay(TimeSpan.FromSeconds(5));
             await _channel!.BasicNackAsync(
@@ -180,16 +159,3 @@ public class BetPlacedConsumer(ILogger<BetPlacedConsumer> logger, IOptions<Rabbi
     }
 }
 
-public class BetPlacedEvent
-{
-    public Guid BetId { get; set; }
-    public Guid UserId { get; set; }
-    public decimal Amount { get; set; }
-}
-
-public class BetApprovedEvent
-{
-    public Guid BetId { get; set; }
-    public Guid UserId { get; set; }
-    public DateTime ApprovedAt { get; set; }
-}
