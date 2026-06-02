@@ -5,6 +5,7 @@ using Game.GrpcClients;
 using Game.Handlers;
 using Game.Messaging;
 using Game.Publishers;
+using Grpc.Core;
 using Microsoft.Extensions.Options;
 using RabbitMQ.Client;
 using RabbitMQ.Client.Events;
@@ -43,13 +44,9 @@ public class BetPlacedConsumer(
         var factory = new ConnectionFactory
         {
             HostName = options.HostName,
-
             Port = options.Port,
-
             UserName = options.UserName,
-
             Password = options.Password,
-
             VirtualHost = options.VirtualHost,
         };
 
@@ -128,6 +125,17 @@ public class BetPlacedConsumer(
         catch (JsonException ex)
         {
             logger.LogError(ex, "Invalid message format. Discarding.");
+            await _channel!.BasicNackAsync(
+                eventArgs.DeliveryTag,
+                false,
+                false,
+                CancellationToken.None
+            );
+        }
+        catch (RpcException ex)
+            when (ex.StatusCode is StatusCode.NotFound or StatusCode.InvalidArgument)
+        {
+            logger.LogError(ex, "Non-retryable catalog error. Discarding.");
             await _channel!.BasicNackAsync(
                 eventArgs.DeliveryTag,
                 false,

@@ -23,12 +23,17 @@ public class BetPlacedHandler
         var eventPrice = await _catalog_client.GetEventPriceAsync(eventId);
 
         // 2. create domain result
-        await _catalog_client.UpdateEventPriceAsync(
+        var updateResult = await _catalog_client.UpdateEventPriceAsync(
             eventId,
             null,
             null,
             eventPrice.PotSize + (long)betPlaced.Stake
         );
+        if (!updateResult.Success)
+            throw new InvalidOperationException(
+                $"Catalog rejected price update for event {eventId}"
+            );
+
         var approvedEvent = new BetApprovedEvent
         {
             // for now always approve
