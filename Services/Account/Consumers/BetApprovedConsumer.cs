@@ -53,12 +53,10 @@ public class BetApprovedConsumer(
 
         const int prefetchCount = 10,
             prefetchSize = 0;
-        const string queue = "bet-approved";
-
         await _channel.BasicQosAsync(prefetchSize, prefetchCount, false, stoppingToken);
 
         await _channel.QueueDeclareAsync(
-            queue,
+            RabbitMQConstants.BetApprovedQueue,
             true,
             false,
             false,
@@ -68,7 +66,12 @@ public class BetApprovedConsumer(
         var consumer = new AsyncEventingBasicConsumer(_channel);
         consumer.ReceivedAsync += OnMessageReceivedAsync;
 
-        await _channel.BasicConsumeAsync(queue, false, consumer, stoppingToken);
+        await _channel.BasicConsumeAsync(
+            RabbitMQConstants.BetApprovedQueue,
+            false,
+            consumer,
+            stoppingToken
+        );
 
         logger.LogInformation("RabbitMQ consumer started.");
 

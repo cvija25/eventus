@@ -26,8 +26,10 @@ public class BetApprovedPublisher : IAsyncDisposable
 
         _connection = factory.CreateConnectionAsync().Result;
         _channel = _connection.CreateChannelAsync().Result;
-        const string queue = "bet-approved";
-        _channel.QueueDeclareAsync(queue, true, false, false).GetAwaiter().GetResult();
+        _channel
+            .QueueDeclareAsync(RabbitMQConstants.BetApprovedQueue, true, false, false)
+            .GetAwaiter()
+            .GetResult();
     }
 
     public async ValueTask DisposeAsync()
@@ -45,7 +47,12 @@ public class BetApprovedPublisher : IAsyncDisposable
         var body = Encoding.UTF8.GetBytes(json);
 
         var props = new BasicProperties { Persistent = true, ContentType = "application/json" };
-        const string queue = "bet-approved";
-        await _channel.BasicPublishAsync("", queue, false, props, body);
+        await _channel.BasicPublishAsync(
+            "",
+            RabbitMQConstants.BetApprovedQueue,
+            false,
+            props,
+            body
+        );
     }
 }

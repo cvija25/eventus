@@ -27,7 +27,10 @@ public class BetPlacedPublisher : IAsyncDisposable
         _connection = factory.CreateConnectionAsync().Result;
         _channel = _connection.CreateChannelAsync().Result;
 
-        _channel.QueueDeclareAsync("bet-placed", true, false, false).GetAwaiter().GetResult();
+        _channel
+            .QueueDeclareAsync(RabbitMQConstants.BetPlacedQueue, true, false, false)
+            .GetAwaiter()
+            .GetResult();
     }
 
     public async ValueTask DisposeAsync()
@@ -46,6 +49,6 @@ public class BetPlacedPublisher : IAsyncDisposable
 
         var props = new BasicProperties { Persistent = true, ContentType = "application/json" };
 
-        await _channel.BasicPublishAsync("", "bet-placed", false, props, body);
+        await _channel.BasicPublishAsync("", RabbitMQConstants.BetPlacedQueue, false, props, body);
     }
 }

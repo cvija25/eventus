@@ -57,7 +57,7 @@ public class BetPlacedConsumer(
         await _channel.BasicQosAsync(0, 10, false, stoppingToken);
 
         await _channel.QueueDeclareAsync(
-            "bet-placed",
+            RabbitMQConstants.BetPlacedQueue,
             true,
             false,
             false,
@@ -65,7 +65,7 @@ public class BetPlacedConsumer(
         );
 
         await _channel.QueueDeclareAsync(
-            "bet-approved",
+            RabbitMQConstants.BetApprovedQueue,
             true,
             false,
             false,
@@ -75,7 +75,12 @@ public class BetPlacedConsumer(
         var consumer = new AsyncEventingBasicConsumer(_channel);
         consumer.ReceivedAsync += OnMessageReceivedAsync;
 
-        await _channel.BasicConsumeAsync("bet-placed", false, consumer, stoppingToken);
+        await _channel.BasicConsumeAsync(
+            RabbitMQConstants.BetPlacedQueue,
+            false,
+            consumer,
+            stoppingToken
+        );
 
         logger.LogInformation("BetPlacedConsumer started.");
 
@@ -99,7 +104,8 @@ public class BetPlacedConsumer(
         {
             var body = eventArgs.Body.ToArray();
             var json = Encoding.UTF8.GetString(body);
-            var betPlaced = JsonSerializer.Deserialize<BetPlacedEvent>(json)
+            var betPlaced =
+                JsonSerializer.Deserialize<BetPlacedEvent>(json)
                 ?? throw new JsonException("Failed to deserialize BetPlacedEvent");
 
             logger.LogInformation("Received bet: {BetId}", betPlaced.BetId);
