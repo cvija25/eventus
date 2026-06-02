@@ -9,15 +9,12 @@ public class BetPlacedHandler
 
     public BetPlacedHandler(BetApprovedPublisher publisher)
     {
-
         _publisher = publisher;
-
     }
 
     public async Task ProcessBetPlacedAsync(BetPlacedEvent betPlaced)
 
     {
-
         // 1. BUSINESS LOGIC
         // example rule
 
@@ -26,18 +23,15 @@ public class BetPlacedHandler
         var approvedEvent = new BetApprovedEvent
 
         {
-
             BetId = betPlaced.BetId,
 
             UserId = betPlaced.UserId,
 
             ApprovedAt = DateTime.UtcNow
-
         };
 
         // 3. publish result
 
         await _publisher.PublishBetApprovedAsync(approvedEvent);
-
     }
 }

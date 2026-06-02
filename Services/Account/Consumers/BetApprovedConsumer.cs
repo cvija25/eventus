@@ -1,10 +1,10 @@
-using RabbitMQ.Client;
-using RabbitMQ.Client.Events;
 using System.Text;
 using System.Text.Json;
 using Account.Messaging;
 using Contracts;
 using Microsoft.Extensions.Options;
+using RabbitMQ.Client;
+using RabbitMQ.Client.Events;
 
 namespace Account.Consumers;
 
@@ -13,13 +13,12 @@ public class BetApprovedConsumer(
     IServiceScopeFactory scopeFactory,
     IOptions<RabbitMqOptions> rabbitOptions) : BackgroundService
 {
-    private IConnection? _connection;
     private IChannel? _channel;
+    private IConnection? _connection;
 
     protected override async Task ExecuteAsync(CancellationToken stoppingToken)
     {
         while (!stoppingToken.IsCancellationRequested)
-        {
             try
             {
                 await StartConsumingAsync(stoppingToken);
@@ -29,7 +28,6 @@ public class BetApprovedConsumer(
                 logger.LogError(ex, "RabbitMQ consumer failed. Retrying in 5s...");
                 await Task.Delay(TimeSpan.FromSeconds(5), stoppingToken);
             }
-        }
     }
 
     private async Task StartConsumingAsync(CancellationToken stoppingToken)
@@ -39,7 +37,6 @@ public class BetApprovedConsumer(
         var factory = new ConnectionFactory
 
         {
-
             HostName = options.HostName,
 
             Port = options.Port,
@@ -49,7 +46,6 @@ public class BetApprovedConsumer(
             Password = options.Password,
 
             VirtualHost = options.VirtualHost
-
         };
 
         _connection = await factory.CreateConnectionAsync(stoppingToken);
@@ -57,19 +53,19 @@ public class BetApprovedConsumer(
 
         const int prefetchCount = 10, prefetchSize = 0;
         const string queue = "bet-approved";
-        
+
         await _channel.BasicQosAsync(
-            prefetchSize: prefetchSize,
-            prefetchCount: prefetchCount,
-            global: false,
-            cancellationToken: stoppingToken
+            prefetchSize,
+            prefetchCount,
+            false,
+            stoppingToken
         );
 
         await _channel.QueueDeclareAsync(
-            queue: queue,
-            durable: true,
-            exclusive: false,
-            autoDelete: false,
+            queue,
+            true,
+            false,
+            false,
             cancellationToken: stoppingToken
         );
 
@@ -77,10 +73,10 @@ public class BetApprovedConsumer(
         consumer.ReceivedAsync += OnMessageReceivedAsync;
 
         await _channel.BasicConsumeAsync(
-            queue: queue,
-            autoAck: false,
-            consumer: consumer,
-            cancellationToken: stoppingToken
+            queue,
+            false,
+            consumer,
+            stoppingToken
         );
 
         logger.LogInformation("RabbitMQ consumer started.");
@@ -109,11 +105,11 @@ public class BetApprovedConsumer(
             var evt = JsonSerializer.Deserialize<BetApprovedEvent>(json);
 
             logger.LogInformation("Bet approved: {BetId}", evt?.BetId);
-            
+
             await _channel!.BasicAckAsync(
-                deliveryTag: ea.DeliveryTag,
-                multiple: false,
-                cancellationToken: CancellationToken.None
+                ea.DeliveryTag,
+                false,
+                CancellationToken.None
             );
         }
         catch (JsonException ex)
@@ -121,10 +117,10 @@ public class BetApprovedConsumer(
             // Bad message — don't requeue, send to dead letter
             logger.LogError(ex, "Invalid message format. Discarding.");
             await _channel!.BasicNackAsync(
-                deliveryTag: ea.DeliveryTag,
-                multiple: false,
-                requeue: false,
-                cancellationToken: CancellationToken.None
+                ea.DeliveryTag,
+                false,
+                false,
+                CancellationToken.None
             );
         }
         catch (Exception ex)
@@ -133,10 +129,10 @@ public class BetApprovedConsumer(
             logger.LogError(ex, "Failed to process message. Requeuing.");
             await Task.Delay(TimeSpan.FromSeconds(5));
             await _channel!.BasicNackAsync(
-                deliveryTag: ea.DeliveryTag,
-                multiple: false,
-                requeue: true,
-                cancellationToken: CancellationToken.None
+                ea.DeliveryTag,
+                false,
+                true,
+                CancellationToken.None
             );
         }
     }
@@ -158,4 +154,3 @@ public class BetApprovedConsumer(
         await base.StopAsync(cancellationToken);
     }
 }
-

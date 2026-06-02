@@ -1,7 +1,7 @@
-using Microsoft.AspNetCore.Mvc;
 using Account.DTOs;
 using Account.Publishers;
 using Contracts;
+using Microsoft.AspNetCore.Mvc;
 
 namespace Account.Controllers;
 
@@ -15,6 +15,7 @@ public class AccountController : ControllerBase
     {
         _publisher = publisher;
     }
+
     [HttpGet]
     public ActionResult<string> GetGreeting()
     {

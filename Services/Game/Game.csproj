@@ -9,17 +9,17 @@
 
     <ItemGroup>
         <PackageReference Include="Microsoft.AspNetCore.OpenApi" Version="10.0.1"/>
-        <PackageReference Include="RabbitMQ.Client" Version="7.2.1" />
+        <PackageReference Include="RabbitMQ.Client" Version="7.2.1"/>
     </ItemGroup>
 
     <ItemGroup>
-      <Content Include="..\.dockerignore">
-        <Link>.dockerignore</Link>
-      </Content>
+        <Content Include="..\.dockerignore">
+            <Link>.dockerignore</Link>
+        </Content>
     </ItemGroup>
 
     <ItemGroup>
-      <ProjectReference Include="..\Contracts\Contracts.csproj" />
+        <ProjectReference Include="..\Contracts\Contracts.csproj"/>
     </ItemGroup>
 
 </Project>
