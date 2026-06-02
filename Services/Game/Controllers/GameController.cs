@@ -1,15 +1,15 @@
 using Microsoft.AspNetCore.Mvc;
 
-namespace Catalog.API.Controllers;
+namespace Game.Controllers;
 
 [ApiController]
-[Route("/api/v1/catalog")]
-public class CatalogController : ControllerBase
+[Route("/api/v1/game")]
+public class GameController : ControllerBase
 {
     [HttpGet]
     [ProducesResponseType(StatusCodes.Status200OK)]
     public ActionResult<string> GetGreeting()
     {
-        return Ok("Hello World, from Catalog!");
+        return Ok("Hello World, from Game!");
     }
 }

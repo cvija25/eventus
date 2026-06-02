@@ -1,12 +1,10 @@
-using Account.Consumers;
-using Account.Messaging;
-using Account.Publishers;
+using Game.Consumers;
+using Game.Messaging;
 
 var builder = WebApplication.CreateBuilder(args);
 
 builder.Services.AddControllers();
-builder.Services.AddHostedService<BetApprovedConsumer>();
-builder.Services.AddSingleton<BetPlacedPublisher>();
+builder.Services.AddHostedService<BetPlacedConsumer>();
 builder.Services.Configure<RabbitMqOptions>(builder.Configuration.GetSection("RabbitMq"));
 var app = builder.Build();
 if (app.Environment.IsDevelopment())
