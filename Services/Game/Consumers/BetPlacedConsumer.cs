@@ -10,8 +10,10 @@ using RabbitMQ.Client.Events;
 
 namespace Game.Consumers;
 
-public class BetPlacedConsumer(ILogger<BetPlacedConsumer> logger, IOptions<RabbitMqOptions> rabbitOptions)
-    : BackgroundService
+public class BetPlacedConsumer(
+    ILogger<BetPlacedConsumer> logger,
+    IOptions<RabbitMqOptions> rabbitOptions
+) : BackgroundService
 {
     private IChannel? _channel;
     private IConnection? _connection;
@@ -36,7 +38,6 @@ public class BetPlacedConsumer(ILogger<BetPlacedConsumer> logger, IOptions<Rabbi
         var options = rabbitOptions.Value;
 
         var factory = new ConnectionFactory
-
         {
             HostName = options.HostName,
 
@@ -46,19 +47,14 @@ public class BetPlacedConsumer(ILogger<BetPlacedConsumer> logger, IOptions<Rabbi
 
             Password = options.Password,
 
-            VirtualHost = options.VirtualHost
+            VirtualHost = options.VirtualHost,
         };
 
         _connection = await factory.CreateConnectionAsync(stoppingToken);
         _channel = await _connection.CreateChannelAsync(cancellationToken: stoppingToken);
         _handler = new BetPlacedHandler(new BetApprovedPublisher(rabbitOptions));
 
-        await _channel.BasicQosAsync(
-            0,
-            10,
-            false,
-            stoppingToken
-        );
+        await _channel.BasicQosAsync(0, 10, false, stoppingToken);
 
         await _channel.QueueDeclareAsync(
             "bet-placed",
@@ -79,12 +75,7 @@ public class BetPlacedConsumer(ILogger<BetPlacedConsumer> logger, IOptions<Rabbi
         var consumer = new AsyncEventingBasicConsumer(_channel);
         consumer.ReceivedAsync += OnMessageReceivedAsync;
 
-        await _channel.BasicConsumeAsync(
-            "bet-placed",
-            false,
-            consumer,
-            stoppingToken
-        );
+        await _channel.BasicConsumeAsync("bet-placed", false, consumer, stoppingToken);
 
         logger.LogInformation("BetPlacedConsumer started.");
 
@@ -113,32 +104,18 @@ public class BetPlacedConsumer(ILogger<BetPlacedConsumer> logger, IOptions<Rabbi
             logger.LogInformation("Received bet: {BetId}", betPlaced?.BetId);
             _handler?.ProcessBetPlacedAsync(betPlaced);
 
-            await _channel!.BasicAckAsync(
-                ea.DeliveryTag,
-                false,
-                CancellationToken.None
-            );
+            await _channel!.BasicAckAsync(ea.DeliveryTag, false, CancellationToken.None);
         }
         catch (JsonException ex)
         {
             logger.LogError(ex, "Invalid message format. Discarding.");
-            await _channel!.BasicNackAsync(
-                ea.DeliveryTag,
-                false,
-                false,
-                CancellationToken.None
-            );
+            await _channel!.BasicNackAsync(ea.DeliveryTag, false, false, CancellationToken.None);
         }
         catch (Exception ex)
         {
             logger.LogError(ex, "Failed to process message. Requeuing.");
             await Task.Delay(TimeSpan.FromSeconds(5));
-            await _channel!.BasicNackAsync(
-                ea.DeliveryTag,
-                false,
-                true,
-                CancellationToken.None
-            );
+            await _channel!.BasicNackAsync(ea.DeliveryTag, false, true, CancellationToken.None);
         }
     }
 

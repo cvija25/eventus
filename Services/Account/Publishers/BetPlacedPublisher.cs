@@ -21,18 +21,13 @@ public class BetPlacedPublisher : IAsyncDisposable
             HostName = rabbitOptions.HostName,
             Port = rabbitOptions.Port,
             UserName = rabbitOptions.UserName,
-            Password = rabbitOptions.Password
+            Password = rabbitOptions.Password,
         };
 
         _connection = factory.CreateConnectionAsync().Result;
         _channel = _connection.CreateChannelAsync().Result;
 
-        _channel.QueueDeclareAsync(
-            "bet-placed",
-            true,
-            false,
-            false
-        ).GetAwaiter().GetResult();
+        _channel.QueueDeclareAsync("bet-placed", true, false, false).GetAwaiter().GetResult();
     }
 
     public async ValueTask DisposeAsync()
@@ -49,18 +44,8 @@ public class BetPlacedPublisher : IAsyncDisposable
         var json = JsonSerializer.Serialize(evt);
         var body = Encoding.UTF8.GetBytes(json);
 
-        var props = new BasicProperties
-        {
-            Persistent = true,
-            ContentType = "application/json"
-        };
+        var props = new BasicProperties { Persistent = true, ContentType = "application/json" };
 
-        await _channel.BasicPublishAsync(
-            "",
-            "bet-placed",
-            false,
-            props,
-            body
-        );
+        await _channel.BasicPublishAsync("", "bet-placed", false, props, body);
     }
 }

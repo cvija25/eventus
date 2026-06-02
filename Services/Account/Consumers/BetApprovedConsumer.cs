@@ -11,7 +11,8 @@ namespace Account.Consumers;
 public class BetApprovedConsumer(
     ILogger<BetApprovedConsumer> logger,
     IServiceScopeFactory scopeFactory,
-    IOptions<RabbitMqOptions> rabbitOptions) : BackgroundService
+    IOptions<RabbitMqOptions> rabbitOptions
+) : BackgroundService
 {
     private IChannel? _channel;
     private IConnection? _connection;
@@ -35,7 +36,6 @@ public class BetApprovedConsumer(
         var options = rabbitOptions.Value;
 
         var factory = new ConnectionFactory
-
         {
             HostName = options.HostName,
 
@@ -45,21 +45,17 @@ public class BetApprovedConsumer(
 
             Password = options.Password,
 
-            VirtualHost = options.VirtualHost
+            VirtualHost = options.VirtualHost,
         };
 
         _connection = await factory.CreateConnectionAsync(stoppingToken);
         _channel = await _connection.CreateChannelAsync(cancellationToken: stoppingToken);
 
-        const int prefetchCount = 10, prefetchSize = 0;
+        const int prefetchCount = 10,
+            prefetchSize = 0;
         const string queue = "bet-approved";
 
-        await _channel.BasicQosAsync(
-            prefetchSize,
-            prefetchCount,
-            false,
-            stoppingToken
-        );
+        await _channel.BasicQosAsync(prefetchSize, prefetchCount, false, stoppingToken);
 
         await _channel.QueueDeclareAsync(
             queue,
@@ -72,12 +68,7 @@ public class BetApprovedConsumer(
         var consumer = new AsyncEventingBasicConsumer(_channel);
         consumer.ReceivedAsync += OnMessageReceivedAsync;
 
-        await _channel.BasicConsumeAsync(
-            queue,
-            false,
-            consumer,
-            stoppingToken
-        );
+        await _channel.BasicConsumeAsync(queue, false, consumer, stoppingToken);
 
         logger.LogInformation("RabbitMQ consumer started.");
 
@@ -106,34 +97,20 @@ public class BetApprovedConsumer(
 
             logger.LogInformation("Bet approved: {BetId}", evt?.BetId);
 
-            await _channel!.BasicAckAsync(
-                ea.DeliveryTag,
-                false,
-                CancellationToken.None
-            );
+            await _channel!.BasicAckAsync(ea.DeliveryTag, false, CancellationToken.None);
         }
         catch (JsonException ex)
         {
             // Bad message — don't requeue, send to dead letter
             logger.LogError(ex, "Invalid message format. Discarding.");
-            await _channel!.BasicNackAsync(
-                ea.DeliveryTag,
-                false,
-                false,
-                CancellationToken.None
-            );
+            await _channel!.BasicNackAsync(ea.DeliveryTag, false, false, CancellationToken.None);
         }
         catch (Exception ex)
         {
             // Transient failure — requeue with delay
             logger.LogError(ex, "Failed to process message. Requeuing.");
             await Task.Delay(TimeSpan.FromSeconds(5));
-            await _channel!.BasicNackAsync(
-                ea.DeliveryTag,
-                false,
-                true,
-                CancellationToken.None
-            );
+            await _channel!.BasicNackAsync(ea.DeliveryTag, false, true, CancellationToken.None);
         }
     }
 

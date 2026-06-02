@@ -29,7 +29,7 @@ public class AccountController : ControllerBase
         {
             BetId = Guid.NewGuid(),
             UserId = Guid.NewGuid(),
-            Stake = request.Stake
+            Stake = request.Stake,
         };
 
         await _publisher.PublishBetPlacedAsync(evt);
