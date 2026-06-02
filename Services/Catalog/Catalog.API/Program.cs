@@ -3,6 +3,14 @@ using Catalog.Common.Extensions;
 var builder = WebApplication.CreateBuilder(args);
 
 builder.Services.AddSwaggerGen();
+builder.Services.AddCors(options =>
+{
+    options.AddPolicy("Frontend", policy =>
+        policy.AllowAnyOrigin()
+            .AllowAnyHeader()
+            .AllowAnyMethod());
+});
+
 builder.Services.AddControllers();
 builder.Services.AddCatalogCommon(builder.Configuration);
 
@@ -14,5 +22,6 @@ if (app.Environment.IsDevelopment())
     app.UseSwaggerUI();
 }
 
+app.UseCors("Frontend");
 app.MapControllers();
 app.Run();

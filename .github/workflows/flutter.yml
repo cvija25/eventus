@@ -1,0 +1,57 @@
+name: Flutter CI
+
+on:
+  push:
+    branches: [ main ]
+  pull_request:
+
+jobs:
+  flutter-ci:
+    runs-on: ubuntu-latest
+
+    defaults:
+      run:
+        working-directory: mobile-app
+
+    steps:
+      # 1. Checkout repository
+      - name: Checkout repo
+        uses: actions/checkout@v4
+
+      # 2. Cache Flutter + pub dependencies
+      - name: Cache Flutter dependencies
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/.pub-cache
+            mobile-app/.dart_tool
+          key: ${{ runner.os }}-flutter-${{ hashFiles('mobile-app/pubspec.lock') }}
+          restore-keys: |
+            ${{ runner.os }}-flutter-
+
+      # 3. Setup Flutter SDK
+      - name: Set up Flutter
+        uses: subosito/flutter-action@v2
+        with:
+          flutter-version: stable
+          cache: true
+
+      # 4. Install dependencies
+      - name: Install dependencies
+        run: flutter pub get
+
+      # 5. Format check (optional but recommended)
+      - name: Check formatting
+        run: dart format --set-exit-if-changed .
+
+      # 6. Static analysis
+      - name: Analyze project
+        run: flutter analyze
+
+      # 7. Run tests
+      - name: Run tests
+        run: flutter test
+
+      # 8. Build APK (debug build for CI validation)
+      - name: Build APK (debug)
+        run: flutter build apk --debug

@@ -2,7 +2,7 @@
 
 public class BetPlacedEvent
 {
-    public Guid BetId { get; set; }
-    public Guid UserId { get; set; }
+    public Guid EventId { get; set; }
+    public Guid OwnerId { get; set; }
     public decimal Stake { get; set; }
 }

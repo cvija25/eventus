@@ -45,7 +45,7 @@ public class BetApprovedConsumer(
 
             Password = options.Password,
 
-            VirtualHost = options.VirtualHost,
+            VirtualHost = options.VirtualHost
         };
 
         _connection = await factory.CreateConnectionAsync(stoppingToken);
@@ -98,7 +98,7 @@ public class BetApprovedConsumer(
             var json = Encoding.UTF8.GetString(body);
             var evt = JsonSerializer.Deserialize<BetApprovedEvent>(json);
 
-            logger.LogInformation("Bet approved: {BetId}", evt?.BetId);
+            logger.LogInformation("Bet approved: {IsApproved}", evt?.IsApproved);
 
             await _channel!.BasicAckAsync(ea.DeliveryTag, false, CancellationToken.None);
         }

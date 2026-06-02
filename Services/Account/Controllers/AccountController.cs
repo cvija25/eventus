@@ -27,9 +27,9 @@ public class AccountController : ControllerBase
     {
         var evt = new BetPlacedEvent
         {
-            BetId = Guid.NewGuid(),
-            UserId = Guid.NewGuid(),
-            Stake = request.Stake,
+            OwnerId = request.OwnerId,
+            EventId = request.EventId,
+            Stake = request.Stake
         };
 
         await _publisher.PublishBetPlacedAsync(evt);

@@ -47,7 +47,7 @@ public class BetPlacedConsumer(
 
             Password = options.Password,
 
-            VirtualHost = options.VirtualHost,
+            VirtualHost = options.VirtualHost
         };
 
         _connection = await factory.CreateConnectionAsync(stoppingToken);
@@ -108,7 +108,8 @@ public class BetPlacedConsumer(
                 JsonSerializer.Deserialize<BetPlacedEvent>(json)
                 ?? throw new JsonException("Failed to deserialize BetPlacedEvent");
 
-            logger.LogInformation("Received bet: {BetId}", betPlaced.BetId);
+            logger.LogInformation("Received bet: {EventId}, {OwnerId}, {Stake}", betPlaced.EventId, betPlaced.OwnerId,
+                betPlaced.Stake);
 
             await _handler!.ProcessBetPlacedAsync(betPlaced);
 

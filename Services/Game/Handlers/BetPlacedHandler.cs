@@ -21,11 +21,9 @@ public class BetPlacedHandler
 
         var approvedEvent = new BetApprovedEvent
         {
-            BetId = betPlaced.BetId,
-
-            UserId = betPlaced.UserId,
-
-            ApprovedAt = DateTime.UtcNow,
+            // for now always approve
+            IsApproved = true,
+            ApprovedAt = DateTime.UtcNow
         };
 
         // 3. publish result
