@@ -109,13 +109,23 @@ public class BetPlacedConsumer(
         catch (JsonException ex)
         {
             logger.LogError(ex, "Invalid message format. Discarding.");
-            await _channel!.BasicNackAsync(eventArgs.DeliveryTag, false, false, CancellationToken.None);
+            await _channel!.BasicNackAsync(
+                eventArgs.DeliveryTag,
+                false,
+                false,
+                CancellationToken.None
+            );
         }
         catch (Exception ex)
         {
             logger.LogError(ex, "Failed to process message. Requeuing.");
             await Task.Delay(TimeSpan.FromSeconds(5));
-            await _channel!.BasicNackAsync(eventArgs.DeliveryTag, false, true, CancellationToken.None);
+            await _channel!.BasicNackAsync(
+                eventArgs.DeliveryTag,
+                false,
+                true,
+                CancellationToken.None
+            );
         }
     }
 
