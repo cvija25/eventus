@@ -93,29 +93,29 @@ public class BetPlacedConsumer(
         await tcs.Task;
     }
 
-    private async Task OnMessageReceivedAsync(object sender, BasicDeliverEventArgs ea)
+    private async Task OnMessageReceivedAsync(object sender, BasicDeliverEventArgs eventArgs)
     {
         try
         {
-            var body = ea.Body.ToArray();
+            var body = eventArgs.Body.ToArray();
             var json = Encoding.UTF8.GetString(body);
             var betPlaced = JsonSerializer.Deserialize<BetPlacedEvent>(json);
 
             logger.LogInformation("Received bet: {BetId}", betPlaced?.BetId);
             _handler?.ProcessBetPlacedAsync(betPlaced);
 
-            await _channel!.BasicAckAsync(ea.DeliveryTag, false, CancellationToken.None);
+            await _channel!.BasicAckAsync(eventArgs.DeliveryTag, false, CancellationToken.None);
         }
         catch (JsonException ex)
         {
             logger.LogError(ex, "Invalid message format. Discarding.");
-            await _channel!.BasicNackAsync(ea.DeliveryTag, false, false, CancellationToken.None);
+            await _channel!.BasicNackAsync(eventArgs.DeliveryTag, false, false, CancellationToken.None);
         }
         catch (Exception ex)
         {
             logger.LogError(ex, "Failed to process message. Requeuing.");
             await Task.Delay(TimeSpan.FromSeconds(5));
-            await _channel!.BasicNackAsync(ea.DeliveryTag, false, true, CancellationToken.None);
+            await _channel!.BasicNackAsync(eventArgs.DeliveryTag, false, true, CancellationToken.None);
         }
     }
 
