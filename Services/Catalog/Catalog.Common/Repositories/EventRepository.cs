@@ -25,7 +25,7 @@ public class EventRepository : IEventRepository
         var newEvent = new Event
         {
             Id = Guid.NewGuid(),
-            Name = createEventDto.Name,
+            Title = createEventDto.Title,
             OwnerId = ownerId,
             PriceYes = InitialPrice,
             PriceNo = InitialPrice,
@@ -51,7 +51,7 @@ public class EventRepository : IEventRepository
         if (ev is null)
             return false;
 
-        ev.Name = updateEventDto.Name;
+        ev.Title = updateEventDto.Title;
         ev.PriceYes = updateEventDto.PriceYes;
         ev.PriceNo = updateEventDto.PriceNo;
         ev.PotSize = updateEventDto.PotSize;

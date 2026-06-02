@@ -1,3 +1,3 @@
 namespace Catalog.Common.DTOs;
 
-public record CreateEventDto(string Name);
+public record CreateEventDto(string Title);
