@@ -8,6 +8,8 @@ FROM mcr.microsoft.com/dotnet/sdk:10.0 AS build
 ARG BUILD_CONFIGURATION=Release
 WORKDIR /src
 COPY ["Catalog/Catalog.GRPC/Catalog.GRPC.csproj", "Catalog/Catalog.GRPC/"]
+COPY ["Catalog/Catalog.Common/Catalog.Common.csproj", "Catalog/Catalog.Common/"]
+COPY ["Contracts/Contracts.csproj", "Contracts/"]
 RUN dotnet restore "Catalog/Catalog.GRPC/Catalog.GRPC.csproj"
 COPY . .
 WORKDIR "/src/Catalog/Catalog.GRPC"
