@@ -10,19 +10,13 @@ namespace Catalog.Common.Migrations
         /// <inheritdoc />
         protected override void Up(MigrationBuilder migrationBuilder)
         {
-            migrationBuilder.RenameColumn(
-                name: "Name",
-                table: "Events",
-                newName: "Title");
+            migrationBuilder.RenameColumn(name: "Name", table: "Events", newName: "Title");
         }
 
         /// <inheritdoc />
         protected override void Down(MigrationBuilder migrationBuilder)
         {
-            migrationBuilder.RenameColumn(
-                name: "Title",
-                table: "Events",
-                newName: "Name");
+            migrationBuilder.RenameColumn(name: "Title", table: "Events", newName: "Name");
         }
     }
 }

@@ -1,7 +1,11 @@
+using Catalog.Common.Extensions;
+
 var builder = WebApplication.CreateBuilder(args);
 
 builder.Services.AddSwaggerGen();
 builder.Services.AddControllers();
+builder.Services.AddCatalogCommon(builder.Configuration);
+
 var app = builder.Build();
 if (app.Environment.IsDevelopment())
 {
