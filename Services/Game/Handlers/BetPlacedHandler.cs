@@ -23,7 +23,7 @@ public class BetPlacedHandler
         {
             // for now always approve
             IsApproved = true,
-            ApprovedAt = DateTime.UtcNow
+            ApprovedAt = DateTime.UtcNow,
         };
 
         // 3. publish result

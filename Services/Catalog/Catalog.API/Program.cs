@@ -5,10 +5,10 @@ var builder = WebApplication.CreateBuilder(args);
 builder.Services.AddSwaggerGen();
 builder.Services.AddCors(options =>
 {
-    options.AddPolicy("Frontend", policy =>
-        policy.AllowAnyOrigin()
-            .AllowAnyHeader()
-            .AllowAnyMethod());
+    options.AddPolicy(
+        "Frontend",
+        policy => policy.AllowAnyOrigin().AllowAnyHeader().AllowAnyMethod()
+    );
 });
 
 builder.Services.AddControllers();

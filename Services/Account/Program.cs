@@ -6,10 +6,10 @@ var builder = WebApplication.CreateBuilder(args);
 
 builder.Services.AddCors(options =>
 {
-    options.AddPolicy("Frontend", policy =>
-        policy.AllowAnyOrigin()
-            .AllowAnyHeader()
-            .AllowAnyMethod());
+    options.AddPolicy(
+        "Frontend",
+        policy => policy.AllowAnyOrigin().AllowAnyHeader().AllowAnyMethod()
+    );
 });
 
 builder.Services.AddControllers();
@@ -22,7 +22,10 @@ if (app.Environment.IsDevelopment())
 
 app.MapGet(
     "/",
-    () => { return "Hello world!"; }
+    () =>
+    {
+        return "Hello world!";
+    }
 );
 app.UseCors("Frontend");
 app.MapControllers();

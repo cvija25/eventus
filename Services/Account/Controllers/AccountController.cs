@@ -29,7 +29,7 @@ public class AccountController : ControllerBase
         {
             OwnerId = request.OwnerId,
             EventId = request.EventId,
-            Stake = request.Stake
+            Stake = request.Stake,
         };
 
         await _publisher.PublishBetPlacedAsync(evt);

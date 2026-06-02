@@ -45,7 +45,7 @@ public class BetApprovedConsumer(
 
             Password = options.Password,
 
-            VirtualHost = options.VirtualHost
+            VirtualHost = options.VirtualHost,
         };
 
         _connection = await factory.CreateConnectionAsync(stoppingToken);
