@@ -22,17 +22,17 @@ jobs:
           cache: true
 
       - name: Install dependencies
-        working-directory: front
+        working-directory: frontend
         run: flutter pub get
 
       - name: Analyze
-        working-directory: front
+        working-directory: frontend
         run: flutter analyze
 
       - name: Run tests
-        working-directory: front
+        working-directory: frontend
         run: flutter test
 
       - name: Build APK
-        working-directory: front
+        working-directory: frontend
         run: flutter build apk --release --no-tree-shake-icons
