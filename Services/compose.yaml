@@ -34,7 +34,7 @@ services:
     volumes:
       - postgres_data:/var/lib/postgresql/data
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U postgres"]
+      test: [ "CMD-SHELL", "pg_isready -U postgres" ]
       interval: 5s
       timeout: 5s
       retries: 5
@@ -72,6 +72,14 @@ services:
       interval: 10s
       timeout: 5s
       retries: 5
+  
+  api.gateway:
+    image: api.gateway
+    build:
+      context: .
+      dockerfile: API.Gateway/Dockerfile
+    ports:
+      - "8088:8080"
 
 volumes:
   postgres_data:
