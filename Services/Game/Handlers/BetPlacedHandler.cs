@@ -19,7 +19,7 @@ public class BetPlacedHandler
     {
         // 1. BUSINESS LOGIC
         // example rule
-        var eventId = Guid.Parse("bc84e4b5-dab3-4cef-9f70-4ec5f6fad254");
+        var eventId = betPlaced.EventId;
         var eventPrice = await _catalog_client.GetEventPriceAsync(eventId);
 
         // 2. create domain result
@@ -27,7 +27,7 @@ public class BetPlacedHandler
             eventId,
             null,
             null,
-            eventPrice.PotSize + (long)betPlaced.Stake
+            eventPrice.PotSize + (long)betPlaced.Stake //hack converting from decimal to long, TBD
         );
         if (!updateResult.Success)
             throw new InvalidOperationException(
