@@ -27,8 +27,8 @@ public class AccountController : ControllerBase
     {
         var evt = new BetPlacedEvent
         {
-            BetId = Guid.NewGuid(),
-            UserId = Guid.NewGuid(),
+            OwnerId = request.OwnerId,
+            EventId = request.EventId,
             Stake = request.Stake,
         };
 
