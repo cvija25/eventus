@@ -19,11 +19,13 @@ public class CatalogService(
         logger.LogInformation("Received GetEventPrice");
         var eventId = Guid.Parse(request.EventId);
         var ev = await eventRepository.GetEventByIdAsync(eventId);
-        return ev is null
-            ? throw new RpcException(
+        if (ev is null)
+        {
+            throw new RpcException(
                 new Status(StatusCode.NotFound, $"Event with id {eventId} not found")
-            )
-            : mapper.Map<GetEventPriceResponse>(ev);
+            );
+        }
+        return mapper.Map<GetEventPriceResponse>(ev);
     }
 
     public override async Task<UpdateEventPriceResponse> UpdateEventPrice(
