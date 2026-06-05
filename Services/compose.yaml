@@ -23,6 +23,17 @@ services:
       postgres:
         condition: service_healthy
 
+  catalog.grpc:
+    image: catalog.grpc
+    build:
+      context: .
+      dockerfile: Catalog/Catalog.GRPC/Dockerfile
+    ports:
+      - "8083:8080"
+    depends_on:
+      postgres:
+        condition: service_healthy
+
   postgres:
     image: postgres:17-alpine
     environment:

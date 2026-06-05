@@ -51,7 +51,7 @@ public class EventRepository : IEventRepository
         if (ev is null)
             return false;
 
-        ev.Title = updateEventDto.Title;
+        // ev.Title = updateEventDto.Title; TODO(djordjemaric) Handle title updates To not override event name with an empty one
         ev.PriceYes = updateEventDto.PriceYes;
         ev.PriceNo = updateEventDto.PriceNo;
         ev.PotSize = updateEventDto.PotSize;
