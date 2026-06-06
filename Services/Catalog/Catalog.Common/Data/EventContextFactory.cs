@@ -15,7 +15,7 @@ public class EventContextFactory : IDesignTimeDbContextFactory<EventContext>
             .Build();
 
         var options = new DbContextOptionsBuilder<EventContext>()
-            .UseNpgsql(config.GetConnectionString("DefaultConnection"))
+            .UseNpgsql(config.GetConnectionString("CatalogDb"))
             .Options;
 
         return new EventContext(options);

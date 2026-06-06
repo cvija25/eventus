@@ -7,10 +7,10 @@ services:
     ports:
       - "8080:8080"
     depends_on:
-      postgres:
-        condition: service_healthy
       rabbitmq:
         condition: service_healthy
+      game:
+        condition: service_started
 
   catalog.api:
     image: catalog.api
@@ -20,7 +20,7 @@ services:
     ports:
       - "8081:8080"
     depends_on:
-      postgres:
+      catalog-db:
         condition: service_healthy
 
   catalog.grpc:
@@ -31,10 +31,10 @@ services:
     ports:
       - "8083:8080"
     depends_on:
-      postgres:
+      catalog-db:
         condition: service_healthy
 
-  postgres:
+  catalog-db:
     image: postgres:17-alpine
     environment:
       POSTGRES_USER: postgres
@@ -43,7 +43,7 @@ services:
     ports:
       - "5432:5432"
     volumes:
-      - postgres_data:/var/lib/postgresql/data
+      - catalog-db_data:/var/lib/postgresql/data
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -U postgres"]
       interval: 5s
@@ -58,7 +58,7 @@ services:
     ports:
       - "5050:80"
     depends_on:
-      - postgres
+      - catalog-db
 
   game:
     image: game
@@ -87,5 +87,5 @@ services:
       retries: 5
 
 volumes:
-  postgres_data:
+  catalog-db_data:
   rabbitmq_data:
