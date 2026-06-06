@@ -14,13 +14,14 @@ public static class ServiceCollectionExtensions
         IConfiguration configuration
     )
     {
-        var client   = new MongoClient(configuration.GetConnectionString("IdentityDb"));
+        var client = new MongoClient(configuration.GetConnectionString("IdentityDb"));
         var database = client.GetDatabase("eventus_identity");
-        var users    = database.GetCollection<User>("users");
+        var users = database.GetCollection<User>("users");
 
         var indexModel = new CreateIndexModel<User>(
             Builders<User>.IndexKeys.Ascending(u => u.Email),
-            new CreateIndexOptions { Unique = true });
+            new CreateIndexOptions { Unique = true }
+        );
         users.Indexes.CreateOne(indexModel);
 
         services.AddSingleton(client);

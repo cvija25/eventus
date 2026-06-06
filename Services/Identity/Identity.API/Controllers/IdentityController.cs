@@ -8,7 +8,8 @@ namespace Identity.API.Controllers;
 
 [ApiController]
 [Route("/api/v1/identity")]
-public class IdentityController(IUserRepository userRepository, JwtService jwtService) : ControllerBase
+public class IdentityController(IUserRepository userRepository, JwtService jwtService)
+    : ControllerBase
 {
     [HttpPost("register")]
     public async Task<IActionResult> Register([FromBody] RegisterRequest request)
@@ -16,7 +17,10 @@ public class IdentityController(IUserRepository userRepository, JwtService jwtSe
         try
         {
             var user = await userRepository.CreateUserAsync(request);
-            return CreatedAtAction(nameof(Register), new RegisterResponse(user.Id, user.Email, user.Role));
+            return CreatedAtAction(
+                nameof(Register),
+                new RegisterResponse(user.Id, user.Email, user.Role)
+            );
         }
         catch (MongoWriteException ex) when (ex.WriteError.Code == 11000)
         {
@@ -32,8 +36,9 @@ public class IdentityController(IUserRepository userRepository, JwtService jwtSe
         if (user is null || !BCrypt.Net.BCrypt.Verify(request.Password, user.PasswordHash))
             return Unauthorized(new { message = "Invalid email or password." });
 
-        var token = jwtService.GenerateToken(new UserDto(
-            user.Id.ToString(), user.Email, user.Role, user.CreatedAt));
+        var token = jwtService.GenerateToken(
+            new UserDto(user.Id.ToString(), user.Email, user.Role, user.CreatedAt)
+        );
 
         return Ok(new LoginResponse(token));
     }

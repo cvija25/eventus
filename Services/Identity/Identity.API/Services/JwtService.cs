@@ -15,15 +15,15 @@ public class JwtService
 
     public JwtService(IConfiguration configuration)
     {
-        _secret        = configuration["Jwt:Secret"]!;
-        _issuer        = configuration["Jwt:Issuer"]!;
-        _audience      = configuration["Jwt:Audience"]!;
+        _secret = configuration["Jwt:Secret"]!;
+        _issuer = configuration["Jwt:Issuer"]!;
+        _audience = configuration["Jwt:Audience"]!;
         _expiryMinutes = int.Parse(configuration["Jwt:ExpiryMinutes"] ?? "60");
     }
 
     public string GenerateToken(UserDto user)
     {
-        var key   = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(_secret));
+        var key = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(_secret));
         var creds = new SigningCredentials(key, SecurityAlgorithms.HmacSha256);
 
         var claims = new[]
@@ -35,11 +35,12 @@ public class JwtService
         };
 
         var token = new JwtSecurityToken(
-            issuer:            _issuer,
-            audience:          _audience,
-            claims:            claims,
-            expires:           DateTime.UtcNow.AddMinutes(_expiryMinutes),
-            signingCredentials: creds);
+            issuer: _issuer,
+            audience: _audience,
+            claims: claims,
+            expires: DateTime.UtcNow.AddMinutes(_expiryMinutes),
+            signingCredentials: creds
+        );
 
         return new JwtSecurityTokenHandler().WriteToken(token);
     }

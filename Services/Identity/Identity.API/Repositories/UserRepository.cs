@@ -20,10 +20,11 @@ public class UserRepository(IMongoCollection<User> users, IMapper mapper) : IUse
     {
         var user = new User
         {
-            Email        = request.Email,
+            Id = Guid.NewGuid(),
+            Email = request.Email,
             PasswordHash = BCrypt.Net.BCrypt.HashPassword(request.Password),
-            Role         = request.IsAdmin ? "admin" : "user",
-            CreatedAt    = DateTime.UtcNow,
+            Role = request.IsAdmin ? "admin" : "user",
+            CreatedAt = DateTime.UtcNow,
         };
 
         await users.InsertOneAsync(user);

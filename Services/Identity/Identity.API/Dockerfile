@@ -7,7 +7,6 @@ FROM mcr.microsoft.com/dotnet/sdk:10.0 AS build
 ARG BUILD_CONFIGURATION=Release
 WORKDIR /src
 COPY ["Identity/Identity.API/Identity.API.csproj", "Identity/Identity.API/"]
-COPY ["Identity/Identity.Common/Identity.Common.csproj", "Identity/Identity.Common/"]
 RUN dotnet restore "Identity/Identity.API/Identity.API.csproj"
 COPY . .
 WORKDIR "/src/Identity/Identity.API"

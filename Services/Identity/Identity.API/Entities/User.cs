@@ -6,7 +6,8 @@ namespace Identity.API.Entities;
 public class User
 {
     [BsonId]
-    public ObjectId Id { get; set; }
+    [BsonRepresentation(BsonType.String)]
+    public Guid Id { get; set; }
 
     [BsonElement("email")]
     public required string Email { get; set; }
