@@ -23,7 +23,12 @@ public static class HostExtensions
             }
             catch (Exception ex) when (attempt < 5)
             {
-                logger.LogWarning(ex, "Migration attempt {Attempt} failed, retrying in {Delay}s", attempt, attempt * 2);
+                logger.LogWarning(
+                    ex,
+                    "Migration attempt {Attempt} failed, retrying in {Delay}s",
+                    attempt,
+                    attempt * 2
+                );
                 await Task.Delay(TimeSpan.FromSeconds(attempt * 2));
             }
         }
