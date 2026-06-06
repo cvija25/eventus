@@ -16,9 +16,9 @@ builder.Services.AddAutoMapper(configuration =>
         .CreateMap<UpdateEventPriceRequest, UpdateEventDto>()
         .ConstructUsing(src => new UpdateEventDto(
             Guid.Parse(src.EventId),
-            (int)src.PriceYes,
-            (int)src.PriceNo,
-            (int)src.PotSize
+            src.HasPriceYes ? (int)src.PriceYes : null,
+            src.HasPriceNo ? (int)src.PriceNo : null,
+            src.HasPotSize ? (int)src.PotSize : null
         ));
 });
 

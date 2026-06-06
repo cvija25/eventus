@@ -52,9 +52,12 @@ public class EventRepository : IEventRepository
             return false;
 
         // ev.Title = updateEventDto.Title; TODO(djordjemaric) Handle title updates To not override event name with an empty one
-        ev.PriceYes = updateEventDto.PriceYes;
-        ev.PriceNo = updateEventDto.PriceNo;
-        ev.PotSize = updateEventDto.PotSize;
+        if (updateEventDto.PriceYes.HasValue)
+            ev.PriceYes = updateEventDto.PriceYes.Value;
+        if (updateEventDto.PriceNo.HasValue)
+            ev.PriceNo = updateEventDto.PriceNo.Value;
+        if (updateEventDto.PotSize.HasValue)
+            ev.PotSize = updateEventDto.PotSize.Value;
 
         await _context.SaveChangesAsync();
         return true;
