@@ -38,7 +38,6 @@ public class BetPlacedHandler
         {
             // for now always approve
             IsApproved = true,
-
             ApprovedAt = DateTime.UtcNow,
         };
 

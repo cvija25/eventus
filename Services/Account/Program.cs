@@ -4,6 +4,14 @@ using Account.Publishers;
 
 var builder = WebApplication.CreateBuilder(args);
 
+builder.Services.AddCors(options =>
+{
+    options.AddPolicy(
+        "Frontend",
+        policy => policy.AllowAnyOrigin().AllowAnyHeader().AllowAnyMethod()
+    );
+});
+
 builder.Services.AddControllers();
 builder.Services.AddHostedService<BetApprovedConsumer>();
 builder.Services.AddSingleton<BetPlacedPublisher>();
@@ -19,5 +27,6 @@ app.MapGet(
         return "Hello world!";
     }
 );
+app.UseCors("Frontend");
 app.MapControllers();
 app.Run();
