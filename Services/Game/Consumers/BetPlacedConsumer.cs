@@ -1,9 +1,11 @@
 using System.Text;
 using System.Text.Json;
 using Contracts;
+using Game.GrpcClients;
 using Game.Handlers;
 using Game.Messaging;
 using Game.Publishers;
+using Grpc.Core;
 using Microsoft.Extensions.Options;
 using RabbitMQ.Client;
 using RabbitMQ.Client.Events;
@@ -12,12 +14,14 @@ namespace Game.Consumers;
 
 public class BetPlacedConsumer(
     ILogger<BetPlacedConsumer> logger,
-    IOptions<RabbitMqOptions> rabbitOptions
+    IOptions<RabbitMqOptions> rabbitOptions,
+    IServiceScopeFactory scopeFactory
 ) : BackgroundService
 {
     private IChannel? _channel;
     private IConnection? _connection;
     private BetPlacedHandler? _handler;
+    private IServiceScope? _scope;
 
     protected override async Task ExecuteAsync(CancellationToken stoppingToken)
     {
@@ -40,19 +44,18 @@ public class BetPlacedConsumer(
         var factory = new ConnectionFactory
         {
             HostName = options.HostName,
-
             Port = options.Port,
-
             UserName = options.UserName,
-
             Password = options.Password,
-
             VirtualHost = options.VirtualHost,
         };
 
         _connection = await factory.CreateConnectionAsync(stoppingToken);
         _channel = await _connection.CreateChannelAsync(cancellationToken: stoppingToken);
-        _handler = new BetPlacedHandler(new BetApprovedPublisher(rabbitOptions));
+        _scope?.Dispose();
+        _scope = scopeFactory.CreateScope();
+        var catalogClient = _scope.ServiceProvider.GetRequiredService<CatalogGrpcClient>();
+        _handler = new BetPlacedHandler(new BetApprovedPublisher(rabbitOptions), catalogClient);
 
         await _channel.BasicQosAsync(0, 10, false, stoppingToken);
 
@@ -129,6 +132,17 @@ public class BetPlacedConsumer(
                 CancellationToken.None
             );
         }
+        catch (RpcException ex)
+            when (ex.StatusCode is StatusCode.NotFound or StatusCode.InvalidArgument)
+        {
+            logger.LogError(ex, "Non-retryable catalog error. Discarding.");
+            await _channel!.BasicNackAsync(
+                eventArgs.DeliveryTag,
+                false,
+                false,
+                CancellationToken.None
+            );
+        }
         catch (Exception ex)
         {
             logger.LogError(ex, "Failed to process message. Requeuing.");
@@ -156,6 +170,7 @@ public class BetPlacedConsumer(
             await _connection.DisposeAsync();
         }
 
+        _scope?.Dispose();
         await base.StopAsync(cancellationToken);
     }
 }

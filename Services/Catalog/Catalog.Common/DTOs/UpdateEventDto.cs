@@ -1,3 +1,9 @@
 namespace Catalog.Common.DTOs;
 
-public record UpdateEventDto(Guid Id, string Title, int PriceYes, int PriceNo, int PotSize);
+public record UpdateEventDto(
+    Guid Id,
+    int? PriceYes = null,
+    int? PriceNo = null,
+    int? PotSize = null,
+    string Title = ""
+);
