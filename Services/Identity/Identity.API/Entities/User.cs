@@ -9,6 +9,9 @@ public class User
     [BsonRepresentation(BsonType.String)]
     public Guid Id { get; set; }
 
+    [BsonElement("name")]
+    public required string Name { get; set; }
+
     [BsonElement("email")]
     public required string Email { get; set; }
 

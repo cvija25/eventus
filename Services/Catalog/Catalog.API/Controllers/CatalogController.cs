@@ -1,5 +1,7 @@
+using System.IdentityModel.Tokens.Jwt;
 using Catalog.Common.DTOs;
 using Catalog.Common.Repositories;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 
 namespace Catalog.API.Controllers;
@@ -27,10 +29,11 @@ public class CatalogController : ControllerBase
     }
 
     [HttpPost]
+    [Authorize]
     [ProducesResponseType(typeof(EventDto), StatusCodes.Status201Created)]
     public async Task<ActionResult<EventDto>> CreateEvent([FromBody] CreateEventDto dto)
     {
-        var ownerId = Guid.NewGuid(); // temporary until auth is implemented
+        var ownerId = Guid.Parse(User.FindFirst(JwtRegisteredClaimNames.Sub)!.Value);
         var ev = await _eventRepository.CreateEventAsync(dto, ownerId);
         return Created($"/api/v1/catalog/events/{ev.Id}", ev);
     }

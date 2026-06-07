@@ -41,7 +41,6 @@ class _DetailScreenState extends State<DetailScreen> {
       try {
         await _api.createAccountStake(
           id: widget.item.id,
-          ownerId: widget.item.ownerId,
           stake: value,
         );
         if (!mounted) return;
