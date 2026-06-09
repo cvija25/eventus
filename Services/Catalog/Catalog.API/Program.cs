@@ -15,6 +15,8 @@ builder.Services.AddControllers();
 builder.Services.AddCatalogCommon(builder.Configuration);
 
 var app = builder.Build();
+await app.MigrateCatalogDatabase();
+
 if (app.Environment.IsDevelopment())
 {
     app.MapOpenApi();

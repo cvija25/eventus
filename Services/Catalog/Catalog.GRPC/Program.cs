@@ -23,6 +23,7 @@ builder.Services.AddAutoMapper(configuration =>
 });
 
 var app = builder.Build();
+await app.MigrateCatalogDatabase();
 
 app.MapGrpcService<CatalogService>();
 app.MapGrpcReflectionService();
