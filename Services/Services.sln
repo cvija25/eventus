@@ -17,6 +17,8 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Contracts", "Contracts\Cont
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Catalog.GRPC", "Catalog\Catalog.GRPC\Catalog.GRPC.csproj", "{A1DB1258-4AB9-4B73-987E-738AA0ECC355}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Identity.API", "Identity\Identity.API\Identity.API.csproj", "{B8D3F1C2-5A7E-4F2D-A934-8B4C6E7D0F12}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -47,5 +49,9 @@ Global
 		{A1DB1258-4AB9-4B73-987E-738AA0ECC355}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{A1DB1258-4AB9-4B73-987E-738AA0ECC355}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{A1DB1258-4AB9-4B73-987E-738AA0ECC355}.Release|Any CPU.Build.0 = Release|Any CPU
+{B8D3F1C2-5A7E-4F2D-A934-8B4C6E7D0F12}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{B8D3F1C2-5A7E-4F2D-A934-8B4C6E7D0F12}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{B8D3F1C2-5A7E-4F2D-A934-8B4C6E7D0F12}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{B8D3F1C2-5A7E-4F2D-A934-8B4C6E7D0F12}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 EndGlobal

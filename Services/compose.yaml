@@ -86,6 +86,24 @@ services:
       timeout: 5s
       retries: 5
 
+  identity.api:
+    image: identity.api
+    build:
+      context: .
+      dockerfile: Identity/Identity.API/Dockerfile
+    ports:
+      - "8084:8080"
+    depends_on:
+      - mongodb
+
+  mongodb:
+    image: mongo:8
+    ports:
+      - "27017:27017"
+    volumes:
+      - mongodb_data:/data/db
+
 volumes:
   catalog-db_data:
   rabbitmq_data:
+  mongodb_data:
