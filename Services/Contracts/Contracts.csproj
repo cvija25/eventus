@@ -7,13 +7,13 @@
 
   <!-- Proto generation: Linux only (Mac uses pre-generated files in Generated/) -->
   <ItemGroup Condition="'$([System.Runtime.InteropServices.RuntimeInformation]::IsOSPlatform($([System.Runtime.InteropServices.OSPlatform]::Linux)))' == 'true' AND '$([System.Runtime.InteropServices.RuntimeInformation]::OSArchitecture)' != 'Arm64'">
-  <Protobuf Include="Protos\catalog.proto" GrpcServices="Client" />
-  <PackageReference Include="Grpc.Tools" Version="2.70.0">
-    <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
-    <PrivateAssets>all</PrivateAssets>
-  </PackageReference>
-  <Compile Remove="Generated\**" />
-</ItemGroup>
+    <Protobuf Include="Protos\catalog.proto" GrpcServices="Client" />
+    <PackageReference Include="Grpc.Tools" Version="2.70.0">
+      <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
+      <PrivateAssets>all</PrivateAssets>
+    </PackageReference>
+    <Compile Remove="Generated\**" />
+  </ItemGroup>
 
   <ItemGroup>
     <PackageReference Include="Google.Protobuf" Version="3.29.3" />
