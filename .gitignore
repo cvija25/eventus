@@ -10,3 +10,5 @@ obj/
 .idea/**/usage.statistics.xml
 .idea/**/dictionaries
 .idea/**/shelf
+
+Services/Contracts/Generated/
