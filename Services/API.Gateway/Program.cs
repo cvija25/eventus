@@ -1,10 +1,14 @@
+using Ocelot.DependencyInjection;
+using Ocelot.Middleware;
+
 var builder = WebApplication.CreateBuilder(args);
+
+builder.Configuration
+    .AddJsonFile("ocelot.json", false, true);
+
+builder.Services.AddOcelot();
+
 var app = builder.Build();
 
-if (app.Environment.IsDevelopment()) app.MapOpenApi();
-
-app.UseHttpsRedirection();
-
-app.MapGet("/", () => { return "hello api.gateway"; });
-
+await app.UseOcelot();
 app.Run();

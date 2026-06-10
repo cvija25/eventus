@@ -79,7 +79,7 @@ services:
       context: .
       dockerfile: API.Gateway/Dockerfile
     ports:
-      - "8088:8080"
+      - "1234:8080"
 
 volumes:
   postgres_data:

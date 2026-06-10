@@ -10,12 +10,13 @@ class ApiService {
           ? '10.0.2.2'
           : 'localhost';
 
-  static String get _baseUrl {
-    return 'http://$_host:8081/api/v1/catalog/events';
-  }
+static const int _gatewayPort = 1234;
 
-  static String get _accountUrl => 'http://$_host:8080/api/v1/account';
+static String get _baseUrl =>
+    'http://$_host:$_gatewayPort/catalog/api/v1/catalog/events';
 
+static String get _accountUrl =>
+    'http://$_host:$_gatewayPort/accounts/api/v1/account';
   Future<List<Item>> fetchItems() async {
     final uri = Uri.parse(_baseUrl);
 
