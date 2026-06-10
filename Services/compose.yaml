@@ -7,10 +7,10 @@ services:
     ports:
       - "8080:8080"
     depends_on:
-      postgres:
-        condition: service_healthy
       rabbitmq:
         condition: service_healthy
+      game:
+        condition: service_started
 
   catalog.api:
     image: catalog.api
@@ -20,10 +20,21 @@ services:
     ports:
       - "8081:8080"
     depends_on:
-      postgres:
+      catalog-db:
         condition: service_healthy
 
-  postgres:
+  catalog.grpc:
+    image: catalog.grpc
+    build:
+      context: .
+      dockerfile: Catalog/Catalog.GRPC/Dockerfile
+    ports:
+      - "8083:8080"
+    depends_on:
+      catalog-db:
+        condition: service_healthy
+
+  catalog-db:
     image: postgres:17-alpine
     environment:
       POSTGRES_USER: postgres
@@ -32,7 +43,7 @@ services:
     ports:
       - "5432:5432"
     volumes:
-      - postgres_data:/var/lib/postgresql/data
+      - catalog-db_data:/var/lib/postgresql/data
     healthcheck:
       test: [ "CMD-SHELL", "pg_isready -U postgres" ]
       interval: 5s
@@ -47,7 +58,7 @@ services:
     ports:
       - "5050:80"
     depends_on:
-      - postgres
+      - catalog-db
 
   game:
     image: game
@@ -59,6 +70,8 @@ services:
     depends_on:
       rabbitmq:
         condition: service_healthy
+      catalog.grpc:
+        condition: service_started
 
   rabbitmq:
     image: rabbitmq:4-management-alpine
@@ -81,6 +94,24 @@ services:
     ports:
       - "1234:8080"
 
+  identity.api:
+    image: identity.api
+    build:
+      context: .
+      dockerfile: Identity/Identity.API/Dockerfile
+    ports:
+      - "8084:8080"
+    depends_on:
+      - mongodb
+
+  mongodb:
+    image: mongo:8
+    ports:
+      - "27017:27017"
+    volumes:
+      - mongodb_data:/data/db
+
 volumes:
-  postgres_data:
+  catalog-db_data:
   rabbitmq_data:
+  mongodb_data:

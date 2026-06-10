@@ -1,0 +1,30 @@
+syntax = "proto3";
+
+option csharp_namespace = "Catalog.GRPC";
+
+package catalog;
+
+service Catalog {
+  rpc GetEventPrice (GetEventPriceRequest) returns (GetEventPriceResponse);
+  rpc UpdateEventPrice (UpdateEventPriceRequest) returns (UpdateEventPriceResponse);
+}
+
+message GetEventPriceRequest {
+  string event_id = 1;
+}
+message GetEventPriceResponse {
+  optional int64 price_yes = 1;
+  optional int64 price_no = 2;
+  optional int64 pot_size = 3;
+}
+
+message UpdateEventPriceRequest {
+  string event_id = 1;
+  optional int64 price_yes = 2;
+  optional int64 price_no = 3;
+  optional int64 pot_size = 4;
+}
+
+message UpdateEventPriceResponse {
+  bool success = 1;
+}
