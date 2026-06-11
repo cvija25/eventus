@@ -94,7 +94,7 @@ services:
     ports:
       - "8084:8080"
     depends_on:
-      - mongodb
+      - identity-db
 
   identity-db:
     image: mongo:8
