@@ -1,7 +1,7 @@
 {
   "Routes": [
     {
-      "UpstreamPathTemplate": "/accounts/{everything}",
+      "UpstreamPathTemplate": "/account/{everything}",
       "UpstreamHttpMethod": [
         "GET",
         "POST",
@@ -35,7 +35,7 @@
       ]
     },
     {
-      "UpstreamPathTemplate": "/game/{everything}",
+      "UpstreamPathTemplate": "/identity/{everything}",
       "UpstreamHttpMethod": [
         "GET",
         "POST",
@@ -46,7 +46,7 @@
       "DownstreamScheme": "http",
       "DownstreamHostAndPorts": [
         {
-          "Host": "game",
+          "Host": "identity.api",
           "Port": 8080
         }
       ]

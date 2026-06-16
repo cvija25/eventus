@@ -13,10 +13,10 @@ class ApiService {
 
 static const int _gatewayPort = 1234;
 
-static String get _baseUrl =>
+static String get _catalogUrl =>
     'http://$_host:$_gatewayPort/catalog/api/v1/catalog/events';
 
-  static String get _identityUrl => 'http://$_host:$_gatewayPort/api/v1/identity';
+  static String get _identityUrl => 'http://$_host:$_gatewayPort/identity/api/v1/identity';
 
   Map<String, String> get _authHeaders {
     final token = AuthService.instance.token;
@@ -26,10 +26,9 @@ static String get _baseUrl =>
     };
   }
 
-static String get _accountUrl =>
-    'http://$_host:$_gatewayPort/accounts/api/v1/account';
-  Future<List<Item>> fetchItems() async {
-    final uri = Uri.parse(_baseUrl);
+static String get _accountUrl => 'http://$_host:$_gatewayPort/account/api/v1/account';
+Future<List<Item>> fetchItems() async {
+    final uri = Uri.parse(_catalogUrl);
 
     try {
       final response = await http.get(uri).timeout(const Duration(seconds: 10));
@@ -64,7 +63,7 @@ static String get _accountUrl =>
   }
 
   Future<Item> createEvent({required String title}) async {
-    final uri = Uri.parse(_baseUrl);
+    final uri = Uri.parse(_catalogUrl);
 
     try {
       final response = await http
