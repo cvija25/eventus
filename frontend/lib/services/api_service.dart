@@ -62,6 +62,48 @@ class ApiService {
     }
   }
 
+  Future<Item> createEvent({required String title}) async {
+    final uri = Uri.parse(_baseUrl);
+
+    try {
+      final response = await http
+          .post(
+            uri,
+            headers: _authHeaders,
+            body: jsonEncode({'title': title}),
+          )
+          .timeout(const Duration(seconds: 10));
+
+      if (response.statusCode == 401) {
+        throw Exception('You must be logged in to create an event.');
+      }
+
+      if (response.statusCode < 200 || response.statusCode >= 300) {
+        throw Exception('POST $uri failed with status ${response.statusCode}');
+      }
+
+      final decoded = jsonDecode(response.body);
+      if (decoded is! Map<String, dynamic>) {
+        throw Exception('POST $uri returned an unexpected response');
+      }
+
+      return Item.fromJson(decoded);
+    } on TimeoutException {
+      throw Exception('POST $uri timed out');
+    } on FormatException catch (error) {
+      throw Exception('POST $uri returned invalid JSON: ${error.message}');
+    } on http.ClientException catch (error) {
+      if (kIsWeb) {
+        throw Exception(
+          'POST $uri failed in Chrome: ${error.message}. '
+          'If the endpoint works directly, enable CORS on the backend for the Flutter web origin.',
+        );
+      }
+
+      throw Exception('POST $uri failed: ${error.message}');
+    }
+  }
+
   Future<void> createAccountStake({
     required String id,
     required int stake,
