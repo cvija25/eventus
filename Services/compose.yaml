@@ -94,16 +94,16 @@ services:
     ports:
       - "8084:8080"
     depends_on:
-      - mongodb
+      - identity-db
 
-  mongodb:
+  identity-db:
     image: mongo:8
     ports:
       - "27017:27017"
     volumes:
-      - mongodb_data:/data/db
+      - identity-db_data:/data/db
 
 volumes:
   catalog-db_data:
   rabbitmq_data:
-  mongodb_data:
+  identity-db_data:

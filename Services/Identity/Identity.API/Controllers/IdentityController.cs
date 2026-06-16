@@ -19,7 +19,7 @@ public class IdentityController(IUserRepository userRepository, JwtService jwtSe
             var user = await userRepository.CreateUserAsync(request);
             return CreatedAtAction(
                 nameof(Register),
-                new RegisterResponse(user.Id, user.Email, user.Role)
+                new RegisterResponse(user.Id, user.Name, user.Email, user.Role)
             );
         }
         catch (MongoWriteException ex) when (ex.WriteError.Code == 11000)
@@ -37,7 +37,7 @@ public class IdentityController(IUserRepository userRepository, JwtService jwtSe
             return Unauthorized(new { message = "Invalid email or password." });
 
         var token = jwtService.GenerateToken(
-            new UserDto(user.Id.ToString(), user.Email, user.Role, user.CreatedAt)
+            new UserDto(user.Id.ToString(), user.Name, user.Email, user.Role, user.CreatedAt)
         );
 
         return Ok(new LoginResponse(token));
