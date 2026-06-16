@@ -1,7 +1,9 @@
 import 'package:flutter/material.dart';
 import '../models/item.dart';
 import '../services/api_service.dart';
+import '../services/auth_service.dart';
 import '../widgets/item_card.dart';
+import 'create_event_screen.dart';
 import 'detail_screen.dart';
 import 'login_screen.dart';
 
@@ -67,15 +69,62 @@ class _HomeScreenState extends State<HomeScreen> {
                 color: Colors.white),
             onPressed: () {},
           ),
-          IconButton(
-            icon: const Icon(Icons.login, color: Colors.white),
-            tooltip: 'Login',
-            onPressed: () {
-              Navigator.push(
-                context,
-                MaterialPageRoute(
-                  builder: (_) => const LoginScreen(),
-                ),
+          ListenableBuilder(
+            listenable: AuthService.instance,
+            builder: (context, _) {
+              final loggedIn = AuthService.instance.isLoggedIn;
+              return Row(
+                children: [
+                  if (loggedIn)
+                    IconButton(
+                      icon: const Icon(Icons.add_circle_outline,
+                          color: Colors.white),
+                      tooltip: 'Create event',
+                      onPressed: () async {
+                        final created = await Navigator.push<Item>(
+                          context,
+                          MaterialPageRoute(
+                            builder: (_) => const CreateEventScreen(),
+                          ),
+                        );
+                        if (created == null) return;
+                        _refresh();
+                        if (!context.mounted) return;
+                        Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                            builder: (_) => DetailScreen(item: created),
+                          ),
+                        );
+                      },
+                    ),
+                  IconButton(
+                    icon: Icon(
+                      loggedIn ? Icons.logout : Icons.login,
+                      color: Colors.white,
+                    ),
+                    tooltip: loggedIn ? 'Logout' : 'Login',
+                    onPressed: () {
+                      if (loggedIn) {
+                        AuthService.instance.logout();
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          const SnackBar(
+                            content: Text('Logged out'),
+                            backgroundColor: Color(0xFF111827),
+                            behavior: SnackBarBehavior.floating,
+                          ),
+                        );
+                      } else {
+                        Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                            builder: (_) => const LoginScreen(),
+                          ),
+                        );
+                      }
+                    },
+                  ),
+                ],
               );
             },
           ),

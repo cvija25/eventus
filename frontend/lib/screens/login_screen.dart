@@ -1,4 +1,6 @@
 import 'package:flutter/material.dart';
+import '../services/api_service.dart';
+import '../services/auth_service.dart';
 
 class LoginScreen extends StatefulWidget {
   const LoginScreen({super.key});
@@ -10,18 +12,16 @@ class LoginScreen extends StatefulWidget {
 class _LoginScreenState extends State<LoginScreen> {
   final _formKey = GlobalKey<FormState>();
   final _nameController = TextEditingController();
-  final _surnameController = TextEditingController();
-  final _ageController = TextEditingController();
   final _emailController = TextEditingController();
   final _passwordController = TextEditingController();
   final _confirmPasswordController = TextEditingController();
+  final _api = ApiService();
   bool _isRegisterMode = false;
+  bool _isSubmitting = false;
 
   @override
   void dispose() {
     _nameController.dispose();
-    _surnameController.dispose();
-    _ageController.dispose();
     _emailController.dispose();
     _passwordController.dispose();
     _confirmPasswordController.dispose();
@@ -35,15 +35,50 @@ class _LoginScreenState extends State<LoginScreen> {
     });
   }
 
-  void _submit() {
-    if (_formKey.currentState?.validate() ?? false) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text(_isRegisterMode ? 'Register submitted' : 'Login submitted'),
-          backgroundColor: const Color(0xFF111827),
-          behavior: SnackBarBehavior.floating,
-        ),
-      );
+  void _showSnackBar(String message, {bool isError = false}) {
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text(message),
+        backgroundColor: isError ? const Color(0xFFB00020) : const Color(0xFF111827),
+        behavior: SnackBarBehavior.floating,
+      ),
+    );
+  }
+
+  Future<void> _submit() async {
+    if (!(_formKey.currentState?.validate() ?? false)) return;
+
+    setState(() => _isSubmitting = true);
+
+    try {
+      if (_isRegisterMode) {
+        await _api.register(
+          name: _nameController.text.trim(),
+          email: _emailController.text.trim(),
+          password: _passwordController.text,
+          isAdmin: false,
+        );
+        if (!mounted) return;
+        _showSnackBar('Account created. You can now log in.');
+        setState(() {
+          _isRegisterMode = false;
+          _formKey.currentState?.reset();
+        });
+      } else {
+        final token = await _api.login(
+          email: _emailController.text.trim(),
+          password: _passwordController.text,
+        );
+        await AuthService.instance.login(token);
+        if (!mounted) return;
+        _showSnackBar('Login successful.');
+        Navigator.pop(context);
+      }
+    } catch (error) {
+      if (!mounted) return;
+      _showSnackBar(error.toString().replaceFirst('Exception: ', ''), isError: true);
+    } finally {
+      if (mounted) setState(() => _isSubmitting = false);
     }
   }
 
@@ -106,35 +141,6 @@ class _LoginScreenState extends State<LoginScreen> {
                         },
                       ),
                       const SizedBox(height: 16),
-                      TextFormField(
-                        controller: _surnameController,
-                        style: const TextStyle(color: Colors.white),
-                        decoration: _inputDecoration('Surname'),
-                        validator: (value) {
-                          if (value == null || value.trim().isEmpty) {
-                            return 'Please enter your surname';
-                          }
-                          return null;
-                        },
-                      ),
-                      const SizedBox(height: 16),
-                      TextFormField(
-                        controller: _ageController,
-                        keyboardType: TextInputType.number,
-                        style: const TextStyle(color: Colors.white),
-                        decoration: _inputDecoration('Age'),
-                        validator: (value) {
-                          if (value == null || value.trim().isEmpty) {
-                            return 'Please enter your age';
-                          }
-                          final age = int.tryParse(value);
-                          if (age == null || age <= 0) {
-                            return 'Please enter a valid age';
-                          }
-                          return null;
-                        },
-                      ),
-                      const SizedBox(height: 16),
                     ],
                     TextFormField(
                       controller: _emailController,
@@ -189,7 +195,7 @@ class _LoginScreenState extends State<LoginScreen> {
                     SizedBox(
                       width: double.infinity,
                       child: ElevatedButton(
-                        onPressed: _submit,
+                        onPressed: _isSubmitting ? null : _submit,
                         style: ElevatedButton.styleFrom(
                           backgroundColor: const Color(0xFF00A3FF),
                           padding: const EdgeInsets.symmetric(vertical: 16),
@@ -197,10 +203,19 @@ class _LoginScreenState extends State<LoginScreen> {
                             borderRadius: BorderRadius.circular(12),
                           ),
                         ),
-                        child: Text(
-                          _isRegisterMode ? 'Register' : 'Login',
-                          style: const TextStyle(fontSize: 16),
-                        ),
+                        child: _isSubmitting
+                            ? const SizedBox(
+                                height: 20,
+                                width: 20,
+                                child: CircularProgressIndicator(
+                                  strokeWidth: 2,
+                                  color: Colors.white,
+                                ),
+                              )
+                            : Text(
+                                _isRegisterMode ? 'Register' : 'Login',
+                                style: const TextStyle(fontSize: 16),
+                              ),
                       ),
                     ),
                   ],

@@ -1,6 +1,8 @@
+using System.IdentityModel.Tokens.Jwt;
 using Account.DTOs;
 using Account.Publishers;
 using Contracts;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 
 namespace Account.Controllers;
@@ -23,11 +25,14 @@ public class AccountController : ControllerBase
     }
 
     [HttpPost]
+    [Authorize]
     public async Task<ActionResult<string>> PublishBet([FromBody] BetPlacedRequest request)
     {
+        var ownerId = Guid.Parse(User.FindFirst(JwtRegisteredClaimNames.Sub)!.Value);
+
         var evt = new BetPlacedEvent
         {
-            OwnerId = request.OwnerId,
+            OwnerId = ownerId,
             EventId = request.EventId,
             Stake = request.Stake,
         };

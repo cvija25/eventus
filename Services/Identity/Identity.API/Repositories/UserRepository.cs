@@ -21,6 +21,7 @@ public class UserRepository(IMongoCollection<User> users, IMapper mapper) : IUse
         var user = new User
         {
             Id = Guid.NewGuid(),
+            Name = request.Name,
             Email = request.Email,
             PasswordHash = BCrypt.Net.BCrypt.HashPassword(request.Password),
             Role = request.IsAdmin ? "admin" : "user",
