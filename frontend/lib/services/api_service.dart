@@ -11,13 +11,12 @@ class ApiService {
           ? '10.0.2.2'
           : 'localhost';
 
-  static String get _baseUrl {
-    return 'http://$_host:8081/api/v1/catalog/events';
-  }
+static const int _gatewayPort = 1234;
 
-  static String get _accountUrl => 'http://$_host:8080/api/v1/account';
+static String get _catalogUrl =>
+    'http://$_host:$_gatewayPort/catalog/api/v1/catalog/events';
 
-  static String get _identityUrl => 'http://$_host:8084/api/v1/identity';
+  static String get _identityUrl => 'http://$_host:$_gatewayPort/identity/api/v1/identity';
 
   Map<String, String> get _authHeaders {
     final token = AuthService.instance.token;
@@ -27,8 +26,9 @@ class ApiService {
     };
   }
 
-  Future<List<Item>> fetchItems() async {
-    final uri = Uri.parse(_baseUrl);
+static String get _accountUrl => 'http://$_host:$_gatewayPort/account/api/v1/account';
+Future<List<Item>> fetchItems() async {
+    final uri = Uri.parse(_catalogUrl);
 
     try {
       final response = await http.get(uri).timeout(const Duration(seconds: 10));
@@ -63,7 +63,7 @@ class ApiService {
   }
 
   Future<Item> createEvent({required String title}) async {
-    final uri = Uri.parse(_baseUrl);
+    final uri = Uri.parse(_catalogUrl);
 
     try {
       final response = await http
