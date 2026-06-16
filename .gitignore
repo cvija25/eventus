@@ -4,6 +4,9 @@ obj/
 *.sln.iml
 
 .idea_modules/
+.DS_Store
+
+**.user
 
 .idea/**/workspace.xml
 .idea/**/tasks.xml
