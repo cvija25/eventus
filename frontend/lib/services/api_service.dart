@@ -26,7 +26,8 @@ static String get _catalogUrl =>
     };
   }
 
-static String get _accountUrl => 'http://$_host:$_gatewayPort/account/api/v1/account';
+static String get _accountUrl => 'http://$_host:$_gatewayPort/account/api/v1/account/bet';
+  static String get _depositUrl => 'http://$_host:$_gatewayPort/account/api/v1/account/deposit';
 Future<List<Item>> fetchItems() async {
     final uri = Uri.parse(_catalogUrl);
 
@@ -117,6 +118,39 @@ Future<List<Item>> fetchItems() async {
             headers: _authHeaders,
             body: jsonEncode({
               'eventId': id,
+              'stake': stake,
+            }),
+          )
+          .timeout(const Duration(seconds: 10));
+
+      if (response.statusCode < 200 || response.statusCode >= 300) {
+        throw Exception('POST $uri failed with status ${response.statusCode}');
+      }
+    } on TimeoutException {
+      throw Exception('POST $uri timed out');
+    } on http.ClientException catch (error) {
+      if (kIsWeb) {
+        throw Exception(
+          'POST $uri failed in Chrome: ${error.message}. '
+          'If the endpoint works directly, enable CORS on the backend for the Flutter web origin.',
+        );
+      }
+
+      throw Exception('POST $uri failed: ${error.message}');
+    }
+  }
+
+  Future<void> depositToAccount({
+    required double stake,
+  }) async {
+    final uri = Uri.parse(_depositUrl);
+
+    try {
+      final response = await http
+          .post(
+            uri,
+            headers: _authHeaders,
+            body: jsonEncode({
               'stake': stake,
             }),
           )
