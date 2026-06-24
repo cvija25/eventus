@@ -3,7 +3,7 @@ using System.Text.Json;
 using Contracts;
 using Game.GrpcClients;
 using Game.Handlers;
-using Game.Messaging;
+using Contracts.Messaging;
 using Game.Publishers;
 using Grpc.Core;
 using Microsoft.Extensions.Options;

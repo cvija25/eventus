@@ -22,6 +22,8 @@ services:
     depends_on:
       catalog-db:
         condition: service_healthy
+      rabbitmq:
+        condition: service_healthy
 
   catalog.grpc:
     image: catalog.grpc
