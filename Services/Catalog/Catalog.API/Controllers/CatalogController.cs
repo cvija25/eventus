@@ -39,6 +39,7 @@ public class CatalogController : ControllerBase
         var ev = await _eventRepository.CreateEventAsync(dto, ownerId);
         return Created($"/api/v1/catalog/events/{ev.Id}", ev);
     }
+
     [HttpPost("resolve")]
     [Authorize]
     [ProducesResponseType(StatusCodes.Status200OK)]
@@ -53,11 +54,7 @@ public class CatalogController : ControllerBase
         if (ev.OwnerId != userId)
             return Forbid();
         await _eventRepository.ResolveEventAsync(dto);
-        var mqEvent = new EventResolvedEvent
-        {
-            EventId = dto.Id,
-            Outcome = EventOutcome.No
-        };
+        var mqEvent = new EventResolvedEvent { EventId = dto.Id, Outcome = EventOutcome.No };
         await _eventResolvedPublisher.PublishEventResolvedAsync(mqEvent);
         return Ok();
     }

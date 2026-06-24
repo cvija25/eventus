@@ -14,15 +14,14 @@ namespace Catalog.Common.Migrations
                 name: "Outcome",
                 table: "Events",
                 type: "integer",
-                nullable: true);
+                nullable: true
+            );
         }
 
         /// <inheritdoc />
         protected override void Down(MigrationBuilder migrationBuilder)
         {
-            migrationBuilder.DropColumn(
-                name: "Outcome",
-                table: "Events");
+            migrationBuilder.DropColumn(name: "Outcome", table: "Events");
         }
     }
 }

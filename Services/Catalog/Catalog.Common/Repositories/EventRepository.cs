@@ -51,7 +51,6 @@ public class EventRepository : IEventRepository
         if (ev is null)
             return false;
 
-        
         if (updateEventDto.PriceYes.HasValue)
             ev.PriceYes = updateEventDto.PriceYes.Value;
         if (updateEventDto.PriceNo.HasValue)

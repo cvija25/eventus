@@ -1,7 +1,7 @@
 using System.Text;
-using Contracts.Messaging;
 using Catalog.API.Publishers;
 using Catalog.Common.Extensions;
+using Contracts.Messaging;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.IdentityModel.Tokens;
 

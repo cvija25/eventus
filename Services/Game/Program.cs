@@ -1,6 +1,6 @@
+using Contracts.Messaging;
 using Game.Consumers;
 using Game.GrpcClients;
-using Contracts.Messaging;
 
 var builder = WebApplication.CreateBuilder(args);
 

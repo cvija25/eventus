@@ -1,13 +1,13 @@
 using System.Text;
 using System.Text.Json;
-using Contracts.Messaging;
 using Contracts;
+using Contracts.Messaging;
 using Microsoft.Extensions.Options;
 using RabbitMQ.Client;
 
 namespace Catalog.API.Publishers;
 
-public class EventResolvedPublisher :  IEventResolvedPublisher
+public class EventResolvedPublisher : IEventResolvedPublisher
 {
     private readonly IChannel _channel;
     private readonly IConnection _connection;
@@ -49,6 +49,12 @@ public class EventResolvedPublisher :  IEventResolvedPublisher
 
         var props = new BasicProperties { Persistent = true, ContentType = "application/json" };
 
-        await _channel.BasicPublishAsync("", RabbitMQConstants.EventResolvedQueue, false, props, body);
+        await _channel.BasicPublishAsync(
+            "",
+            RabbitMQConstants.EventResolvedQueue,
+            false,
+            props,
+            body
+        );
     }
 }
