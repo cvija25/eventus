@@ -1,7 +1,7 @@
 using System.Text;
 using Account.Consumers;
-using Account.Messaging;
 using Account.Publishers;
+using Contracts.Messaging;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.IdentityModel.Tokens;
 

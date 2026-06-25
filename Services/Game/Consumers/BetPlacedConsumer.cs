@@ -1,9 +1,9 @@
 using System.Text;
 using System.Text.Json;
 using Contracts;
+using Contracts.Messaging;
 using Game.GrpcClients;
 using Game.Handlers;
-using Game.Messaging;
 using Game.Publishers;
 using Grpc.Core;
 using Microsoft.Extensions.Options;

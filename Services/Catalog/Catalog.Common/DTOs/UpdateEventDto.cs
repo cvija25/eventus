@@ -5,5 +5,5 @@ public record UpdateEventDto(
     int? PriceYes = null,
     int? PriceNo = null,
     int? PotSize = null,
-    string Title = ""
+    string? Title = null
 );

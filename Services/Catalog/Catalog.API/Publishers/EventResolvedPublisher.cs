@@ -5,14 +5,14 @@ using Contracts.Messaging;
 using Microsoft.Extensions.Options;
 using RabbitMQ.Client;
 
-namespace Game.Publishers;
+namespace Catalog.API.Publishers;
 
-public class BetApprovedPublisher : IAsyncDisposable
+public class EventResolvedPublisher : IEventResolvedPublisher
 {
     private readonly IChannel _channel;
     private readonly IConnection _connection;
 
-    public BetApprovedPublisher(IOptions<RabbitMqOptions> options)
+    public EventResolvedPublisher(IOptions<RabbitMqOptions> options)
     {
         var rabbitOptions = options.Value;
 
@@ -26,8 +26,9 @@ public class BetApprovedPublisher : IAsyncDisposable
 
         _connection = factory.CreateConnectionAsync().Result;
         _channel = _connection.CreateChannelAsync().Result;
+
         _channel
-            .QueueDeclareAsync(RabbitMQConstants.BetApprovedQueue, true, false, false)
+            .QueueDeclareAsync(RabbitMQConstants.EventResolvedQueue, true, false, false)
             .GetAwaiter()
             .GetResult();
     }
@@ -41,15 +42,16 @@ public class BetApprovedPublisher : IAsyncDisposable
         await _connection.DisposeAsync();
     }
 
-    public async Task PublishBetApprovedAsync(BetApprovedEvent evt)
+    public async Task PublishEventResolvedAsync(EventResolvedEvent evt)
     {
         var json = JsonSerializer.Serialize(evt);
         var body = Encoding.UTF8.GetBytes(json);
 
         var props = new BasicProperties { Persistent = true, ContentType = "application/json" };
+
         await _channel.BasicPublishAsync(
             "",
-            RabbitMQConstants.BetApprovedQueue,
+            RabbitMQConstants.EventResolvedQueue,
             false,
             props,
             body

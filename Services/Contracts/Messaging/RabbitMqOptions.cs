@@ -1,4 +1,4 @@
-namespace Game.Messaging;
+namespace Contracts.Messaging;
 
 public class RabbitMqOptions
 {
