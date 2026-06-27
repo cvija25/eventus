@@ -3,6 +3,7 @@ using System.Text.Json;
 using Account.Common.Repositories;
 using Account.Messaging;
 using Contracts;
+using Contracts.Messaging;
 using Microsoft.Extensions.Options;
 using RabbitMQ.Client;
 using RabbitMQ.Client.Events;
@@ -39,8 +40,11 @@ public class BetApprovedConsumer(
         var factory = new ConnectionFactory
         {
             HostName = options.HostName,
+
             Port = options.Port,
+
             UserName = options.UserName,
+
             Password = options.Password,
             VirtualHost = options.VirtualHost
         };
@@ -111,11 +115,13 @@ public class BetApprovedConsumer(
         }
         catch (JsonException ex)
         {
+            // Bad message — don't requeue, send to dead letter
             logger.LogError(ex, "Invalid message format. Discarding.");
             await _channel!.BasicNackAsync(ea.DeliveryTag, false, false, CancellationToken.None);
         }
         catch (Exception ex)
         {
+            // Transient failure — requeue with delay
             logger.LogError(ex, "Failed to process message. Requeuing.");
             await Task.Delay(TimeSpan.FromSeconds(5));
             await _channel!.BasicNackAsync(ea.DeliveryTag, false, true, CancellationToken.None);

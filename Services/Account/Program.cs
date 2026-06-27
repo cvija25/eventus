@@ -4,6 +4,7 @@ using Account.Consumers;
 using Account.Infrastructure;
 using Account.Messaging;
 using Account.Publishers;
+using Contracts.Messaging;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
@@ -19,7 +20,6 @@ builder.Services.AddCors(options =>
 });
 
 builder.Services.AddControllers();
-builder.Services.AddOpenApi();
 builder.Services.AddHostedService<BetApprovedConsumer>();
 builder.Services.AddSingleton<BetPlacedPublisher>();
 builder.Services.Configure<RabbitMqOptions>(builder.Configuration.GetSection("RabbitMq"));
@@ -47,7 +47,7 @@ builder.Services
             ValidateAudience = true,
             ValidAudience = builder.Configuration["Jwt:Audience"],
             ValidateLifetime = true,
-            ClockSkew = TimeSpan.Zero
+            ClockSkew = TimeSpan.Zero,
         };
     });
 builder.Services.AddAuthorization();
@@ -64,6 +64,13 @@ using (var scope = app.Services.CreateScope())
 if (app.Environment.IsDevelopment())
     app.MapOpenApi();
 
+app.MapGet(
+    "/",
+    () =>
+    {
+        return "Hello world!";
+    }
+);
 app.UseCors("Frontend");
 app.UseAuthentication();
 app.UseAuthorization();

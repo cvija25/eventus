@@ -1,6 +1,8 @@
 using System.IdentityModel.Tokens.Jwt;
+using Catalog.API.Publishers;
 using Catalog.Common.DTOs;
 using Catalog.Common.Repositories;
+using Contracts;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 
@@ -38,10 +40,31 @@ public class CatalogController : ControllerBase
         return Created($"/api/v1/catalog/events/{ev.Id}", ev);
     }
 
-    private readonly IEventRepository _eventRepository;
+    [HttpPost("resolve")]
+    [Authorize]
+    [ProducesResponseType(StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status404NotFound)]
+    [ProducesResponseType(StatusCodes.Status403Forbidden)]
+    public async Task<ActionResult<bool>> ResolveEvent([FromBody] ResolveEventDto dto)
+    {
+        var userId = Guid.Parse(User.FindFirst(JwtRegisteredClaimNames.Sub)!.Value);
+        var ev = await _eventRepository.GetEventByIdAsync(dto.Id);
+        if (ev is null)
+            return NotFound();
+        if (ev.OwnerId != userId)
+            return Forbid();
+        await _eventRepository.ResolveEventAsync(dto);
+        var mqEvent = new EventResolvedEvent { EventId = dto.Id, Outcome = EventOutcome.No };
+        await _eventResolvedPublisher.PublishEventResolvedAsync(mqEvent);
+        return Ok();
+    }
 
-    public CatalogController(IEventRepository eventRepository)
+    private readonly IEventRepository _eventRepository;
+    private readonly IEventResolvedPublisher _eventResolvedPublisher;
+
+    public CatalogController(IEventRepository eventRepository, EventResolvedPublisher publisher)
     {
         _eventRepository = eventRepository;
+        _eventResolvedPublisher = publisher;
     }
 }

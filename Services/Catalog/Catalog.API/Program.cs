@@ -1,5 +1,7 @@
 using System.Text;
+using Catalog.API.Publishers;
 using Catalog.Common.Extensions;
+using Contracts.Messaging;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.IdentityModel.Tokens;
 
@@ -16,6 +18,8 @@ builder.Services.AddCors(options =>
 
 builder.Services.AddControllers();
 builder.Services.AddCatalogCommon(builder.Configuration);
+builder.Services.AddSingleton<EventResolvedPublisher>();
+builder.Services.Configure<RabbitMqOptions>(builder.Configuration.GetSection("RabbitMq"));
 
 builder
     .Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
