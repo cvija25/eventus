@@ -1,7 +1,7 @@
-using Account.Common.Data;
-using Account.Common.DTOs;
+using Account.Data;
+using Account.DTOs;
 
-namespace Account.Common.Repositories;
+namespace Account.Repositories;
 
 public class WalletRepository(WalletContext db) : IWalletRepository
 {

@@ -1,8 +1,7 @@
 using System.IdentityModel.Tokens.Jwt;
-using Account.Common.DTOs;
-using Account.Common.Repositories;
 using Account.DTOs;
 using Account.Publishers;
+using Account.Repositories;
 using Contracts;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;

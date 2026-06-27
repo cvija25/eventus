@@ -24,7 +24,6 @@
     </ItemGroup>
 
     <ItemGroup>
-        <ProjectReference Include="..\Account.Common\Account.Common.csproj"/>
         <ProjectReference Include="..\Catalog\Catalog.Common\Catalog.Common.csproj"/>
         <ProjectReference Include="..\Contracts\Contracts.csproj"/>
     </ItemGroup>

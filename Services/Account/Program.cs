@@ -1,9 +1,8 @@
 using System.Text;
-using Account.Common.Repositories;
 using Account.Consumers;
-using Account.Infrastructure;
-using Account.Messaging;
+using Account.Data;
 using Account.Publishers;
+using Account.Repositories;
 using Contracts.Messaging;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.EntityFrameworkCore;
@@ -47,7 +46,7 @@ builder.Services
             ValidateAudience = true,
             ValidAudience = builder.Configuration["Jwt:Audience"],
             ValidateLifetime = true,
-            ClockSkew = TimeSpan.Zero,
+            ClockSkew = TimeSpan.Zero
         };
     });
 builder.Services.AddAuthorization();
@@ -66,10 +65,7 @@ if (app.Environment.IsDevelopment())
 
 app.MapGet(
     "/",
-    () =>
-    {
-        return "Hello world!";
-    }
+    () => { return "Hello world!"; }
 );
 app.UseCors("Frontend");
 app.UseAuthentication();

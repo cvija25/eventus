@@ -1,6 +1,6 @@
-using Account.Common.DTOs;
+using Account.DTOs;
 
-namespace Account.Common.Repositories;
+namespace Account.Repositories;
 
 public interface IWalletRepository
 {

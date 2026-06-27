@@ -1,7 +1,6 @@
 using System.Text;
 using System.Text.Json;
-using Account.Common.Repositories;
-using Account.Messaging;
+using Account.Repositories;
 using Contracts;
 using Contracts.Messaging;
 using Microsoft.Extensions.Options;
