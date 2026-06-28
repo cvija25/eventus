@@ -70,23 +70,26 @@ class _BalanceScreenState extends State<BalanceScreen> {
               final text = _amountController.text.trim();
               final value = double.tryParse(text);
               if (value == null || value <= 0) return;
-              // Call backend deposit endpoint
+
+              final navigator = Navigator.of(context);
+              final messenger = ScaffoldMessenger.of(context);
+
               try {
                 await ApiService().depositToAccount(amount: value);
                 await _loadBalance();
-                if (context.mounted) {
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    const SnackBar(content: Text('Deposit successful')),
-                  );
-                }
+                if (!mounted) return;
+                messenger.showSnackBar(
+                  const SnackBar(content: Text('Deposit successful')),
+                );
               } catch (e) {
-                if (context.mounted) {
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    SnackBar(content: Text('Deposit failed: $e')),
-                  );
-                }
+                if (!mounted) return;
+                messenger.showSnackBar(
+                  SnackBar(content: Text('Deposit failed: $e')),
+                );
               } finally {
-                Navigator.of(context).pop();
+                if (mounted) {
+                  navigator.pop();
+                }
               }
             },
             child: const Text('Deposit'),
@@ -130,8 +133,8 @@ class _BalanceScreenState extends State<BalanceScreen> {
                   Container(
                     width: 22,
                     height: 22,
-                    decoration: BoxDecoration(
-                      color: const Color(0xFF00A3FF),
+                    decoration: const BoxDecoration(
+                      color: Color(0xFF00A3FF),
                       shape: BoxShape.circle,
                     ),
                     alignment: Alignment.center,
