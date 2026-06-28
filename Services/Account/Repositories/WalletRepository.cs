@@ -8,7 +8,8 @@ public class WalletRepository(WalletContext db) : IWalletRepository
     public async Task<UpdateWalletDto?> Deposit(Guid accId, decimal amount)
     {
         var wallet = await db.Wallets.FindAsync(accId);
-        if (wallet is null) return null;
+        if (wallet is null)
+            return null;
 
         wallet.Amount += amount;
         await db.SaveChangesAsync();
@@ -19,7 +20,8 @@ public class WalletRepository(WalletContext db) : IWalletRepository
     public async Task<UpdateWalletDto?> Withdraw(Guid accId, decimal amount)
     {
         var wallet = await db.Wallets.FindAsync(accId);
-        if (wallet is null) return null;
+        if (wallet is null)
+            return null;
 
         wallet.Amount = Math.Max(wallet.Amount - amount, 0);
         await db.SaveChangesAsync();
@@ -30,7 +32,8 @@ public class WalletRepository(WalletContext db) : IWalletRepository
     public async Task<WalletBalanceDto?> GetBalance(Guid accId)
     {
         var wallet = await db.Wallets.FindAsync(accId);
-        if (wallet is null) return null;
+        if (wallet is null)
+            return null;
 
         return new WalletBalanceDto(wallet.Amount);
     }

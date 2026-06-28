@@ -27,11 +27,12 @@ builder.Services.AddDbContext<WalletContext>(opt =>
     opt.UseNpgsql(
         builder.Configuration.GetConnectionString("AccountDb"),
         b => b.MigrationsAssembly("Account")
-    ));
+    )
+);
 builder.Services.AddScoped<IWalletRepository, WalletRepository>();
 
-builder.Services
-    .AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
+builder
+    .Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
     .AddJwtBearer(options =>
     {
         options.MapInboundClaims = false;
@@ -46,7 +47,7 @@ builder.Services
             ValidateAudience = true,
             ValidAudience = builder.Configuration["Jwt:Audience"],
             ValidateLifetime = true,
-            ClockSkew = TimeSpan.Zero
+            ClockSkew = TimeSpan.Zero,
         };
     });
 builder.Services.AddAuthorization();
@@ -65,7 +66,10 @@ if (app.Environment.IsDevelopment())
 
 app.MapGet(
     "/",
-    () => { return "Hello world!"; }
+    () =>
+    {
+        return "Hello world!";
+    }
 );
 app.UseCors("Frontend");
 app.UseAuthentication();

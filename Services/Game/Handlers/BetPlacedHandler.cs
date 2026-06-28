@@ -40,7 +40,7 @@ public class BetPlacedHandler
             IsApproved = true,
             ApprovedAt = DateTime.UtcNow,
             AccId = betPlaced.OwnerId,
-            Stake = betPlaced.Stake
+            Stake = betPlaced.Stake,
         };
 
         // 3. publish result

@@ -16,19 +16,19 @@ namespace Account.Data.Migrations
                 columns: table => new
                 {
                     AccId = table.Column<Guid>(type: "uuid", nullable: false),
-                    Amount = table.Column<decimal>(type: "numeric", nullable: false)
+                    Amount = table.Column<decimal>(type: "numeric", nullable: false),
                 },
                 constraints: table =>
                 {
                     table.PrimaryKey("PK_Wallets", x => x.AccId);
-                });
+                }
+            );
         }
 
         /// <inheritdoc />
         protected override void Down(MigrationBuilder migrationBuilder)
         {
-            migrationBuilder.DropTable(
-                name: "Wallets");
+            migrationBuilder.DropTable(name: "Wallets");
         }
     }
 }

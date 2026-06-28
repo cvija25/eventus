@@ -7,8 +7,11 @@ using Npgsql;
 
 namespace Identity.API.Repositories;
 
-public class UserRepository(IMongoCollection<User> users, IMapper mapper, IConfiguration configuration)
-    : IUserRepository
+public class UserRepository(
+    IMongoCollection<User> users,
+    IMapper mapper,
+    IConfiguration configuration
+) : IUserRepository
 {
     public async Task<UserDto?> FindByEmailAsync(string email)
     {

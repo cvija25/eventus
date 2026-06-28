@@ -13,8 +13,8 @@ namespace Account.Controllers;
 public class AccountController(
     BetPlacedPublisher publisher,
     IWalletRepository walletRepository,
-    ILogger<AccountController> logger)
-    : ControllerBase
+    ILogger<AccountController> logger
+) : ControllerBase
 {
     [HttpGet]
     public ActionResult<string> GetGreeting()
@@ -51,7 +51,7 @@ public class AccountController(
         {
             OwnerId = ownerId,
             EventId = request.EventId,
-            Stake = request.Stake
+            Stake = request.Stake,
         };
 
         await publisher.PublishBetPlacedAsync(evt);
@@ -65,26 +65,40 @@ public class AccountController(
         var ownerId = Guid.Parse(User.FindFirst(JwtRegisteredClaimNames.Sub)!.Value);
         var result = await walletRepository.GetBalance(ownerId);
 
-        logger.LogInformation("Balance requested: AccountId={AccountId}, Amount={Amount}", ownerId,
-            result?.Amount ?? 0m);
+        logger.LogInformation(
+            "Balance requested: AccountId={AccountId}, Amount={Amount}",
+            ownerId,
+            result?.Amount ?? 0m
+        );
 
-        if (result is null) return NotFound("Wallet not found");
+        if (result is null)
+            return NotFound("Wallet not found");
 
         return Ok(new { amount = result.Amount });
     }
 
     [HttpPost("deposit")]
     [Authorize]
-    public async Task<ActionResult<UpdateWalletDto?>> DepositCoins([FromBody] DepositRequest request)
+    public async Task<ActionResult<UpdateWalletDto?>> DepositCoins(
+        [FromBody] DepositRequest request
+    )
     {
         var ownerId = Guid.Parse(User.FindFirst(JwtRegisteredClaimNames.Sub)!.Value);
-        logger.LogInformation("Deposit requested: AccountId={AccountId}, Amount={Amount}", ownerId, request.Amount);
+        logger.LogInformation(
+            "Deposit requested: AccountId={AccountId}, Amount={Amount}",
+            ownerId,
+            request.Amount
+        );
         var result = await walletRepository.Deposit(ownerId, request.Amount);
 
-        if (result is null) return NotFound("Wallet not found");
+        if (result is null)
+            return NotFound("Wallet not found");
 
-        logger.LogInformation("Deposit completed: AccountId={AccountId}, NewBalance={NewBalance}", ownerId,
-            result.Amount);
+        logger.LogInformation(
+            "Deposit completed: AccountId={AccountId}, NewBalance={NewBalance}",
+            ownerId,
+            result.Amount
+        );
 
         return Ok(result);
     }

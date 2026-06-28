@@ -14,7 +14,10 @@ public class BetApprovedPublisher : IAsyncDisposable
     private readonly IConnection _connection;
     private readonly ILogger<BetApprovedPublisher> _logger;
 
-    public BetApprovedPublisher(IOptions<RabbitMqOptions> options, ILogger<BetApprovedPublisher> logger)
+    public BetApprovedPublisher(
+        IOptions<RabbitMqOptions> options,
+        ILogger<BetApprovedPublisher> logger
+    )
     {
         _logger = logger;
         var rabbitOptions = options.Value;

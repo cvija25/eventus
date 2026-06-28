@@ -45,7 +45,7 @@ public class BetApprovedConsumer(
             UserName = options.UserName,
 
             Password = options.Password,
-            VirtualHost = options.VirtualHost
+            VirtualHost = options.VirtualHost,
         };
 
         _connection = await factory.CreateConnectionAsync(stoppingToken);
@@ -55,7 +55,9 @@ public class BetApprovedConsumer(
 
         await _channel.QueueDeclareAsync(
             RabbitMQConstants.BetApprovedQueue,
-            true, false, false,
+            true,
+            false,
+            false,
             cancellationToken: stoppingToken
         );
 
@@ -98,7 +100,12 @@ public class BetApprovedConsumer(
             if (evt is null)
             {
                 logger.LogWarning("Received null event, discarding.");
-                await _channel!.BasicNackAsync(ea.DeliveryTag, false, false, CancellationToken.None);
+                await _channel!.BasicNackAsync(
+                    ea.DeliveryTag,
+                    false,
+                    false,
+                    CancellationToken.None
+                );
                 return;
             }
 
@@ -107,7 +114,9 @@ public class BetApprovedConsumer(
 
             logger.LogInformation(
                 "Bet processed: AccountId={AccountId} Amount={Amount} Approved={IsApproved}",
-                evt.AccId, evt.Stake, evt.IsApproved
+                evt.AccId,
+                evt.Stake,
+                evt.IsApproved
             );
 
             await _channel!.BasicAckAsync(ea.DeliveryTag, false, CancellationToken.None);
