@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import '../services/wallet_service.dart';
 import '../services/api_service.dart';
 
 class BalanceScreen extends StatefulWidget {
@@ -11,6 +10,37 @@ class BalanceScreen extends StatefulWidget {
 
 class _BalanceScreenState extends State<BalanceScreen> {
   final _amountController = TextEditingController();
+  double _balance = 0.0;
+  bool _isLoading = true;
+  String? _errorMessage;
+
+  @override
+  void initState() {
+    super.initState();
+    _loadBalance();
+  }
+
+  Future<void> _loadBalance() async {
+    setState(() {
+      _isLoading = true;
+      _errorMessage = null;
+    });
+
+    try {
+      final balance = await ApiService().fetchBalance();
+      if (!mounted) return;
+      setState(() {
+        _balance = balance;
+        _isLoading = false;
+      });
+    } catch (e) {
+      if (!mounted) return;
+      setState(() {
+        _errorMessage = e.toString();
+        _isLoading = false;
+      });
+    }
+  }
 
   @override
   void dispose() {
@@ -42,9 +72,8 @@ class _BalanceScreenState extends State<BalanceScreen> {
               if (value == null || value <= 0) return;
               // Call backend deposit endpoint
               try {
-                await ApiService().depositToAccount(stake: value);
-                // Update local wallet after successful backend call
-                await WalletService.instance.deposit(value);
+                await ApiService().depositToAccount(amount: value);
+                await _loadBalance();
                 if (context.mounted) {
                   ScaffoldMessenger.of(context).showSnackBar(
                     const SnackBar(content: Text('Deposit successful')),
@@ -79,48 +108,52 @@ class _BalanceScreenState extends State<BalanceScreen> {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            ListenableBuilder(
-              listenable: WalletService.instance,
-              builder: (context, _) {
-                final bal = WalletService.instance.balance;
-                return Row(
-                  children: [
-                    const Text(
-                      'Balance:',
+            if (_isLoading)
+              const Center(
+                child: CircularProgressIndicator(color: Color(0xFF00A3FF)),
+              )
+            else if (_errorMessage != null)
+              Text(
+                _errorMessage!,
+                style: const TextStyle(color: Colors.redAccent),
+              )
+            else
+              Row(
+                children: [
+                  const Text(
+                    'Balance:',
+                    style: TextStyle(
+                      fontSize: 20,
+                    ),
+                  ),
+                  const SizedBox(width: 8),
+                  Container(
+                    width: 22,
+                    height: 22,
+                    decoration: BoxDecoration(
+                      color: const Color(0xFF00A3FF),
+                      shape: BoxShape.circle,
+                    ),
+                    alignment: Alignment.center,
+                    child: const Text(
+                      'C',
                       style: TextStyle(
-                        fontSize: 20,
-                      ),
-                    ),
-                    const SizedBox(width: 8),
-                    Container(
-                      width: 22,
-                      height: 22,
-                      decoration: BoxDecoration(
-                        color: const Color(0xFF00A3FF),
-                        shape: BoxShape.circle,
-                      ),
-                      alignment: Alignment.center,
-                      child: const Text(
-                        'C',
-                        style: TextStyle(
-                          color: Colors.white,
-                          fontSize: 14,
-                          fontWeight: FontWeight.bold,
-                        ),
-                      ),
-                    ),
-                    const SizedBox(width: 6),
-                    Text(
-                      bal.toStringAsFixed(2),
-                      style: const TextStyle(
-                        fontSize: 28,
+                        color: Colors.white,
+                        fontSize: 14,
                         fontWeight: FontWeight.bold,
                       ),
                     ),
-                  ],
-                );
-              },
-            ),
+                  ),
+                  const SizedBox(width: 6),
+                  Text(
+                    _balance.toStringAsFixed(2),
+                    style: const TextStyle(
+                      fontSize: 28,
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+                ],
+              ),
             const SizedBox(height: 24),
             ElevatedButton(
               onPressed: _showDepositDialog,

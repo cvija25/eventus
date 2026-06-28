@@ -141,7 +141,7 @@ Future<List<Item>> fetchItems() async {
   }
 
   Future<void> depositToAccount({
-    required double stake,
+    required double amount,
   }) async {
     final uri = Uri.parse(_depositUrl);
 
@@ -151,7 +151,7 @@ Future<List<Item>> fetchItems() async {
             uri,
             headers: _authHeaders,
             body: jsonEncode({
-              'stake': stake,
+              'amount': amount,
             }),
           )
           .timeout(const Duration(seconds: 10));
@@ -170,6 +170,57 @@ Future<List<Item>> fetchItems() async {
       }
 
       throw Exception('POST $uri failed: ${error.message}');
+    }
+  }
+
+  Future<double> fetchBalance() async {
+    final uri = Uri.parse('http://$_host:$_gatewayPort/account/api/v1/account/balance');
+
+    try {
+      final response = await http.get(uri, headers: _authHeaders).timeout(const Duration(seconds: 10));
+
+      if (response.statusCode < 200 || response.statusCode >= 300) {
+        throw Exception('GET $uri failed with status ${response.statusCode}');
+      }
+
+      final decoded = jsonDecode(response.body);
+      if (decoded is Map<String, dynamic>) {
+        final amountValue = decoded['amount'] ?? decoded['balance'] ?? decoded['Amount'];
+        if (amountValue is num) {
+          return amountValue.toDouble();
+        }
+        if (amountValue is String) {
+          final parsed = double.tryParse(amountValue);
+          if (parsed != null) {
+            return parsed;
+          }
+        }
+      }
+
+      if (decoded is num) {
+        return decoded.toDouble();
+      }
+      if (decoded is String) {
+        final parsed = double.tryParse(decoded);
+        if (parsed != null) {
+          return parsed;
+        }
+      }
+
+      throw Exception('GET $uri returned an unexpected response');
+    } on TimeoutException {
+      throw Exception('GET $uri timed out');
+    } on FormatException catch (error) {
+      throw Exception('GET $uri returned invalid JSON: ${error.message}');
+    } on http.ClientException catch (error) {
+      if (kIsWeb) {
+        throw Exception(
+          'GET $uri failed in Chrome: ${error.message}. '
+          'If the endpoint works directly, enable CORS on the backend for the Flutter web origin.',
+        );
+      }
+
+      throw Exception('GET $uri failed: ${error.message}');
     }
   }
 

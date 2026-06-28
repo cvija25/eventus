@@ -7,7 +7,6 @@ import 'create_event_screen.dart';
 import 'detail_screen.dart';
 import 'login_screen.dart';
 import 'balance_screen.dart';
-import '../services/wallet_service.dart';
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
@@ -66,48 +65,16 @@ class _HomeScreenState extends State<HomeScreen> {
             icon: const Icon(Icons.search, color: Colors.white),
             onPressed: () {},
           ),
-          ListenableBuilder(
-            listenable: WalletService.instance,
-            builder: (context, _) {
-              final bal = WalletService.instance.balance;
-              return TextButton.icon(
-                onPressed: () {
-                  Navigator.push(
-                    context,
-                    MaterialPageRoute(builder: (_) => const BalanceScreen()),
-                  );
-                },
-                icon: const Icon(
-                  Icons.account_balance_wallet_outlined,
-                  color: Colors.white,
-                ),
-                label: Row(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    Container(
-                      width: 16,
-                      height: 16,
-                      decoration: BoxDecoration(
-                        color: const Color(0xFF00A3FF),
-                        shape: BoxShape.circle,
-                      ),
-                      alignment: Alignment.center,
-                      child: const Text(
-                        'C',
-                        style: TextStyle(
-                          color: Colors.white,
-                          fontSize: 10,
-                          fontWeight: FontWeight.bold,
-                        ),
-                      ),
-                    ),
-                    const SizedBox(width: 6),
-                    Text(
-                      bal.toStringAsFixed(2),
-                      style: const TextStyle(color: Colors.white),
-                    ),
-                  ],
-                ),
+          IconButton(
+            icon: const Icon(
+              Icons.account_balance_wallet_outlined,
+              color: Colors.white,
+            ),
+            tooltip: 'Wallet',
+            onPressed: () {
+              Navigator.push(
+                context,
+                MaterialPageRoute(builder: (_) => const BalanceScreen()),
               );
             },
           ),

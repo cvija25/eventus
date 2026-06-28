@@ -103,7 +103,7 @@ public class BetApprovedConsumer(
             }
 
             if (evt.IsApproved)
-                await repository.Deposit(evt.AccId, evt.Stake);
+                await repository.Withdraw(evt.AccId, evt.Stake);
 
             logger.LogInformation(
                 "Bet processed: AccountId={AccountId} Amount={Amount} Approved={IsApproved}",
