@@ -14,7 +14,7 @@ public class WalletRepository(WalletContext db) : IWalletRepository
         wallet.Amount += amount;
         await db.SaveChangesAsync();
 
-        return new UpdateWalletDto(wallet.AccId, wallet.Amount);
+        return new UpdateWalletDto(wallet.AvailableFunds, wallet.Amount);
     }
 
     public async Task<UpdateWalletDto?> Withdraw(Guid accId, decimal amount)
@@ -26,7 +26,7 @@ public class WalletRepository(WalletContext db) : IWalletRepository
         wallet.Amount = Math.Max(wallet.Amount - amount, 0);
         await db.SaveChangesAsync();
 
-        return new UpdateWalletDto(wallet.AccId, wallet.Amount);
+        return new UpdateWalletDto(wallet.AvailableFunds, wallet.Amount);
     }
 
     public async Task<WalletBalanceDto?> GetBalance(Guid accId)
