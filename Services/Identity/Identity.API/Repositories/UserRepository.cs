@@ -32,7 +32,7 @@ public class UserRepository(
             Email = request.Email,
             PasswordHash = BCrypt.Net.BCrypt.HashPassword(request.Password),
             Role = request.IsAdmin ? "admin" : "user",
-            CreatedAt = DateTime.UtcNow
+            CreatedAt = DateTime.UtcNow,
         };
 
         await users.InsertOneAsync(user);
