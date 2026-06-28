@@ -11,10 +11,10 @@ public class WalletRepository(WalletContext db) : IWalletRepository
         if (wallet is null)
             return null;
 
-        wallet.Amount += amount;
+        wallet.AvailableFunds += amount;
         await db.SaveChangesAsync();
 
-        return new UpdateWalletDto(wallet.AvailableFunds, wallet.Amount);
+        return new UpdateWalletDto(wallet.AccountId, wallet.AvailableFunds);
     }
 
     public async Task<UpdateWalletDto?> Withdraw(Guid accId, decimal amount)
@@ -23,10 +23,10 @@ public class WalletRepository(WalletContext db) : IWalletRepository
         if (wallet is null)
             return null;
 
-        wallet.Amount = Math.Max(wallet.Amount - amount, 0);
+        wallet.AvailableFunds = Math.Max(wallet.AvailableFunds - amount, 0);
         await db.SaveChangesAsync();
 
-        return new UpdateWalletDto(wallet.AvailableFunds, wallet.Amount);
+        return new UpdateWalletDto(wallet.AccountId, wallet.AvailableFunds);
     }
 
     public async Task<WalletBalanceDto?> GetBalance(Guid accId)
@@ -35,6 +35,6 @@ public class WalletRepository(WalletContext db) : IWalletRepository
         if (wallet is null)
             return null;
 
-        return new WalletBalanceDto(wallet.Amount);
+        return new WalletBalanceDto(wallet.AvailableFunds);
     }
 }

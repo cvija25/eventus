@@ -5,7 +5,7 @@ namespace Account.Entities;
 public class Wallet
 {
     [Key]
-    public Guid AvailableFunds { get; set; }
+    public Guid AccountId { get; set; }
 
-    public decimal Amount { get; set; }
+    public decimal AvailableFunds { get; set; }
 }

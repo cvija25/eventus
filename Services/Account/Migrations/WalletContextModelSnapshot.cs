@@ -3,20 +3,17 @@ using System;
 using Account.Data;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
-using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 
 #nullable disable
 
-namespace Account.Data.Migrations
+namespace Account.Migrations
 {
     [DbContext(typeof(WalletContext))]
-    [Migration("20260627140948_InitialCreate")]
-    partial class InitialCreate
+    partial class WalletContextModelSnapshot : ModelSnapshot
     {
-        /// <inheritdoc />
-        protected override void BuildTargetModel(ModelBuilder modelBuilder)
+        protected override void BuildModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -27,14 +24,14 @@ namespace Account.Data.Migrations
 
             modelBuilder.Entity("Account.Entities.Wallet", b =>
                 {
-                    b.Property<Guid>("AccId")
+                    b.Property<Guid>("AccountId")
                         .ValueGeneratedOnAdd()
                         .HasColumnType("uuid");
 
-                    b.Property<decimal>("Amount")
+                    b.Property<decimal>("AvailableFunds")
                         .HasColumnType("numeric");
 
-                    b.HasKey("AccId");
+                    b.HasKey("AccountId");
 
                     b.ToTable("Wallets");
                 });

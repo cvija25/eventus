@@ -1,7 +1,6 @@
 using AutoMapper;
 using Identity.API.DTOs;
 using Identity.API.Entities;
-using Microsoft.Extensions.Configuration;
 using MongoDB.Driver;
 using Npgsql;
 
@@ -19,8 +18,10 @@ public class UserRepository(
         return user is null ? null : mapper.Map<UserDto>(user);
     }
 
-    public Task<User?> FindUserWithHashByEmailAsync(string email) =>
-        users.Find(u => u.Email == email).FirstOrDefaultAsync()!;
+    public Task<User?> FindUserWithHashByEmailAsync(string email)
+    {
+        return users.Find(u => u.Email == email).FirstOrDefaultAsync()!;
+    }
 
     public async Task<UserDto> CreateUserAsync(RegisterRequest request)
     {
@@ -31,7 +32,7 @@ public class UserRepository(
             Email = request.Email,
             PasswordHash = BCrypt.Net.BCrypt.HashPassword(request.Password),
             Role = request.IsAdmin ? "admin" : "user",
-            CreatedAt = DateTime.UtcNow,
+            CreatedAt = DateTime.UtcNow
         };
 
         await users.InsertOneAsync(user);
@@ -43,15 +44,13 @@ public class UserRepository(
     {
         var connectionString = configuration.GetConnectionString("AccountDb");
         if (string.IsNullOrWhiteSpace(connectionString))
-        {
             throw new InvalidOperationException("AccountDb connection string is not configured.");
-        }
 
         await using var connection = new NpgsqlConnection(connectionString);
         await connection.OpenAsync();
 
         await using var command = new NpgsqlCommand(
-            "INSERT INTO \"Wallets\" (\"AccId\", \"Amount\") VALUES (@id, 0) ON CONFLICT (\"AccId\") DO NOTHING",
+            "INSERT INTO \"Wallets\" (\"AccountId\", \"AvailableFunds\") VALUES (@id, 0) ON CONFLICT (\"AccountId\") DO NOTHING",
             connection
         );
         command.Parameters.AddWithValue("id", userId);
