@@ -6,6 +6,7 @@ import '../widgets/item_card.dart';
 import 'create_event_screen.dart';
 import 'detail_screen.dart';
 import 'login_screen.dart';
+import 'balance_screen.dart';
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
@@ -65,9 +66,17 @@ class _HomeScreenState extends State<HomeScreen> {
             onPressed: () {},
           ),
           IconButton(
-            icon: const Icon(Icons.account_balance_wallet_outlined,
-                color: Colors.white),
-            onPressed: () {},
+            icon: const Icon(
+              Icons.account_balance_wallet_outlined,
+              color: Colors.white,
+            ),
+            tooltip: 'Wallet',
+            onPressed: () {
+              Navigator.push(
+                context,
+                MaterialPageRoute(builder: (_) => const BalanceScreen()),
+              );
+            },
           ),
           ListenableBuilder(
             listenable: AuthService.instance,

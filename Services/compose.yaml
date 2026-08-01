@@ -36,6 +36,22 @@ services:
       catalog-db:
         condition: service_healthy
 
+  account-db:
+    image: postgres:17-alpine
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+      POSTGRES_DB: eventus_account
+    ports:
+      - "5433:5432"
+    volumes:
+      - account-db_data:/var/lib/postgresql/data
+    healthcheck:
+      test: [ "CMD-SHELL", "pg_isready -U postgres" ]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+  
   catalog-db:
     image: postgres:17-alpine
     environment:
@@ -95,6 +111,15 @@ services:
       dockerfile: API.Gateway/Dockerfile
     ports:
       - "1234:8080"
+    depends_on:
+      account:
+        condition: service_started
+      game:
+        condition: service_started
+      catalog.api:
+        condition: service_started
+      identity.api:
+        condition: service_started
 
   identity.api:
     image: identity.api
@@ -115,5 +140,6 @@ services:
 
 volumes:
   catalog-db_data:
+  account-db_data:
   rabbitmq_data:
   identity-db_data:

@@ -2,10 +2,15 @@ using AutoMapper;
 using Identity.API.DTOs;
 using Identity.API.Entities;
 using MongoDB.Driver;
+using Npgsql;
 
 namespace Identity.API.Repositories;
 
-public class UserRepository(IMongoCollection<User> users, IMapper mapper) : IUserRepository
+public class UserRepository(
+    IMongoCollection<User> users,
+    IMapper mapper,
+    IConfiguration configuration
+) : IUserRepository
 {
     public async Task<UserDto?> FindByEmailAsync(string email)
     {
@@ -13,8 +18,10 @@ public class UserRepository(IMongoCollection<User> users, IMapper mapper) : IUse
         return user is null ? null : mapper.Map<UserDto>(user);
     }
 
-    public Task<User?> FindUserWithHashByEmailAsync(string email) =>
-        users.Find(u => u.Email == email).FirstOrDefaultAsync()!;
+    public Task<User?> FindUserWithHashByEmailAsync(string email)
+    {
+        return users.Find(u => u.Email == email).FirstOrDefaultAsync()!;
+    }
 
     public async Task<UserDto> CreateUserAsync(RegisterRequest request)
     {
@@ -29,6 +36,24 @@ public class UserRepository(IMongoCollection<User> users, IMapper mapper) : IUse
         };
 
         await users.InsertOneAsync(user);
+        await CreateWalletAsync(user.Id);
         return mapper.Map<UserDto>(user);
+    }
+
+    private async Task CreateWalletAsync(Guid userId)
+    {
+        var connectionString = configuration.GetConnectionString("AccountDb");
+        if (string.IsNullOrWhiteSpace(connectionString))
+            throw new InvalidOperationException("AccountDb connection string is not configured.");
+
+        await using var connection = new NpgsqlConnection(connectionString);
+        await connection.OpenAsync();
+
+        await using var command = new NpgsqlCommand(
+            "INSERT INTO \"Wallets\" (\"AccountId\", \"AvailableFunds\") VALUES (@id, 0) ON CONFLICT (\"AccountId\") DO NOTHING",
+            connection
+        );
+        command.Parameters.AddWithValue("id", userId);
+        await command.ExecuteNonQueryAsync();
     }
 }

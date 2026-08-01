@@ -55,7 +55,12 @@ public class BetPlacedConsumer(
         _scope?.Dispose();
         _scope = scopeFactory.CreateScope();
         var catalogClient = _scope.ServiceProvider.GetRequiredService<CatalogGrpcClient>();
-        _handler = new BetPlacedHandler(new BetApprovedPublisher(rabbitOptions), catalogClient);
+        var loggerFactory = _scope.ServiceProvider.GetRequiredService<ILoggerFactory>();
+        var publisherLogger = loggerFactory.CreateLogger<BetApprovedPublisher>();
+        _handler = new BetPlacedHandler(
+            new BetApprovedPublisher(rabbitOptions, publisherLogger),
+            catalogClient
+        );
 
         await _channel.BasicQosAsync(0, 10, false, stoppingToken);
 

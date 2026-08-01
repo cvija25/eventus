@@ -2,6 +2,7 @@ using System.Text;
 using System.Text.Json;
 using Contracts;
 using Contracts.Messaging;
+using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 using RabbitMQ.Client;
 
@@ -11,9 +12,14 @@ public class BetApprovedPublisher : IAsyncDisposable
 {
     private readonly IChannel _channel;
     private readonly IConnection _connection;
+    private readonly ILogger<BetApprovedPublisher> _logger;
 
-    public BetApprovedPublisher(IOptions<RabbitMqOptions> options)
+    public BetApprovedPublisher(
+        IOptions<RabbitMqOptions> options,
+        ILogger<BetApprovedPublisher> logger
+    )
     {
+        _logger = logger;
         var rabbitOptions = options.Value;
 
         var factory = new ConnectionFactory
@@ -45,6 +51,14 @@ public class BetApprovedPublisher : IAsyncDisposable
     {
         var json = JsonSerializer.Serialize(evt);
         var body = Encoding.UTF8.GetBytes(json);
+
+        _logger.LogInformation(
+            "Publishing BetApprovedEvent: AccId={AccId}, Stake={Stake}, IsApproved={IsApproved}, Json={Json}",
+            evt.AccId,
+            evt.Stake,
+            evt.IsApproved,
+            json
+        );
 
         var props = new BasicProperties { Persistent = true, ContentType = "application/json" };
         await _channel.BasicPublishAsync(

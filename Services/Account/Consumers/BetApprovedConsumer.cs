@@ -1,5 +1,6 @@
 using System.Text;
 using System.Text.Json;
+using Account.Repositories;
 using Contracts;
 using Contracts.Messaging;
 using Microsoft.Extensions.Options;
@@ -44,16 +45,13 @@ public class BetApprovedConsumer(
             UserName = options.UserName,
 
             Password = options.Password,
-
             VirtualHost = options.VirtualHost,
         };
 
         _connection = await factory.CreateConnectionAsync(stoppingToken);
         _channel = await _connection.CreateChannelAsync(cancellationToken: stoppingToken);
 
-        const int prefetchCount = 10,
-            prefetchSize = 0;
-        await _channel.BasicQosAsync(prefetchSize, prefetchCount, false, stoppingToken);
+        await _channel.BasicQosAsync(0, 10, false, stoppingToken);
 
         await _channel.QueueDeclareAsync(
             RabbitMQConstants.BetApprovedQueue,
@@ -92,13 +90,34 @@ public class BetApprovedConsumer(
     private async Task OnMessageReceivedAsync(object sender, BasicDeliverEventArgs ea)
     {
         await using var scope = scopeFactory.CreateAsyncScope();
+        var repository = scope.ServiceProvider.GetRequiredService<IWalletRepository>();
+
         try
         {
-            var body = ea.Body.ToArray();
-            var json = Encoding.UTF8.GetString(body);
+            var json = Encoding.UTF8.GetString(ea.Body.ToArray());
             var evt = JsonSerializer.Deserialize<BetApprovedEvent>(json);
 
-            logger.LogInformation("Bet approved: {IsApproved}", evt?.IsApproved);
+            if (evt is null)
+            {
+                logger.LogWarning("Received null event, discarding.");
+                await _channel!.BasicNackAsync(
+                    ea.DeliveryTag,
+                    false,
+                    false,
+                    CancellationToken.None
+                );
+                return;
+            }
+
+            if (evt.IsApproved)
+                await repository.Withdraw(evt.AccId, evt.Stake);
+
+            logger.LogInformation(
+                "Bet processed: AccountId={AccountId} Amount={Amount} Approved={IsApproved}",
+                evt.AccId,
+                evt.Stake,
+                evt.IsApproved
+            );
 
             await _channel!.BasicAckAsync(ea.DeliveryTag, false, CancellationToken.None);
         }

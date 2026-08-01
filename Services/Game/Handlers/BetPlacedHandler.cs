@@ -6,8 +6,8 @@ namespace Game.Handlers;
 
 public class BetPlacedHandler
 {
-    private readonly BetApprovedPublisher _publisher;
     private readonly CatalogGrpcClient _catalog_client;
+    private readonly BetApprovedPublisher _publisher;
 
     public BetPlacedHandler(BetApprovedPublisher publisher, CatalogGrpcClient client)
     {
@@ -39,6 +39,8 @@ public class BetPlacedHandler
             // for now always approve
             IsApproved = true,
             ApprovedAt = DateTime.UtcNow,
+            AccId = betPlaced.OwnerId,
+            Stake = betPlaced.Stake,
         };
 
         // 3. publish result
