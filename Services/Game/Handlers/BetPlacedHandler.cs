@@ -1,3 +1,4 @@
+using System.Globalization;
 using Contracts;
 using Game.GrpcClients;
 using Game.Publishers;
@@ -8,11 +9,13 @@ public class BetPlacedHandler
 {
     private readonly CatalogGrpcClient _catalog_client;
     private readonly BetApprovedPublisher _publisher;
+    private readonly ILogger<BetPlacedHandler> _logger;
 
-    public BetPlacedHandler(BetApprovedPublisher publisher, CatalogGrpcClient client)
+    public BetPlacedHandler(BetApprovedPublisher publisher, CatalogGrpcClient client, ILogger<BetPlacedHandler> logger)
     {
         _publisher = publisher;
         _catalog_client = client;
+        _logger = logger;
     }
 
     public async Task ProcessBetPlacedAsync(BetPlacedEvent betPlaced)
@@ -20,30 +23,75 @@ public class BetPlacedHandler
         // 1. BUSINESS LOGIC
         // example rule
         var eventId = betPlaced.EventId;
-        var eventPrice = await _catalog_client.GetEventPriceAsync(eventId);
+        var market = await _catalog_client.GetEventPriceAsync(eventId);
 
-        // 2. create domain result
+        var yesPot = decimal.Parse(
+            market.PotSizeYes,
+            CultureInfo.InvariantCulture
+        );
+
+        var noPot = decimal.Parse(
+            market.PotSizeNo,
+            CultureInfo.InvariantCulture
+        );
+
+        var totalPot = yesPot + noPot;
+
+        if (totalPot <= 0)
+            throw new InvalidOperationException(
+                $"Invalid market pot for event {eventId}"
+            );
+
+        // 2. Calculate price BEFORE adding the current stake
+        var selectedPrice = betPlaced.Outcome switch
+        {
+            MarketOutcome.Yes => yesPot / totalPot,
+            MarketOutcome.No => noPot / totalPot,
+            _ => throw new InvalidOperationException(
+                $"Invalid market outcome: {betPlaced.Outcome}"
+            )
+        };
+
+        var sharesReceived = betPlaced.Stake / selectedPrice;
+
+        // 3. Add stake to the selected outcome pot
+        if (betPlaced.Outcome == MarketOutcome.Yes)
+            yesPot += betPlaced.Stake;
+        else
+            noPot += betPlaced.Stake;
+
         var updateResult = await _catalog_client.UpdateEventPriceAsync(
             eventId,
             null,
             null,
-            eventPrice.PotSize + (long)betPlaced.Stake //hack converting from decimal to long, TBD
+            potSize: market.PotSize + (long)betPlaced.Stake,
+            potSizeYes: yesPot,
+            potSizeNo: noPot
         );
+
         if (!updateResult.Success)
             throw new InvalidOperationException(
-                $"Catalog rejected price update for event {eventId}"
+                $"Catalog rejected pot update for event {eventId}"
             );
 
+        // 5. Log the calculated shares
+        _logger.LogInformation(
+            "Bet executed: EventId={EventId}, AccountId={AccountId}, Outcome={Outcome}, Stake={Stake}, SharesReceived={SharesReceived}",
+            betPlaced.EventId,
+            betPlaced.OwnerId,
+            betPlaced.Outcome,
+            betPlaced.Stake,
+            sharesReceived
+        );
+
+        // 6. Publish approval
         var approvedEvent = new BetApprovedEvent
         {
-            // for now always approve
             IsApproved = true,
             ApprovedAt = DateTime.UtcNow,
             AccId = betPlaced.OwnerId,
             Stake = betPlaced.Stake,
         };
-
-        // 3. publish result
 
         await _publisher.PublishBetApprovedAsync(approvedEvent);
     }

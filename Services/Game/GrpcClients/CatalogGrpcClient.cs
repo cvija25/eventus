@@ -12,7 +12,9 @@ public class CatalogGrpcClient(CatalogProto.CatalogClient client)
         Guid eventId,
         long? priceYes = null,
         long? priceNo = null,
-        long? potSize = null
+        long? potSize = null,
+        decimal? potSizeYes = null,
+        decimal? potSizeNo = null
     )
     {
         var request = new UpdateEventPriceRequest { EventId = eventId.ToString() };
@@ -22,6 +24,14 @@ public class CatalogGrpcClient(CatalogProto.CatalogClient client)
             request.PriceNo = priceNo.Value;
         if (potSize.HasValue)
             request.PotSize = potSize.Value;
+        if (potSizeYes.HasValue)
+            request.PotSizeYes = potSizeYes.Value.ToString(
+                System.Globalization.CultureInfo.InvariantCulture
+            );
+        if (potSizeNo.HasValue)
+            request.PotSizeNo = potSizeNo.Value.ToString(
+                System.Globalization.CultureInfo.InvariantCulture
+            );
         return await client.UpdateEventPriceAsync(request);
     }
 }

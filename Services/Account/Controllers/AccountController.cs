@@ -26,6 +26,26 @@ public class AccountController(
     [Authorize]
     public async Task<ActionResult<string>> PublishBet([FromBody] BetPlacedRequest request)
     {
+        if (request.Stake <= 0)
+        {
+            logger.LogWarning(
+                "Invalid bet stake: Stake={Stake}, EventId={EventId}", 
+                request.Stake, 
+                request.EventId
+            );
+            return BadRequest("Stake must be greater than zero");
+        }
+
+        if (!Enum.IsDefined(request.Outcome))
+        {
+            logger.LogWarning(
+                "Invalid bet outcome: Outcome={Outcome}, EventId={EventId}", 
+                request.Outcome, 
+                request.EventId
+            );
+            return BadRequest("Outcome must be Yes (1) or No (2)");
+        }
+
         var ownerId = Guid.Parse(User.FindFirst(JwtRegisteredClaimNames.Sub)!.Value);
         var funds = await walletRepository.GetBalance(ownerId);
 
@@ -52,6 +72,7 @@ public class AccountController(
             OwnerId = ownerId,
             EventId = request.EventId,
             Stake = request.Stake,
+            Outcome = request.Outcome
         };
 
         await publisher.PublishBetPlacedAsync(evt);

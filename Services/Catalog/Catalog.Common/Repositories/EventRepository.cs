@@ -30,6 +30,8 @@ public class EventRepository : IEventRepository
             PriceYes = InitialPrice,
             PriceNo = InitialPrice,
             PotSize = InitialPotSize,
+            PotSizeYes = 1m,
+            PotSizeNo = 1m,
         };
         _context.Events.Add(newEvent);
         await _context.SaveChangesAsync();
@@ -57,6 +59,10 @@ public class EventRepository : IEventRepository
             ev.PriceNo = updateEventDto.PriceNo.Value;
         if (updateEventDto.PotSize.HasValue)
             ev.PotSize = updateEventDto.PotSize.Value;
+        if (updateEventDto.PotSizeYes.HasValue) 
+            ev.PotSizeYes = updateEventDto.PotSizeYes.Value;
+        if (updateEventDto.PotSizeNo.HasValue) 
+            ev.PotSizeNo = updateEventDto.PotSizeNo.Value;
         if (updateEventDto.Title != null)
             ev.Title = updateEventDto.Title;
 
