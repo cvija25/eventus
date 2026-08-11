@@ -29,8 +29,8 @@ public class AccountController(
         if (request.Stake <= 0)
         {
             logger.LogWarning(
-                "Invalid bet stake: Stake={Stake}, EventId={EventId}", 
-                request.Stake, 
+                "Invalid bet stake: Stake={Stake}, EventId={EventId}",
+                request.Stake,
                 request.EventId
             );
             return BadRequest("Stake must be greater than zero");
@@ -39,8 +39,8 @@ public class AccountController(
         if (!Enum.IsDefined(request.Outcome))
         {
             logger.LogWarning(
-                "Invalid bet outcome: Outcome={Outcome}, EventId={EventId}", 
-                request.Outcome, 
+                "Invalid bet outcome: Outcome={Outcome}, EventId={EventId}",
+                request.Outcome,
                 request.EventId
             );
             return BadRequest("Outcome must be Yes (1) or No (2)");
@@ -72,7 +72,7 @@ public class AccountController(
             OwnerId = ownerId,
             EventId = request.EventId,
             Stake = request.Stake,
-            Outcome = request.Outcome
+            Outcome = request.Outcome,
         };
 
         await publisher.PublishBetPlacedAsync(evt);

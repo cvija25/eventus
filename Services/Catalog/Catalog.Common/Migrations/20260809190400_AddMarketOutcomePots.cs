@@ -15,26 +15,24 @@ namespace Catalog.Common.Migrations
                 table: "Events",
                 type: "numeric",
                 nullable: false,
-                defaultValue: 1m);
+                defaultValue: 1m
+            );
 
             migrationBuilder.AddColumn<decimal>(
                 name: "PotSizeYes",
                 table: "Events",
                 type: "numeric",
                 nullable: false,
-                defaultValue: 1m);
+                defaultValue: 1m
+            );
         }
 
         /// <inheritdoc />
         protected override void Down(MigrationBuilder migrationBuilder)
         {
-            migrationBuilder.DropColumn(
-                name: "PotSizeNo",
-                table: "Events");
+            migrationBuilder.DropColumn(name: "PotSizeNo", table: "Events");
 
-            migrationBuilder.DropColumn(
-                name: "PotSizeYes",
-                table: "Events");
+            migrationBuilder.DropColumn(name: "PotSizeYes", table: "Events");
         }
     }
 }

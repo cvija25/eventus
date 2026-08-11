@@ -13,12 +13,8 @@ public class EventContext(DbContextOptions<EventContext> options)
     {
         base.OnModelCreating(modelBuilder);
 
-        modelBuilder.Entity<Event>()
-            .Property(e => e.PotSizeYes)
-            .HasDefaultValue(1m);
+        modelBuilder.Entity<Event>().Property(e => e.PotSizeYes).HasDefaultValue(1m);
 
-        modelBuilder.Entity<Event>()
-            .Property(e => e.PotSizeNo)
-            .HasDefaultValue(1m);
+        modelBuilder.Entity<Event>().Property(e => e.PotSizeNo).HasDefaultValue(1m);
     }
 }

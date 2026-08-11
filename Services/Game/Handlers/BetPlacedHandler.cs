@@ -11,7 +11,11 @@ public class BetPlacedHandler
     private readonly BetApprovedPublisher _publisher;
     private readonly ILogger<BetPlacedHandler> _logger;
 
-    public BetPlacedHandler(BetApprovedPublisher publisher, CatalogGrpcClient client, ILogger<BetPlacedHandler> logger)
+    public BetPlacedHandler(
+        BetApprovedPublisher publisher,
+        CatalogGrpcClient client,
+        ILogger<BetPlacedHandler> logger
+    )
     {
         _publisher = publisher;
         _catalog_client = client;
@@ -25,15 +29,9 @@ public class BetPlacedHandler
         var eventId = betPlaced.EventId;
         var market = await _catalog_client.GetEventPriceAsync(eventId);
 
-        var yesPot = decimal.Parse(
-            market.PotSizeYes,
-            CultureInfo.InvariantCulture
-        );
+        var yesPot = decimal.Parse(market.PotSizeYes, CultureInfo.InvariantCulture);
 
-        var noPot = decimal.Parse(
-            market.PotSizeNo,
-            CultureInfo.InvariantCulture
-        );
+        var noPot = decimal.Parse(market.PotSizeNo, CultureInfo.InvariantCulture);
 
         var totalPot = yesPot + noPot;
 
@@ -44,7 +42,7 @@ public class BetPlacedHandler
             MarketOutcome.No => noPot / totalPot,
             _ => throw new InvalidOperationException(
                 $"Invalid market outcome: {betPlaced.Outcome}"
-            )
+            ),
         };
 
         var sharesReceived = betPlaced.Stake / selectedPrice;
@@ -65,9 +63,7 @@ public class BetPlacedHandler
         );
 
         if (!updateResult.Success)
-            throw new InvalidOperationException(
-                $"Catalog rejected pot update for event {eventId}"
-            );
+            throw new InvalidOperationException($"Catalog rejected pot update for event {eventId}");
 
         // 5. Log the calculated shares
         _logger.LogInformation(

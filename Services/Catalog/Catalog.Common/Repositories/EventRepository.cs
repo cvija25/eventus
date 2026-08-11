@@ -59,9 +59,9 @@ public class EventRepository : IEventRepository
             ev.PriceNo = updateEventDto.PriceNo.Value;
         if (updateEventDto.PotSize.HasValue)
             ev.PotSize = updateEventDto.PotSize.Value;
-        if (updateEventDto.PotSizeYes.HasValue) 
+        if (updateEventDto.PotSizeYes.HasValue)
             ev.PotSizeYes = updateEventDto.PotSizeYes.Value;
-        if (updateEventDto.PotSizeNo.HasValue) 
+        if (updateEventDto.PotSizeNo.HasValue)
             ev.PotSizeNo = updateEventDto.PotSizeNo.Value;
         if (updateEventDto.Title != null)
             ev.Title = updateEventDto.Title;
