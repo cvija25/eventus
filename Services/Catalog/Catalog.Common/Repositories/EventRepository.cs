@@ -12,7 +12,7 @@ public class EventRepository : IEventRepository
     private readonly IEventContext _context;
     private readonly IMapper _mapper;
     private const int InitialPrice = 50;
-    private const int InitialPotSize = 0;
+    private const int InitialPotSize = 2;
 
     public EventRepository(IEventContext context, IMapper mapper)
     {

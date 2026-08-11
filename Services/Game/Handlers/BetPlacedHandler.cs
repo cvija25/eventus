@@ -37,11 +37,6 @@ public class BetPlacedHandler
 
         var totalPot = yesPot + noPot;
 
-        if (totalPot <= 0)
-            throw new InvalidOperationException(
-                $"Invalid market pot for event {eventId}"
-            );
-
         // 2. Calculate price BEFORE adding the current stake
         var selectedPrice = betPlaced.Outcome switch
         {
