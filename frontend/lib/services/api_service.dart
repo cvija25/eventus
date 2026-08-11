@@ -108,6 +108,7 @@ Future<List<Item>> fetchItems() async {
   Future<void> createAccountStake({
     required String id,
     required int stake,
+    required String outcome,
   }) async {
     final uri = Uri.parse(_accountUrl);
 
@@ -119,6 +120,7 @@ Future<List<Item>> fetchItems() async {
             body: jsonEncode({
               'eventId': id,
               'stake': stake,
+              'outcome': outcome == 'Yes' ? 1 : 2,
             }),
           )
           .timeout(const Duration(seconds: 10));
