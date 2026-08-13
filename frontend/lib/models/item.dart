@@ -4,6 +4,8 @@ class Item {
   final String ownerId;
   final int priceYes;
   final int priceNo;
+  final double potSizeYes;
+  final double potSizeNo;
   final int potSize;
 
   const Item({
@@ -12,6 +14,8 @@ class Item {
     required this.ownerId,
     required this.priceYes,
     required this.priceNo,
+    required this.potSizeYes,
+    required this.potSizeNo,
     required this.potSize,
   });
 
@@ -21,6 +25,8 @@ class Item {
     final rawOwnerId = json['OwnerId'] ?? json['ownerId'];
     final rawPriceYes = json['PriceYes'] ?? json['priceYes'];
     final rawPriceNo = json['PriceNo'] ?? json['priceNo'];
+    final rawPotSizeYes = json['PotSizeYes'] ?? json['potSizeYes'];
+    final rawPotSizeNo = json['PotSizeNo'] ?? json['potSizeNo'];  
     final rawPotSize = json['PotSize'] ?? json['potSize'];
 
     return Item(
@@ -29,6 +35,8 @@ class Item {
       ownerId: rawOwnerId?.toString() ?? '',
       priceYes: _toInt(rawPriceYes) ?? 0,
       priceNo: _toInt(rawPriceNo) ?? 0,
+      potSizeYes: _toDouble(rawPotSizeYes) ?? 0,
+      potSizeNo: _toDouble(rawPotSizeNo) ?? 0, 
       potSize: _toInt(rawPotSize) ?? 0,
     );
   }
@@ -56,5 +64,11 @@ class Item {
     if (value is int) return value;
     if (value is num) return value.toInt();
     return int.tryParse(value?.toString() ?? '');
+  }
+
+  static double? _toDouble(Object? value) {
+    if (value is double) return value;
+    if (value is num) return value.toDouble();
+    return double.tryParse(value?.toString() ?? '');
   }
 }

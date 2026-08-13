@@ -8,5 +8,7 @@ public class Event
     public required int PriceYes { get; set; }
     public required int PriceNo { get; set; }
     public required int PotSize { get; set; }
+    public decimal PotSizeYes { get; set; }
+    public decimal PotSizeNo { get; set; }
     public EventOutcome? Outcome { get; set; }
 }

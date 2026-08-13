@@ -16,6 +16,8 @@ message GetEventPriceResponse {
   optional int64 price_yes = 1;
   optional int64 price_no = 2;
   optional int64 pot_size = 3;
+  string pot_size_yes = 4;
+  string pot_size_no = 5;
 }
 
 message UpdateEventPriceRequest {
@@ -23,6 +25,8 @@ message UpdateEventPriceRequest {
   optional int64 price_yes = 2;
   optional int64 price_no = 3;
   optional int64 pot_size = 4;
+  string pot_size_yes = 5;
+  string pot_size_no = 6;
 }
 
 message UpdateEventPriceResponse {

@@ -20,6 +20,7 @@ class _DetailScreenState extends State<DetailScreen> {
   bool _submitting = false;
   int? _submittedValue;
   String? _submitError;
+  String? _selectedOutcome;
 
   @override
   void dispose() {
@@ -28,6 +29,14 @@ class _DetailScreenState extends State<DetailScreen> {
   }
 
   Future<void> _submit() async {
+    if (_selectedOutcome == null) {
+      setState(() {
+        _submitError = 'Select an outcome first';
+        _submitted = false;
+      });
+      return;
+    }
+
     if (_formKey.currentState?.validate() ?? false) {
       final value = int.parse(_controller.text);
       setState(() {
@@ -42,6 +51,7 @@ class _DetailScreenState extends State<DetailScreen> {
         await _api.createAccountStake(
           id: widget.item.id,
           stake: value,
+          outcome: _selectedOutcome!,
         );
         if (!mounted) return;
 
@@ -127,7 +137,17 @@ class _DetailScreenState extends State<DetailScreen> {
               ),
             ),
             const SizedBox(height: 12),
-            _OutcomePanel(item: item),
+            _OutcomePanel(
+              item: item,
+              selectedOutcome: _selectedOutcome,
+              onOutcomeSelected: (outcome) {
+                setState(() {
+                  _selectedOutcome = outcome;
+                  _submitError = null;
+                  _submitted = false;
+                });
+              },
+            ),
             const SizedBox(height: 12),
             _TradePanel(
               formKey: _formKey,
@@ -149,8 +169,14 @@ class _DetailScreenState extends State<DetailScreen> {
 
 class _OutcomePanel extends StatelessWidget {
   final Item item;
+  final String? selectedOutcome;
+  final ValueChanged<String> onOutcomeSelected;
 
-  const _OutcomePanel({required this.item});
+  const _OutcomePanel({
+    required this.item,
+    required this.selectedOutcome,
+    required this.onOutcomeSelected,
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -185,6 +211,8 @@ class _OutcomePanel extends StatelessWidget {
                   label: 'Yes',
                   price: item.priceYes,
                   color: const Color(0xFF00A3FF),
+                  selected: selectedOutcome == 'Yes',
+                  onTap: () => onOutcomeSelected('Yes'),
                 ),
               ),
               const SizedBox(width: 10),
@@ -193,6 +221,8 @@ class _OutcomePanel extends StatelessWidget {
                   label: 'No',
                   price: item.priceNo,
                   color: const Color(0xFFEF4444),
+                  selected: selectedOutcome == 'No',
+                  onTap: () => onOutcomeSelected('No'),
                 ),
               ),
             ],
@@ -453,43 +483,50 @@ class _OutcomeButton extends StatelessWidget {
   final String label;
   final int price;
   final Color color;
+  final bool selected;
+  final VoidCallback onTap;
 
   const _OutcomeButton({
     required this.label,
     required this.price,
     required this.color,
+    required this.selected,
+    required this.onTap,
   });
 
   @override
   Widget build(BuildContext context) {
-    return Container(
-      padding: const EdgeInsets.symmetric(vertical: 12),
-      decoration: BoxDecoration(
-        color: color.withOpacity(0.16),
-        borderRadius: BorderRadius.circular(8),
-        border: Border.all(color: color.withOpacity(0.5)),
-      ),
-      child: Column(
-        children: [
-          Text(
-            label,
-            style: TextStyle(
-              color: color,
-              fontSize: 13,
-              fontWeight: FontWeight.w800,
+    return GestureDetector(
+    onTap: onTap,
+    child: Container(
+        padding: const EdgeInsets.symmetric(vertical: 12),
+        decoration: BoxDecoration(
+          color: selected ? color.withOpacity(0.28) : color.withOpacity(0.16),
+          borderRadius: BorderRadius.circular(8),
+          border: Border.all(color: selected ? color : color.withOpacity(0.5), width: selected ? 2 : 1),
+        ),
+        child: Column(
+          children: [
+            Text(
+              label,
+              style: TextStyle(
+                color: color,
+                fontSize: 13,
+                fontWeight: FontWeight.w800,
+              ),
             ),
-          ),
-          const SizedBox(height: 3),
-          Text(
-            '$price cents',
-            style: const TextStyle(
-              color: Colors.white,
-              fontSize: 17,
-              fontWeight: FontWeight.w800,
+            const SizedBox(height: 3),
+            Text(
+              '$price cents',
+              style: const TextStyle(
+                color: Colors.white,
+                fontSize: 17,
+                fontWeight: FontWeight.w800,
+              ),
             ),
-          ),
-        ],
-      ),
+          ],
+        ),
+      )
     );
   }
 }
