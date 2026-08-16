@@ -196,7 +196,7 @@ class _TradeButton extends StatelessWidget {
           ),
           const SizedBox(width: 6),
           Text(
-            '${(price*100} cents',
+            '${price*100} cents',
             style: const TextStyle(
               color: Colors.white,
               fontSize: 13,

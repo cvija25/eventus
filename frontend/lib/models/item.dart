@@ -60,12 +60,6 @@ class Item {
 
   int get _stableNumber => id.codeUnits.fold(0, (sum, unit) => sum + unit);
 
-  static int? _toInt(Object? value) {
-    if (value is int) return value;
-    if (value is num) return value.toInt();
-    return int.tryParse(value?.toString() ?? '');
-  }
-
   static double? _toDouble(Object? value) {
     if (value is double) return value;
     if (value is num) return value.toDouble();
