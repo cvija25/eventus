@@ -2,11 +2,11 @@ class Item {
   final String id;
   final String title;
   final String ownerId;
-  final int priceYes;
-  final int priceNo;
+  final double priceYes;
+  final double priceNo;
   final double potSizeYes;
   final double potSizeNo;
-  final int potSize;
+  final double potSize;
 
   const Item({
     required this.id,
@@ -33,11 +33,11 @@ class Item {
       id: rawId?.toString() ?? '',
       title: rawTitle?.toString() ?? 'Untitled event',
       ownerId: rawOwnerId?.toString() ?? '',
-      priceYes: _toInt(rawPriceYes) ?? 0,
-      priceNo: _toInt(rawPriceNo) ?? 0,
+      priceYes: _toDouble(rawPriceYes) ?? 0,
+      priceNo: _toDouble(rawPriceNo) ?? 0,
       potSizeYes: _toDouble(rawPotSizeYes) ?? 0,
       potSizeNo: _toDouble(rawPotSizeNo) ?? 0, 
-      potSize: _toInt(rawPotSize) ?? 0,
+      potSize: _toDouble(rawPotSize) ?? 0,
     );
   }
 
