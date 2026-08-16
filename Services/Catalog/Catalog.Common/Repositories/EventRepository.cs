@@ -27,9 +27,6 @@ public class EventRepository : IEventRepository
             Id = Guid.NewGuid(),
             Title = createEventDto.Title,
             OwnerId = ownerId,
-            PriceYes = InitialPrice,
-            PriceNo = InitialPrice,
-            PotSize = InitialPotSize,
             PotSizeYes = 1m,
             PotSizeNo = 1m,
         };
@@ -53,12 +50,6 @@ public class EventRepository : IEventRepository
         if (ev is null)
             return false;
 
-        if (updateEventDto.PriceYes.HasValue)
-            ev.PriceYes = updateEventDto.PriceYes.Value;
-        if (updateEventDto.PriceNo.HasValue)
-            ev.PriceNo = updateEventDto.PriceNo.Value;
-        if (updateEventDto.PotSize.HasValue)
-            ev.PotSize = updateEventDto.PotSize.Value;
         if (updateEventDto.PotSizeYes.HasValue)
             ev.PotSizeYes = updateEventDto.PotSizeYes.Value;
         if (updateEventDto.PotSizeNo.HasValue)

@@ -17,9 +17,6 @@ builder.Services.AddAutoMapper(configuration =>
         .CreateMap<UpdateEventPriceRequest, UpdateEventDto>()
         .ConstructUsing(src => new UpdateEventDto(
             Guid.Parse(src.EventId),
-            src.HasPriceYes ? (int)src.PriceYes : null,
-            src.HasPriceNo ? (int)src.PriceNo : null,
-            src.HasPotSize ? (int)src.PotSize : null,
             decimal.Parse(src.PotSizeYes, CultureInfo.InvariantCulture),
             decimal.Parse(src.PotSizeNo, CultureInfo.InvariantCulture)
         ))

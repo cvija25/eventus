@@ -409,7 +409,7 @@ class _InfoPanel extends StatelessWidget {
             children: [
               Expanded(
                   child: _Stat(
-                      label: 'Pot size', value: '\$${_money(item.potSize)}')),
+                      label: 'Pot size', value: '\$${_money(item.potSize.toInt())}')),
               Expanded(
                   child: _Stat(
                       label: 'Liquidity',
@@ -481,7 +481,7 @@ class _Pill extends StatelessWidget {
 
 class _OutcomeButton extends StatelessWidget {
   final String label;
-  final int price;
+  final double price;
   final Color color;
   final bool selected;
   final VoidCallback onTap;
@@ -517,7 +517,7 @@ class _OutcomeButton extends StatelessWidget {
             ),
             const SizedBox(height: 3),
             Text(
-              '$price cents',
+              '${(price*100).toStringAsFixed(0)} cents',
               style: const TextStyle(
                 color: Colors.white,
                 fontSize: 17,

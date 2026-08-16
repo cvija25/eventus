@@ -101,7 +101,7 @@ class ItemCard extends StatelessWidget {
     );
   }
 
-  String _formatMoney(int value) {
+  String _formatMoney(double value) {
     if (value >= 1000000) return '${(value / 1000000).toStringAsFixed(1)}M';
     if (value >= 1000) return '${(value / 1000).toStringAsFixed(0)}K';
     return value.toString();
@@ -165,7 +165,7 @@ class _MetaPill extends StatelessWidget {
 
 class _TradeButton extends StatelessWidget {
   final String label;
-  final int price;
+  final double price;
   final Color color;
 
   const _TradeButton({
@@ -196,7 +196,7 @@ class _TradeButton extends StatelessWidget {
           ),
           const SizedBox(width: 6),
           Text(
-            '$price cents',
+            '${price*100} cents',
             style: const TextStyle(
               color: Colors.white,
               fontSize: 13,

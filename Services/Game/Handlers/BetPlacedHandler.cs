@@ -55,9 +55,6 @@ public class BetPlacedHandler
 
         var updateResult = await _catalog_client.UpdateEventPriceAsync(
             eventId,
-            null,
-            null,
-            potSize: market.PotSize + (long)betPlaced.Stake,
             potSizeYes: yesPot,
             potSizeNo: noPot
         );
