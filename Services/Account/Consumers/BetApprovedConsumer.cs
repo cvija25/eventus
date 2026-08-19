@@ -1,5 +1,7 @@
 using System.Text;
 using System.Text.Json;
+using Account.Data;
+using Account.DTOs;
 using Account.Repositories;
 using Contracts;
 using Contracts.Messaging;
@@ -90,7 +92,10 @@ public class BetApprovedConsumer(
     private async Task OnMessageReceivedAsync(object sender, BasicDeliverEventArgs ea)
     {
         await using var scope = scopeFactory.CreateAsyncScope();
-        var repository = scope.ServiceProvider.GetRequiredService<IWalletRepository>();
+        var walletRepository = scope.ServiceProvider.GetRequiredService<IWalletRepository>();
+        var transactionRepository =
+            scope.ServiceProvider.GetRequiredService<ITransactionRepository>();
+        var db = scope.ServiceProvider.GetRequiredService<AccountDbContext>();
 
         try
         {
@@ -110,7 +115,24 @@ public class BetApprovedConsumer(
             }
 
             if (evt.IsApproved)
-                await repository.Withdraw(evt.AccId, evt.Stake);
+            {
+                await using var transaction = await db.Database.BeginTransactionAsync(
+                    CancellationToken.None
+                );
+                try
+                {
+                    await walletRepository.Withdraw(evt.AccId, evt.Stake);
+                    await transactionRepository.CreateTransaction(
+                        new TransactionDTO(evt.EventId, evt.AccId, evt.ShareAmount, evt.Outcome)
+                    );
+                    await transaction.CommitAsync(CancellationToken.None);
+                }
+                catch
+                {
+                    await transaction.RollbackAsync(CancellationToken.None);
+                    throw;
+                }
+            }
 
             logger.LogInformation(
                 "Bet processed: AccountId={AccountId} Amount={Amount} Approved={IsApproved}",

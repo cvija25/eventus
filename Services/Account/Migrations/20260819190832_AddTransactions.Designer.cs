@@ -12,8 +12,8 @@ using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 namespace Account.Migrations
 {
     [DbContext(typeof(AccountDbContext))]
-    [Migration("20260628214040_InitalCreate")]
-    partial class InitalCreate
+    [Migration("20260819190832_AddTransactions")]
+    partial class AddTransactions
     {
         /// <inheritdoc />
         protected override void BuildTargetModel(ModelBuilder modelBuilder)
@@ -24,6 +24,29 @@ namespace Account.Migrations
                 .HasAnnotation("Relational:MaxIdentifierLength", 63);
 
             NpgsqlModelBuilderExtensions.UseIdentityByDefaultColumns(modelBuilder);
+
+            modelBuilder.Entity("Account.Entities.Transaction", b =>
+                {
+                    b.Property<Guid>("TransactionId")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid");
+
+                    b.Property<Guid>("AccountId")
+                        .HasColumnType("uuid");
+
+                    b.Property<Guid>("EventId")
+                        .HasColumnType("uuid");
+
+                    b.Property<int>("Outcome")
+                        .HasColumnType("integer");
+
+                    b.Property<decimal>("ShareAmount")
+                        .HasColumnType("numeric");
+
+                    b.HasKey("TransactionId");
+
+                    b.ToTable("Transactions");
+                });
 
             modelBuilder.Entity("Account.Entities.Wallet", b =>
                 {

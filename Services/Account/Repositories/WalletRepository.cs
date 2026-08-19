@@ -3,7 +3,7 @@ using Account.DTOs;
 
 namespace Account.Repositories;
 
-public class WalletRepository(WalletContext db) : IWalletRepository
+public class WalletRepository(AccountDbContext db) : IWalletRepository
 {
     public async Task<UpdateWalletDto?> Deposit(Guid accId, decimal amount)
     {

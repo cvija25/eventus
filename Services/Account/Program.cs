@@ -1,6 +1,7 @@
 using System.Text;
 using Account.Consumers;
 using Account.Data;
+using Account.Mappings;
 using Account.Publishers;
 using Account.Repositories;
 using Contracts.Messaging;
@@ -23,13 +24,15 @@ builder.Services.AddHostedService<BetApprovedConsumer>();
 builder.Services.AddSingleton<BetPlacedPublisher>();
 builder.Services.Configure<RabbitMqOptions>(builder.Configuration.GetSection("RabbitMq"));
 
-builder.Services.AddDbContext<WalletContext>(opt =>
+builder.Services.AddDbContext<AccountDbContext>(opt =>
     opt.UseNpgsql(
         builder.Configuration.GetConnectionString("AccountDb"),
         b => b.MigrationsAssembly("Account")
     )
 );
 builder.Services.AddScoped<IWalletRepository, WalletRepository>();
+builder.Services.AddScoped<ITransactionRepository, TransactionRepository>();
+builder.Services.AddAutoMapper(cfg => cfg.AddProfile<TransactionMappingProfile>());
 
 builder
     .Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
@@ -57,7 +60,7 @@ var app = builder.Build();
 // Auto-migrate on startup
 using (var scope = app.Services.CreateScope())
 {
-    var db = scope.ServiceProvider.GetRequiredService<WalletContext>();
+    var db = scope.ServiceProvider.GetRequiredService<AccountDbContext>();
     await db.Database.MigrateAsync();
 }
 
