@@ -11,6 +11,8 @@ services:
         condition: service_healthy
       game:
         condition: service_started
+      account-db:
+        condition: service_healthy
 
   catalog.api:
     image: catalog.api

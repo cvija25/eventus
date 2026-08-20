@@ -44,7 +44,7 @@ public class BetPlacedHandler
                 $"Invalid market outcome: {betPlaced.Outcome}"
             ),
         };
-
+        // TODO: user must by a whole number of shares(?)
         var sharesReceived = betPlaced.Stake / selectedPrice;
 
         // 3. Add stake to the selected outcome pot
@@ -79,6 +79,9 @@ public class BetPlacedHandler
             ApprovedAt = DateTime.UtcNow,
             AccId = betPlaced.OwnerId,
             Stake = betPlaced.Stake,
+            EventId = betPlaced.EventId,
+            Outcome = betPlaced.Outcome,
+            ShareAmount = sharesReceived,
         };
 
         await _publisher.PublishBetApprovedAsync(approvedEvent);
