@@ -109,8 +109,8 @@ public class AccountController(
 
         if (result is null)
             return NotFound("Transactions not found");
-        
-        return Ok( result );
+
+        return Ok(result);
     }
 
     [HttpPost("deposit")]
