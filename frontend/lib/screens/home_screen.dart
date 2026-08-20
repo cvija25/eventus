@@ -67,10 +67,10 @@ class _HomeScreenState extends State<HomeScreen> {
           ),
           IconButton(
             icon: const Icon(
-              Icons.account_balance_wallet_outlined,
+              Icons.person_outline,
               color: Colors.white,
             ),
-            tooltip: 'Wallet',
+            tooltip: 'Profile',
             onPressed: () {
               Navigator.push(
                 context,
@@ -198,13 +198,15 @@ class _HomeScreenState extends State<HomeScreen> {
                 for (final item in items) ...[
                   ItemCard(
                     item: item,
-                    onTap: () {
-                      Navigator.push(
+                    onTap: () async {
+                      await Navigator.push(
                         context,
                         MaterialPageRoute(
                           builder: (_) => DetailScreen(item: item),
                         ),
                       );
+                      if (!context.mounted) return;
+                      _refresh();
                     },
                   ),
                   const SizedBox(height: 10),

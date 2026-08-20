@@ -13,6 +13,7 @@ namespace Account.Controllers;
 public class AccountController(
     BetPlacedPublisher publisher,
     IWalletRepository walletRepository,
+    ITransactionRepository transactionRepository,
     ILogger<AccountController> logger
 ) : ControllerBase
 {
@@ -96,6 +97,20 @@ public class AccountController(
             return NotFound("Wallet not found");
 
         return Ok(new { amount = result.Amount });
+    }
+
+    [HttpGet("transactions")]
+    [Authorize]
+    public async Task<ActionResult<object?>> GetTransactions()
+    {
+        var ownerId = Guid.Parse(User.FindFirst(JwtRegisteredClaimNames.Sub)!.Value);
+        var result = await transactionRepository.GetTransactionsForUser(ownerId);
+        logger.LogInformation("Transactions requested: AccountId={AccountId}", ownerId);
+
+        if (result is null)
+            return NotFound("Transactions not found");
+        
+        return Ok( result );
     }
 
     [HttpPost("deposit")]

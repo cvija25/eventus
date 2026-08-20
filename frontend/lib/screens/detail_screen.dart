@@ -16,11 +16,18 @@ class _DetailScreenState extends State<DetailScreen> {
   final ApiService _api = ApiService();
   final TextEditingController _controller = TextEditingController();
   final GlobalKey<FormState> _formKey = GlobalKey<FormState>();
+  late Item _item;
   bool _submitted = false;
   bool _submitting = false;
   int? _submittedValue;
   String? _submitError;
   String? _selectedOutcome;
+
+  @override
+  void initState() {
+    super.initState();
+    _item = widget.item;
+  }
 
   @override
   void dispose() {
@@ -49,10 +56,11 @@ class _DetailScreenState extends State<DetailScreen> {
 
       try {
         await _api.createAccountStake(
-          id: widget.item.id,
+          id: _item.id,
           stake: value,
           outcome: _selectedOutcome!,
         );
+        await _refreshMarket();
         if (!mounted) return;
 
         setState(() {
@@ -79,9 +87,27 @@ class _DetailScreenState extends State<DetailScreen> {
     }
   }
 
+  Future<void> _refreshMarket() async {
+    final previousPotSize = _item.potSize;
+
+    // Bets are processed asynchronously through RabbitMQ. Poll briefly so the
+    // screen reflects the Catalog update as soon as it is persisted.
+    for (var attempt = 0; attempt < 5; attempt++) {
+      await Future<void>.delayed(const Duration(milliseconds: 500));
+      final updatedItem = await _api.fetchItem(_item.id);
+      if (!mounted) return;
+
+      setState(() {
+        _item = updatedItem;
+      });
+
+      if (updatedItem.potSize != previousPotSize) return;
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
-    final item = widget.item;
+    final item = _item;
 
     return Scaffold(
       backgroundColor: const Color(0xFF070A0F),
@@ -409,7 +435,8 @@ class _InfoPanel extends StatelessWidget {
             children: [
               Expanded(
                   child: _Stat(
-                      label: 'Pot size', value: '\$${_money(item.potSize.toInt())}')),
+                      label: 'Pot size',
+                      value: '\$${_money(item.potSize.toInt())}')),
               Expanded(
                   child: _Stat(
                       label: 'Liquidity',
@@ -497,37 +524,38 @@ class _OutcomeButton extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return GestureDetector(
-    onTap: onTap,
-    child: Container(
-        padding: const EdgeInsets.symmetric(vertical: 12),
-        decoration: BoxDecoration(
-          color: selected ? color.withOpacity(0.28) : color.withOpacity(0.16),
-          borderRadius: BorderRadius.circular(8),
-          border: Border.all(color: selected ? color : color.withOpacity(0.5), width: selected ? 2 : 1),
-        ),
-        child: Column(
-          children: [
-            Text(
-              label,
-              style: TextStyle(
-                color: color,
-                fontSize: 13,
-                fontWeight: FontWeight.w800,
+        onTap: onTap,
+        child: Container(
+          padding: const EdgeInsets.symmetric(vertical: 12),
+          decoration: BoxDecoration(
+            color: selected ? color.withOpacity(0.28) : color.withOpacity(0.16),
+            borderRadius: BorderRadius.circular(8),
+            border: Border.all(
+                color: selected ? color : color.withOpacity(0.5),
+                width: selected ? 2 : 1),
+          ),
+          child: Column(
+            children: [
+              Text(
+                label,
+                style: TextStyle(
+                  color: color,
+                  fontSize: 13,
+                  fontWeight: FontWeight.w800,
+                ),
               ),
-            ),
-            const SizedBox(height: 3),
-            Text(
-              '${(price*100).toStringAsFixed(0)} cents',
-              style: const TextStyle(
-                color: Colors.white,
-                fontSize: 17,
-                fontWeight: FontWeight.w800,
+              const SizedBox(height: 3),
+              Text(
+                '${(price * 100).toStringAsFixed(0)} cents',
+                style: const TextStyle(
+                  color: Colors.white,
+                  fontSize: 17,
+                  fontWeight: FontWeight.w800,
+                ),
               ),
-            ),
-          ],
-        ),
-      )
-    );
+            ],
+          ),
+        ));
   }
 }
 

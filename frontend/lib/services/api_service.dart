@@ -11,12 +11,13 @@ class ApiService {
           ? '10.0.2.2'
           : 'localhost';
 
-static const int _gatewayPort = 1234;
+  static const int _gatewayPort = 1234;
 
-static String get _catalogUrl =>
-    'http://$_host:$_gatewayPort/catalog/api/v1/catalog/events';
+  static String get _catalogUrl =>
+      'http://$_host:$_gatewayPort/catalog/api/v1/catalog/events';
 
-  static String get _identityUrl => 'http://$_host:$_gatewayPort/identity/api/v1/identity';
+  static String get _identityUrl =>
+      'http://$_host:$_gatewayPort/identity/api/v1/identity';
 
   Map<String, String> get _authHeaders {
     final token = AuthService.instance.token;
@@ -26,9 +27,11 @@ static String get _catalogUrl =>
     };
   }
 
-static String get _accountUrl => 'http://$_host:$_gatewayPort/account/api/v1/account/bet';
-  static String get _depositUrl => 'http://$_host:$_gatewayPort/account/api/v1/account/deposit';
-Future<List<Item>> fetchItems() async {
+  static String get _accountUrl =>
+      'http://$_host:$_gatewayPort/account/api/v1/account/bet';
+  static String get _depositUrl =>
+      'http://$_host:$_gatewayPort/account/api/v1/account/deposit';
+  Future<List<Item>> fetchItems() async {
     final uri = Uri.parse(_catalogUrl);
 
     try {
@@ -59,6 +62,31 @@ Future<List<Item>> fetchItems() async {
         );
       }
 
+      throw Exception('GET $uri failed: ${error.message}');
+    }
+  }
+
+  Future<Item> fetchItem(String id) async {
+    final uri = Uri.parse('$_catalogUrl/$id');
+
+    try {
+      final response = await http.get(uri).timeout(const Duration(seconds: 10));
+
+      if (response.statusCode != 200) {
+        throw Exception('GET $uri failed with status ${response.statusCode}');
+      }
+
+      final decoded = jsonDecode(response.body);
+      if (decoded is! Map<String, dynamic>) {
+        throw Exception('GET $uri returned an unexpected response');
+      }
+
+      return Item.fromJson(decoded);
+    } on TimeoutException {
+      throw Exception('GET $uri timed out');
+    } on FormatException catch (error) {
+      throw Exception('GET $uri returned invalid JSON: ${error.message}');
+    } on http.ClientException catch (error) {
       throw Exception('GET $uri failed: ${error.message}');
     }
   }
@@ -176,10 +204,13 @@ Future<List<Item>> fetchItems() async {
   }
 
   Future<double> fetchBalance() async {
-    final uri = Uri.parse('http://$_host:$_gatewayPort/account/api/v1/account/balance');
+    final uri =
+        Uri.parse('http://$_host:$_gatewayPort/account/api/v1/account/balance');
 
     try {
-      final response = await http.get(uri, headers: _authHeaders).timeout(const Duration(seconds: 10));
+      final response = await http
+          .get(uri, headers: _authHeaders)
+          .timeout(const Duration(seconds: 10));
 
       if (response.statusCode < 200 || response.statusCode >= 300) {
         throw Exception('GET $uri failed with status ${response.statusCode}');
@@ -187,7 +218,8 @@ Future<List<Item>> fetchItems() async {
 
       final decoded = jsonDecode(response.body);
       if (decoded is Map<String, dynamic>) {
-        final amountValue = decoded['amount'] ?? decoded['balance'] ?? decoded['Amount'];
+        final amountValue =
+            decoded['amount'] ?? decoded['balance'] ?? decoded['Amount'];
         if (amountValue is num) {
           return amountValue.toDouble();
         }
@@ -210,6 +242,43 @@ Future<List<Item>> fetchItems() async {
       }
 
       throw Exception('GET $uri returned an unexpected response');
+    } on TimeoutException {
+      throw Exception('GET $uri timed out');
+    } on FormatException catch (error) {
+      throw Exception('GET $uri returned invalid JSON: ${error.message}');
+    } on http.ClientException catch (error) {
+      if (kIsWeb) {
+        throw Exception(
+          'GET $uri failed in Chrome: ${error.message}. '
+          'If the endpoint works directly, enable CORS on the backend for the Flutter web origin.',
+        );
+      }
+
+      throw Exception('GET $uri failed: ${error.message}');
+    }
+  }
+
+  Future<List<Map<String, dynamic>>> fetchTransactions() async {
+    final uri = Uri.parse(
+        'http://$_host:$_gatewayPort/account/api/v1/account/transactions');
+
+    try {
+      final response = await http
+          .get(uri, headers: _authHeaders)
+          .timeout(const Duration(seconds: 10));
+
+      if (response.statusCode < 200 || response.statusCode >= 300) {
+        throw Exception('GET $uri failed with status ${response.statusCode}');
+      }
+
+      final decoded = jsonDecode(response.body);
+      if (decoded is! List) {
+        throw Exception('GET $uri returned an unexpected response');
+      }
+
+      return decoded
+          .map((item) => item as Map<String, dynamic>)
+          .toList(growable: false);
     } on TimeoutException {
       throw Exception('GET $uri timed out');
     } on FormatException catch (error) {
