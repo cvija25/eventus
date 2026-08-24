@@ -1,3 +1,5 @@
+using Contracts;
+
 namespace Catalog.Common.Entities;
 
 public class Event
@@ -7,5 +9,5 @@ public class Event
     public required Guid OwnerId { get; set; }
     public decimal PotSizeYes { get; set; }
     public decimal PotSizeNo { get; set; }
-    public EventOutcome? Outcome { get; set; }
+    public MarketOutcome? Outcome { get; set; }
 }
