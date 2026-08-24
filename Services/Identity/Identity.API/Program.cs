@@ -1,3 +1,4 @@
+using Identity.API.Clients;
 using Identity.API.Extensions;
 using Identity.API.Services;
 
@@ -15,6 +16,9 @@ builder.Services.AddSwaggerGen();
 builder.Services.AddControllers();
 builder.Services.AddIdentityServices(builder.Configuration);
 builder.Services.AddSingleton<JwtService>();
+builder.Services.AddHttpClient<AccountClient>(client =>
+    client.BaseAddress = new Uri(builder.Configuration["ApiEndpoints:Account"])
+);
 
 var app = builder.Build();
 

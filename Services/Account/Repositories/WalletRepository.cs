@@ -1,5 +1,6 @@
 using Account.Data;
 using Account.DTOs;
+using Account.Entities;
 
 namespace Account.Repositories;
 
@@ -36,5 +37,14 @@ public class WalletRepository(AccountDbContext db) : IWalletRepository
             return null;
 
         return new WalletBalanceDto(wallet.AvailableFunds);
+    }
+
+    public async Task CreateWalletIfMissing(Guid userId)
+    {
+        if (await db.Wallets.FindAsync(userId) == null)
+            return;
+        var wallet = new Wallet { AccountId = userId };
+        db.Wallets.Add(wallet);
+        await db.SaveChangesAsync();
     }
 }

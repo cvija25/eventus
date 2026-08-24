@@ -138,4 +138,11 @@ public class AccountController(
 
         return Ok(result);
     }
+
+    [HttpPost("wallet")]
+    public async Task<ActionResult<bool>> CreateWallet([FromBody] CreateWalletDto createWalletDto)
+    {
+        await walletRepository.CreateWalletIfMissing(createWalletDto.UserId);
+        return NoContent();
+    }
 }
