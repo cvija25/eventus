@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import '../services/api_service.dart';
 import '../services/auth_service.dart';
+import 'detail_screen.dart';
 
 enum MarketOutcome { yes, no }
 
@@ -31,6 +32,7 @@ class _BalanceScreenState extends State<BalanceScreen> {
   final _amountController = TextEditingController();
   final _api = ApiService();
   List<ShareHolding> _shareHoldings = const [];
+  final Set<String> _expandedEventIds = <String>{};
   double _balance = 0.0;
   bool _isLoading = true;
   bool _transactionsLoading = true;
@@ -120,6 +122,7 @@ class _BalanceScreenState extends State<BalanceScreen> {
             })
             .whereType<ShareHolding>()
             .toList();
+
         _transactionsLoading = false;
       });
     } catch (e) {
@@ -171,6 +174,10 @@ class _BalanceScreenState extends State<BalanceScreen> {
   @override
   Widget build(BuildContext context) {
     final isLoggedIn = AuthService.instance.isLoggedIn;
+    final groupedHoldings = <String, List<ShareHolding>>{};
+    for (final holding in _shareHoldings) {
+      groupedHoldings.putIfAbsent(holding.eventId, () => <ShareHolding>[]).add(holding);
+    }
 
     return Scaffold(
       appBar: AppBar(
@@ -332,63 +339,169 @@ class _BalanceScreenState extends State<BalanceScreen> {
                         style: const TextStyle(color: Colors.white60),
                       )
                     else
-                      ..._shareHoldings.map((holding) {
-                        return Container(
-                          margin: const EdgeInsets.only(bottom: 10),
-                          padding: const EdgeInsets.all(14),
-                          decoration: BoxDecoration(
-                            color: const Color(0xFF111B2B),
-                            borderRadius: BorderRadius.circular(12),
-                          ),
-                          child: Row(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              Expanded(
-                                child: Column(
-                                  crossAxisAlignment: CrossAxisAlignment.start,
-                                  children: [
-                                    Text(
-                                      'Event ${holding.eventId.substring(0, 8)}',
-                                      style: const TextStyle(
-                                        color: Colors.white,
-                                        fontWeight: FontWeight.w600,
-                                      ),
-                                    ),
-                                    const SizedBox(height: 4),
-                                    Text(
-                                      'Outcome: ${holding.outcomeLabel}',
-                                      style: const TextStyle(
-                                        color: Colors.white70,
-                                        fontSize: 12,
-                                      ),
-                                    ),
-                                  ],
-                                ),
+                      Column(
+                        children: groupedHoldings.entries.map((entry) {
+                          final eventId = entry.key;
+                          final holdings = entry.value;
+                          final totalShares = holdings.fold<double>(
+                            0,
+                            (sum, holding) => sum + holding.shareAmount,
+                          );
+                          final expanded = _expandedEventIds.contains(eventId);
+
+                          return Container(
+                            margin: const EdgeInsets.only(bottom: 10),
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: 12,
+                              vertical: 4,
+                            ),
+                            decoration: BoxDecoration(
+                              color: const Color(0xFF111B2B),
+                              borderRadius: BorderRadius.circular(12),
+                            ),
+                            child: Theme(
+                              data: Theme.of(context).copyWith(
+                                dividerColor: Colors.transparent,
                               ),
-                              Column(
-                                crossAxisAlignment: CrossAxisAlignment.end,
+                              child: ExpansionTile(
+                                tilePadding: EdgeInsets.zero,
+                                childrenPadding: const EdgeInsets.only(
+                                  bottom: 12,
+                                ),
+                                initiallyExpanded: expanded,
+                                onExpansionChanged: (value) {
+                                  setState(() {
+                                    if (value) {
+                                      _expandedEventIds.add(eventId);
+                                    } else {
+                                      _expandedEventIds.remove(eventId);
+                                    }
+                                  });
+                                },
+                                title: GestureDetector(
+                                  onTap: () async {
+                                    try {
+                                      final item = await _api.fetchItem(eventId);
+                                      if (!mounted) return;
+                                      await Navigator.push(
+                                        context,
+                                        MaterialPageRoute(
+                                          builder: (_) => DetailScreen(item: item),
+                                        ),
+                                      );
+                                      await _loadTransactions();
+                                      await _loadBalance();
+                                    } catch (e) {
+                                      if (!mounted) return;
+                                      ScaffoldMessenger.of(context).showSnackBar(
+                                        SnackBar(
+                                          content: Text('Could not open event: $e'),
+                                        ),
+                                      );
+                                    }
+                                  },
+                                  child: Row(
+                                    children: [
+                                      Expanded(
+                                        child: Text(
+                                          'Event ${eventId.substring(0, 8)}',
+                                          style: const TextStyle(
+                                            color: Colors.white,
+                                            fontWeight: FontWeight.w600,
+                                          ),
+                                        ),
+                                      ),
+                                      const Icon(
+                                        Icons.open_in_new,
+                                        size: 16,
+                                        color: Colors.white70,
+                                      ),
+                                    ],
+                                  ),
+                                ),
+                                trailing: Icon(
+                                  expanded
+                                      ? Icons.keyboard_arrow_up
+                                      : Icons.keyboard_arrow_down,
+                                  color: Colors.white70,
+                                ),
                                 children: [
-                                  Text(
-                                    '${holding.shareAmount.toStringAsFixed(2)} shares',
-                                    style: const TextStyle(
-                                      color: Color(0xFF00A3FF),
-                                      fontWeight: FontWeight.bold,
+                                  Padding(
+                                    padding: const EdgeInsets.symmetric(
+                                      horizontal: 8,
+                                      vertical: 4,
+                                    ),
+                                    child: Row(
+                                      mainAxisAlignment:
+                                          MainAxisAlignment.spaceBetween,
+                                      children: [
+                                        const Text(
+                                          'Total shares',
+                                          style: TextStyle(
+                                            color: Colors.white60,
+                                            fontSize: 12,
+                                          ),
+                                        ),
+                                        Text(
+                                          '${totalShares.toStringAsFixed(2)}',
+                                          style: const TextStyle(
+                                            color: Color(0xFF00A3FF),
+                                            fontWeight: FontWeight.bold,
+                                          ),
+                                        ),
+                                      ],
                                     ),
                                   ),
-                                  const SizedBox(height: 4),
-                                  Text(
-                                    'User ${holding.userId.substring(0, 8)}',
-                                    style: const TextStyle(
-                                      color: Colors.white38,
-                                      fontSize: 11,
-                                    ),
-                                  ),
+                                  ...holdings.map((holding) {
+                                    return Container(
+                                      margin: const EdgeInsets.only(bottom: 6),
+                                      padding: const EdgeInsets.all(10),
+                                      decoration: BoxDecoration(
+                                        color: const Color(0xFF0D1320),
+                                        borderRadius: BorderRadius.circular(10),
+                                      ),
+                                      child: Row(
+                                        children: [
+                                          Expanded(
+                                            child: Column(
+                                              crossAxisAlignment:
+                                                  CrossAxisAlignment.start,
+                                              children: [
+                                                Text(
+                                                  'Outcome: ${holding.outcomeLabel}',
+                                                  style: const TextStyle(
+                                                    color: Colors.white,
+                                                    fontWeight: FontWeight.w600,
+                                                  ),
+                                                ),
+                                                const SizedBox(height: 4),
+                                                Text(
+                                                  'User ${holding.userId.substring(0, 8)}',
+                                                  style: const TextStyle(
+                                                    color: Colors.white38,
+                                                    fontSize: 11,
+                                                  ),
+                                                ),
+                                              ],
+                                            ),
+                                          ),
+                                          Text(
+                                            '${holding.shareAmount.toStringAsFixed(2)}',
+                                            style: const TextStyle(
+                                              color: Color(0xFF00A3FF),
+                                              fontWeight: FontWeight.bold,
+                                            ),
+                                          ),
+                                        ],
+                                      ),
+                                    );
+                                  }).toList(),
                                 ],
                               ),
-                            ],
-                          ),
-                        );
-                      }),
+                            ),
+                          );
+                        }).toList(),
+                      ),
                   ],
                 ),
               ),

@@ -203,6 +203,45 @@ class ApiService {
     }
   }
 
+  Future<void> sellShares({
+    required String eventId,
+    required double shares,
+    required String outcome,
+  }) async {
+    final uri = Uri.parse('http://$_host:$_gatewayPort/account/api/v1/account/sell-shares');
+
+    try {
+      final response = await http
+          .post(
+            uri,
+            headers: _authHeaders,
+            body: jsonEncode({
+              'eventId': eventId,
+              'shares': shares,
+              'outcome': outcome == 'Yes' ? 1 : 2,
+            }),
+          )
+          .timeout(const Duration(seconds: 10));
+
+      final message = response.body.isNotEmpty ? response.body : 'Unknown error';
+
+      if (response.statusCode < 200 || response.statusCode >= 300) {
+        throw Exception('POST $uri failed with status ${response.statusCode}: $message');
+      }
+    } on TimeoutException {
+      throw Exception('POST $uri timed out');
+    } on http.ClientException catch (error) {
+      if (kIsWeb) {
+        throw Exception(
+          'POST $uri failed in Chrome: ${error.message}. '
+          'If the endpoint works directly, enable CORS on the backend for the Flutter web origin.',
+        );
+      }
+
+      throw Exception('POST $uri failed: ${error.message}');
+    }
+  }
+
   Future<double> fetchBalance() async {
     final uri =
         Uri.parse('http://$_host:$_gatewayPort/account/api/v1/account/balance');

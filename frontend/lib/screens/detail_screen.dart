@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import '../models/item.dart';
 import '../services/api_service.dart';
+import 'balance_screen.dart';
 
 class DetailScreen extends StatefulWidget {
   final Item item;
@@ -15,24 +16,130 @@ class DetailScreen extends StatefulWidget {
 class _DetailScreenState extends State<DetailScreen> {
   final ApiService _api = ApiService();
   final TextEditingController _controller = TextEditingController();
+  final Map<MarketOutcome, TextEditingController> _sellControllers = {
+    MarketOutcome.yes: TextEditingController(),
+    MarketOutcome.no: TextEditingController(),
+  };
   final GlobalKey<FormState> _formKey = GlobalKey<FormState>();
   late Item _item;
   bool _submitted = false;
   bool _submitting = false;
+  bool _loadingHoldings = false;
   int? _submittedValue;
   String? _submitError;
   String? _selectedOutcome;
+  List<_EventHoldingSummary> _myHoldings = const [];
 
   @override
   void initState() {
     super.initState();
     _item = widget.item;
+    _loadMyEventHoldings();
   }
 
   @override
   void dispose() {
     _controller.dispose();
+    for (final controller in _sellControllers.values) {
+      controller.dispose();
+    }
     super.dispose();
+  }
+
+  double _toDouble(dynamic value) {
+    if (value is num) {
+      return value.toDouble();
+    }
+    if (value is String) {
+      return double.tryParse(value) ?? 0.0;
+    }
+    return 0.0;
+  }
+
+  Future<void> _loadMyEventHoldings() async {
+    setState(() {
+      _loadingHoldings = true;
+    });
+
+    try {
+      final transactions = await _api.fetchTransactions();
+      final byOutcome = <MarketOutcome, double>{
+        MarketOutcome.yes: 0,
+        MarketOutcome.no: 0,
+      };
+
+      for (final tx in transactions) {
+        final eventId = (tx['eventId'] ?? tx['event_id'] ?? '').toString();
+        if (eventId != _item.id) continue;
+
+        final outcomeValue = tx['outcome'] ?? tx['Outcome'] ?? 1;
+        final outcome = outcomeValue == 2 || outcomeValue.toString() == '2'
+            ? MarketOutcome.no
+            : MarketOutcome.yes;
+        final amount = _toDouble(
+          tx['shareAmount'] ?? tx['share_amount'] ?? tx['ShareAmount'],
+        );
+
+        byOutcome[outcome] = (byOutcome[outcome] ?? 0) + amount;
+      }
+
+      final rows = <_EventHoldingSummary>[];
+      final yesAmount = byOutcome[MarketOutcome.yes] ?? 0;
+      final noAmount = byOutcome[MarketOutcome.no] ?? 0;
+
+      if (yesAmount > 0) {
+        rows.add(_EventHoldingSummary(outcome: MarketOutcome.yes, shares: yesAmount));
+      }
+      if (noAmount > 0) {
+        rows.add(_EventHoldingSummary(outcome: MarketOutcome.no, shares: noAmount));
+      }
+
+      if (!mounted) return;
+      setState(() {
+        _myHoldings = rows;
+        _loadingHoldings = false;
+      });
+    } catch (_) {
+      if (!mounted) return;
+      setState(() {
+        _myHoldings = const [];
+        _loadingHoldings = false;
+      });
+    }
+  }
+
+  Future<void> _sellHolding(MarketOutcome outcome) async {
+    final controller = _sellControllers[outcome]!;
+    final shares = double.tryParse(controller.text.trim());
+
+    if (shares == null || shares <= 0) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Enter a valid share amount greater than 0'),
+          backgroundColor: Color(0xFFB00020),
+        ),
+      );
+      return;
+    }
+
+    try {
+      await _api.sellShares(
+        eventId: _item.id,
+        shares: shares,
+        outcome: outcome == MarketOutcome.yes ? 'Yes' : 'No',
+      );
+      controller.clear();
+      await _loadMyEventHoldings();
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Sell request sent')),
+      );
+    } catch (e) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Sell failed: $e')),
+      );
+    }
   }
 
   Future<void> _submit() async {
@@ -183,6 +290,13 @@ class _DetailScreenState extends State<DetailScreen> {
               submittedValue: _submittedValue,
               submitError: _submitError,
               onSubmit: _submit,
+            ),
+            const SizedBox(height: 12),
+            _HoldingPanel(
+              loading: _loadingHoldings,
+              holdings: _myHoldings,
+              sellControllers: _sellControllers,
+              onSell: _sellHolding,
             ),
             const SizedBox(height: 12),
             _InfoPanel(item: item),
@@ -399,6 +513,142 @@ class _TradePanel extends StatelessWidget {
               ),
             ),
           ],
+        ],
+      ),
+    );
+  }
+}
+
+class _EventHoldingSummary {
+  final MarketOutcome outcome;
+  final double shares;
+
+  const _EventHoldingSummary({
+    required this.outcome,
+    required this.shares,
+  });
+
+  String get label => outcome == MarketOutcome.yes ? 'YES' : 'NO';
+}
+
+class _HoldingPanel extends StatelessWidget {
+  final bool loading;
+  final List<_EventHoldingSummary> holdings;
+  final Map<MarketOutcome, TextEditingController> sellControllers;
+  final Future<void> Function(MarketOutcome outcome) onSell;
+
+  const _HoldingPanel({
+    required this.loading,
+    required this.holdings,
+    required this.sellControllers,
+    required this.onSell,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return _Panel(
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          const Text(
+            'Your shares on this event',
+            style: TextStyle(
+              color: Colors.white,
+              fontSize: 16,
+              fontWeight: FontWeight.w700,
+            ),
+          ),
+          const SizedBox(height: 12),
+          if (loading)
+            const Center(
+              child: Padding(
+                padding: EdgeInsets.symmetric(vertical: 8),
+                child: CircularProgressIndicator(
+                  color: Color(0xFF00A3FF),
+                  strokeWidth: 2,
+                ),
+              ),
+            )
+          else if (holdings.isEmpty)
+            const Text(
+              'You do not currently hold shares for this event.',
+              style: TextStyle(color: Colors.white60),
+            )
+          else
+            ...holdings.map((holding) {
+              final controller = sellControllers[holding.outcome]!;
+              return Container(
+                margin: const EdgeInsets.only(bottom: 10),
+                padding: const EdgeInsets.all(12),
+                decoration: BoxDecoration(
+                  color: const Color(0xFF111827),
+                  borderRadius: BorderRadius.circular(10),
+                ),
+                child: Row(
+                  children: [
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            'Outcome: ${holding.label}',
+                            style: const TextStyle(
+                              color: Colors.white,
+                              fontWeight: FontWeight.w600,
+                            ),
+                          ),
+                          const SizedBox(height: 4),
+                          Text(
+                            '${holding.shares.toStringAsFixed(2)} shares',
+                            style: const TextStyle(
+                              color: Color(0xFF00A3FF),
+                              fontWeight: FontWeight.bold,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                    const SizedBox(width: 8),
+                    SizedBox(
+                      width: 96,
+                      child: TextFormField(
+                        controller: controller,
+                        keyboardType: const TextInputType.numberWithOptions(
+                          decimal: true,
+                        ),
+                        style: const TextStyle(color: Colors.white),
+                        decoration: InputDecoration(
+                          hintText: 'Shares',
+                          hintStyle: const TextStyle(color: Colors.white38),
+                          filled: true,
+                          fillColor: const Color(0xFF0D1320),
+                          border: OutlineInputBorder(
+                            borderRadius: BorderRadius.circular(8),
+                            borderSide: BorderSide.none,
+                          ),
+                          contentPadding: const EdgeInsets.symmetric(
+                            horizontal: 10,
+                            vertical: 10,
+                          ),
+                        ),
+                      ),
+                    ),
+                    const SizedBox(width: 8),
+                    ElevatedButton(
+                      onPressed: () => onSell(holding.outcome),
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: const Color(0xFFFF7A59),
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 12,
+                          vertical: 14,
+                        ),
+                      ),
+                      child: const Text('Sell'),
+                    ),
+                  ],
+                ),
+              );
+            }),
         ],
       ),
     );

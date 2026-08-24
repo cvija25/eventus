@@ -11,8 +11,8 @@ using RabbitMQ.Client.Events;
 
 namespace Account.Consumers;
 
-public class BetApprovedConsumer(
-    ILogger<BetApprovedConsumer> logger,
+public class CommandApprovedConsumer(
+    ILogger<CommandApprovedConsumer> logger,
     IServiceScopeFactory scopeFactory,
     IOptions<RabbitMqOptions> rabbitOptions
 ) : BackgroundService
@@ -56,7 +56,7 @@ public class BetApprovedConsumer(
         await _channel.BasicQosAsync(0, 10, false, stoppingToken);
 
         await _channel.QueueDeclareAsync(
-            RabbitMQConstants.BetApprovedQueue,
+            RabbitMQConstants.CommandApprovedQueue,
             true,
             false,
             false,
@@ -67,7 +67,7 @@ public class BetApprovedConsumer(
         consumer.ReceivedAsync += OnMessageReceivedAsync;
 
         await _channel.BasicConsumeAsync(
-            RabbitMQConstants.BetApprovedQueue,
+            RabbitMQConstants.CommandApprovedQueue,
             false,
             consumer,
             stoppingToken
@@ -100,46 +100,30 @@ public class BetApprovedConsumer(
         try
         {
             var json = Encoding.UTF8.GetString(ea.Body.ToArray());
-            var evt = JsonSerializer.Deserialize<BetApprovedEvent>(json);
+            var result = JsonSerializer.Deserialize<MessageEnvelope>(json)
+                ?? throw new JsonException("Failed to deserialize command result.");
 
-            if (evt is null)
+            switch (result.Type)
             {
-                logger.LogWarning("Received null event, discarding.");
-                await _channel!.BasicNackAsync(
-                    ea.DeliveryTag,
-                    false,
-                    false,
-                    CancellationToken.None
-                );
-                return;
-            }
-
-            if (evt.IsApproved)
-            {
-                await using var transaction = await db.Database.BeginTransactionAsync(
-                    CancellationToken.None
-                );
-                try
-                {
-                    await walletRepository.Withdraw(evt.AccId, evt.Stake);
-                    await transactionRepository.CreateTransaction(
-                        new TransactionDTO(evt.EventId, evt.AccId, evt.ShareAmount, evt.Outcome)
+                case MessageTypes.BetApproved:
+                    await ProcessBetAsync(
+                        result.Deserialize<BetApprovedEvent>(),
+                        walletRepository,
+                        transactionRepository,
+                        db
                     );
-                    await transaction.CommitAsync(CancellationToken.None);
-                }
-                catch
-                {
-                    await transaction.RollbackAsync(CancellationToken.None);
-                    throw;
-                }
+                    break;
+                case MessageTypes.SellSharesApproved:
+                    await ProcessSaleAsync(
+                        result.Deserialize<SellSharesApprovedEvent>(),
+                        walletRepository,
+                        transactionRepository,
+                        db
+                    );
+                    break;
+                default:
+                    throw new JsonException($"Unknown command result type '{result.Type}'.");
             }
-
-            logger.LogInformation(
-                "Bet processed: AccountId={AccountId} Amount={Amount} Approved={IsApproved}",
-                evt.AccId,
-                evt.Stake,
-                evt.IsApproved
-            );
 
             await _channel!.BasicAckAsync(ea.DeliveryTag, false, CancellationToken.None);
         }
@@ -155,6 +139,56 @@ public class BetApprovedConsumer(
             logger.LogError(ex, "Failed to process message. Requeuing.");
             await Task.Delay(TimeSpan.FromSeconds(5));
             await _channel!.BasicNackAsync(ea.DeliveryTag, false, true, CancellationToken.None);
+        }
+    }
+
+    private async Task ProcessBetAsync(
+        BetApprovedEvent evt,
+        IWalletRepository walletRepository,
+        ITransactionRepository transactionRepository,
+        AccountDbContext db
+    )
+    {
+        if (!evt.IsApproved) return;
+
+        await using var transaction = await db.Database.BeginTransactionAsync(CancellationToken.None);
+        try
+        {
+            await walletRepository.Withdraw(evt.AccId, evt.Stake);
+            await transactionRepository.CreateTransaction(
+                new TransactionDTO(evt.EventId, evt.AccId, evt.ShareAmount, evt.Outcome)
+            );
+            await transaction.CommitAsync(CancellationToken.None);
+        }
+        catch
+        {
+            await transaction.RollbackAsync(CancellationToken.None);
+            throw;
+        }
+    }
+
+    private async Task ProcessSaleAsync(
+        SellSharesApprovedEvent evt,
+        IWalletRepository walletRepository,
+        ITransactionRepository transactionRepository,
+        AccountDbContext db
+    )
+    {
+        if (!evt.IsApproved) return;
+
+        await using var transaction = await db.Database.BeginTransactionAsync(CancellationToken.None);
+        try
+        {
+            await walletRepository.Deposit(evt.AccId, evt.SellPrice * evt.ShareAmount);
+            await transactionRepository.CreateTransaction(
+                new TransactionDTO(evt.EventId, evt.AccId, -evt.ShareAmount, evt.Outcome)
+            );
+            await transaction.CommitAsync(CancellationToken.None);
+        }
+        catch
+        {
+            await transaction.RollbackAsync(CancellationToken.None);
+            throw;
         }
     }
 

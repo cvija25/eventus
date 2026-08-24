@@ -28,7 +28,7 @@ public class BetPlacedPublisher : IAsyncDisposable
         _channel = _connection.CreateChannelAsync().Result;
 
         _channel
-            .QueueDeclareAsync(RabbitMQConstants.BetPlacedQueue, true, false, false)
+            .QueueDeclareAsync(RabbitMQConstants.GameCommandQueue, true, false, false)
             .GetAwaiter()
             .GetResult();
     }
@@ -44,11 +44,11 @@ public class BetPlacedPublisher : IAsyncDisposable
 
     public async Task PublishBetPlacedAsync(BetPlacedEvent evt)
     {
-        var json = JsonSerializer.Serialize(evt);
+        var json = JsonSerializer.Serialize(MessageEnvelope.Create(MessageTypes.BetPlaced, evt));
         var body = Encoding.UTF8.GetBytes(json);
 
         var props = new BasicProperties { Persistent = true, ContentType = "application/json" };
 
-        await _channel.BasicPublishAsync("", RabbitMQConstants.BetPlacedQueue, false, props, body);
+        await _channel.BasicPublishAsync("", RabbitMQConstants.GameCommandQueue, false, props, body);
     }
 }

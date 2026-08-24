@@ -20,8 +20,9 @@ builder.Services.AddCors(options =>
 });
 
 builder.Services.AddControllers();
-builder.Services.AddHostedService<BetApprovedConsumer>();
+builder.Services.AddHostedService<CommandApprovedConsumer>();
 builder.Services.AddSingleton<BetPlacedPublisher>();
+builder.Services.AddSingleton<SellSharesPublisher>();
 builder.Services.Configure<RabbitMqOptions>(builder.Configuration.GetSection("RabbitMq"));
 
 builder.Services.AddDbContext<AccountDbContext>(opt =>
