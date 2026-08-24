@@ -9,6 +9,6 @@ public class TransactionMappingProfile : Profile
     public TransactionMappingProfile()
     {
         CreateMap<Transaction, TransactionDTO>()
-            .ForMember(dest => dest.UserId, opt => opt.MapFrom(src => src.AccountId));
+            .ForCtorParam(nameof(TransactionDTO.UserId), opt => opt.MapFrom(src => src.AccountId));
     }
 }

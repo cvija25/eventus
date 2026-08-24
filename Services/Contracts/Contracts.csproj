@@ -5,20 +5,9 @@
     <Nullable>enable</Nullable>
   </PropertyGroup>
 
-  <!-- Proto generation: Linux x64 only (CI) -->
-  <ItemGroup Condition="'$([System.Runtime.InteropServices.RuntimeInformation]::IsOSPlatform($([System.Runtime.InteropServices.OSPlatform]::Linux)))' == 'true' AND '$([System.Runtime.InteropServices.RuntimeInformation]::OSArchitecture)' != 'Arm64'">
+  <ItemGroup>
     <Protobuf Include="Protos\catalog.proto" GrpcServices="Client" />
-    <PackageReference Include="Grpc.Tools" Version="2.70.0">
-      <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
-      <PrivateAssets>all</PrivateAssets>
-    </PackageReference>
-    <Compile Remove="Generated\**" />
-  </ItemGroup>
-
-  <!-- Proto generation: Mac -->
-  <ItemGroup Condition="'$([System.Runtime.InteropServices.RuntimeInformation]::IsOSPlatform($([System.Runtime.InteropServices.OSPlatform]::OSX)))' == 'true'">
-    <Protobuf Include="Protos\catalog.proto" GrpcServices="Client" />
-    <PackageReference Include="Grpc.Tools" Version="2.70.0">
+    <PackageReference Include="Grpc.Tools" Version="2.68.1">
       <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
       <PrivateAssets>all</PrivateAssets>
     </PackageReference>
