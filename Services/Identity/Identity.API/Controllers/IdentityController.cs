@@ -47,6 +47,4 @@ public class IdentityController(
 
         return Ok(new LoginResponse(token));
     }
-
-    private async void CreateWallet(Guid userId) { }
 }
