@@ -133,6 +133,43 @@ class ApiService {
     }
   }
 
+  Future<void> resolveEvent({
+    required String id,
+    required int outcome,
+  }) async {
+    final uri = Uri.parse('$_catalogUrl/resolve');
+
+    try {
+      final response = await http
+          .post(
+            uri,
+            headers: _authHeaders,
+            body: jsonEncode({
+              'id': id,
+              'outcome': outcome,
+            }),
+          )
+          .timeout(const Duration(seconds: 10));
+
+      if (response.statusCode < 200 || response.statusCode >= 300) {
+        throw Exception('POST $uri failed with status ${response.statusCode}');
+      }
+    } on TimeoutException {
+      throw Exception('POST $uri timed out');
+    } on FormatException catch (error) {
+      throw Exception('POST $uri returned invalid JSON: ${error.message}');
+    } on http.ClientException catch (error) {
+      if (kIsWeb) {
+        throw Exception(
+          'POST $uri failed in Chrome: ${error.message}. '
+          'If the endpoint works directly, enable CORS on the backend for the Flutter web origin.',
+        );
+      }
+
+      throw Exception('POST $uri failed: ${error.message}');
+    }
+  }
+
   Future<void> createAccountStake({
     required String id,
     required int stake,

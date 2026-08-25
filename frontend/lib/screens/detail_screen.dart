@@ -4,6 +4,7 @@ import '../models/item.dart';
 import '../services/api_service.dart';
 import 'balance_screen.dart';
 import '../utils/color_utils.dart';
+import '../services/auth_service.dart';
 
 class DetailScreen extends StatefulWidget {
   final Item item;
@@ -30,6 +31,7 @@ class _DetailScreenState extends State<DetailScreen> {
   String? _submitError;
   String? _selectedOutcome;
   List<_EventHoldingSummary> _myHoldings = const [];
+  bool _isResolving = false;
 
   @override
   void initState() {
@@ -213,6 +215,41 @@ class _DetailScreenState extends State<DetailScreen> {
     }
   }
 
+  Future<void> _resolveMarket(int outcome) async {
+    setState(() {
+      _isResolving = true;
+    });
+
+    try {
+      await _api.resolveEvent(id: _item.id, outcome: outcome);
+      await _refreshMarket();
+      if (!mounted) return;
+
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Market resolved as ${outcome == 1 ? "YES" : "NO"}!'),
+          backgroundColor: const Color(0xFF166534),
+          behavior: SnackBarBehavior.floating,
+        ),
+      );
+    } catch (error) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Resolve error: $error'),
+          backgroundColor: const Color(0xFF7F1D1D),
+          behavior: SnackBarBehavior.floating,
+        ),
+      );
+    } finally {
+      if (mounted) {
+        setState(() {
+          _isResolving = false;
+        });
+      }
+    }
+  }
+
   Future<void> _refreshMarket() async {
     final previousPotSize = _item.potSize;
 
@@ -227,13 +264,19 @@ class _DetailScreenState extends State<DetailScreen> {
         _item = updatedItem;
       });
 
-      if (updatedItem.potSize != previousPotSize) return;
+      if (updatedItem.potSize != previousPotSize || updatedItem.isResolved) {
+        return;
+      }
     }
   }
 
   @override
   Widget build(BuildContext context) {
     final item = _item;
+
+    // Uzimamo ulogovanog korisnika i proveravamo da li je on owner eventa
+    final currentUserId = AuthService.instance.userId;
+    final isOwner = currentUserId != null && currentUserId == item.ownerId;
 
     return Scaffold(
       backgroundColor: const Color(0xFF070A0F),
@@ -290,6 +333,16 @@ class _DetailScreenState extends State<DetailScreen> {
               },
             ),
             const SizedBox(height: 12),
+
+            // Ako je korisnik vlasnik i event još nije završen, prikazujemo Owner Tools
+            if (isOwner && !item.isResolved) ...[
+              _OwnerResolvePanel(
+                isResolving: _isResolving,
+                onResolve: _resolveMarket,
+              ),
+              const SizedBox(height: 12),
+            ],
+
             if (item.isResolved)
               _Panel(
                 child: Container(
@@ -345,6 +398,75 @@ class _DetailScreenState extends State<DetailScreen> {
             ),
           ],
         ),
+      ),
+    );
+  }
+}
+
+class _OwnerResolvePanel extends StatelessWidget {
+  final bool isResolving;
+  final Function(int outcome) onResolve;
+
+  const _OwnerResolvePanel({
+    required this.isResolving,
+    required this.onResolve,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return _Panel(
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          const Row(
+            children: [
+              Icon(Icons.admin_panel_settings,
+                  color: Color(0xFFF59E0B), size: 20),
+              SizedBox(width: 6),
+              Text(
+                'Owner Tools: Resolve Market',
+                style: TextStyle(
+                  color: Colors.white,
+                  fontSize: 15,
+                  fontWeight: FontWeight.w700,
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 8),
+          const Text(
+            'As the owner of this market, declare the final winning outcome to distribute payouts:',
+            style: TextStyle(color: Colors.white60, fontSize: 12),
+          ),
+          const SizedBox(height: 12),
+          Row(
+            children: [
+              Expanded(
+                child: ElevatedButton(
+                  onPressed: isResolving ? null : () => onResolve(1),
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: const Color(0xFF00A3FF),
+                    foregroundColor: Colors.white,
+                    disabledBackgroundColor: const Color(0xFF1E3A8A),
+                  ),
+                  child: Text(isResolving ? 'Resolving...' : 'Resolve YES'),
+                ),
+              ),
+              const SizedBox(width: 10),
+              Expanded(
+                child: ElevatedButton(
+                  onPressed: isResolving ? null : () => onResolve(0),
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: const Color(0xFFEF4444),
+                    foregroundColor: Colors.white,
+                    disabledBackgroundColor: const Color(0xFF7F1D1D),
+                  ),
+                  child: Text(isResolving ? 'Resolving...' : 'Resolve NO'),
+                ),
+              ),
+            ],
+          ),
+        ],
       ),
     );
   }
