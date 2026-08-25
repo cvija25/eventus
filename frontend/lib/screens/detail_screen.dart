@@ -455,7 +455,7 @@ class _OwnerResolvePanel extends StatelessWidget {
               const SizedBox(width: 10),
               Expanded(
                 child: ElevatedButton(
-                  onPressed: isResolving ? null : () => onResolve(0),
+                  onPressed: isResolving ? null : () => onResolve(2),
                   style: ElevatedButton.styleFrom(
                     backgroundColor: const Color(0xFFEF4444),
                     foregroundColor: Colors.white,
@@ -513,7 +513,6 @@ class _OutcomePanel extends StatelessWidget {
                 label: 'No',
                 price: item.priceNo,
                 color: const Color(0xFFEF4444),
-                // Dodata tvoja logika (i 2 umesto starog 0 za NO!)
                 selected: item.isResolved ? item.outcome == 2 : selectedOutcome == 'No',
                 onTap: () => onOutcomeSelected('No'),
               ),
