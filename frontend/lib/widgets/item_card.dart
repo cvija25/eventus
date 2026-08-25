@@ -44,38 +44,59 @@ class ItemCard extends StatelessWidget {
               ],
             ),
             const SizedBox(height: 12),
-            Container(
-              padding: const EdgeInsets.symmetric(vertical: 4),
-              decoration: BoxDecoration(
-                color: const Color(0xFF0B1018),
-                borderRadius: BorderRadius.circular(8),
+            if (item.isResolved)
+              Container(
+                width: double.infinity,
+                padding: const EdgeInsets.symmetric(vertical: 8),
+                decoration: BoxDecoration(
+                  color: const Color(0xFF1F2937),
+                  borderRadius: BorderRadius.circular(7),
+                  border: Border.all(color: const Color(0xFF374151)),
+                ),
+                child: Center(
+                  child: Text(
+                    'RESOLVED • Winner: ${item.outcome == 1 ? "YES" : "NO"}',
+                    style: TextStyle(
+                      color: item.outcome == 1
+                          ? const Color(0xFF00A3FF)
+                          : const Color(0xFFEF4444),
+                      fontSize: 13,
+                      fontWeight: FontWeight.w800,
+                    ),
+                  ),
+                ),
+              )
+            else
+              Container(
+                padding: const EdgeInsets.symmetric(vertical: 4),
+                decoration: BoxDecoration(
+                  color: const Color(0xFF0B1018),
+                  borderRadius: BorderRadius.circular(8),
+                ),
+                child: Column(
+                  children: [
+                    _PriceLine(
+                      label: 'Yes',
+                      price: item.priceYes,
+                      color: const Color(0xFF00A3FF),
+                    ),
+                    const Divider(
+                      height: 1,
+                      color: Color(0xFF1F2937),
+                    ),
+                    _PriceLine(
+                      label: 'No',
+                      price: item.priceNo,
+                      color: const Color(0xFFEF4444),
+                    ),
+                  ],
+                ),
               ),
-              child: Column(
-                children: [
-                  _PriceLine(
-                    label: 'Yes',
-                    price: item.priceYes,
-                    color: const Color(0xFF00A3FF),
-                  ),
-                  const Divider(
-                    height: 1,
-                    color: Color(0xFF1F2937),
-                  ),
-                  _PriceLine(
-                    label: 'No',
-                    price: item.priceNo,
-                    color: const Color(0xFFEF4444),
-                  ),
-                ],
-              ),
-            ),
           ],
         ),
       ),
     );
   }
-
-  // _formatMoney removed (not used)
 }
 
 class _MarketIcon extends StatelessWidget {

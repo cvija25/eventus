@@ -157,6 +157,8 @@ class _DetailScreenState extends State<DetailScreen> {
   }
 
   Future<void> _submit() async {
+    if (_item.isResolved) return;
+
     if (_selectedOutcome == null) {
       setState(() {
         _submitError = 'Select an outcome first';
@@ -279,6 +281,7 @@ class _DetailScreenState extends State<DetailScreen> {
               item: item,
               selectedOutcome: _selectedOutcome,
               onOutcomeSelected: (outcome) {
+                if (item.isResolved) return;
                 setState(() {
                   _selectedOutcome = outcome;
                   _submitError = null;
@@ -287,15 +290,52 @@ class _DetailScreenState extends State<DetailScreen> {
               },
             ),
             const SizedBox(height: 12),
-            _TradePanel(
-              formKey: _formKey,
-              controller: _controller,
-              submitted: _submitted,
-              submitting: _submitting,
-              submittedValue: _submittedValue,
-              submitError: _submitError,
-              onSubmit: _submit,
-            ),
+            if (item.isResolved)
+              _Panel(
+                child: Container(
+                  width: double.infinity,
+                  padding: const EdgeInsets.all(12),
+                  decoration: BoxDecoration(
+                    color: const Color(0xFF1F2937),
+                    borderRadius: BorderRadius.circular(8),
+                  ),
+                  child: Column(
+                    children: [
+                      const Icon(Icons.lock, color: Colors.white54, size: 28),
+                      const SizedBox(height: 6),
+                      const Text(
+                        'Event Market Resolved',
+                        style: TextStyle(
+                          color: Colors.white,
+                          fontSize: 16,
+                          fontWeight: FontWeight.w700,
+                        ),
+                      ),
+                      const SizedBox(height: 4),
+                      Text(
+                        'Winning Outcome: ${item.outcome == 1 ? "YES" : "NO"}',
+                        style: TextStyle(
+                          color: item.outcome == 1
+                              ? const Color(0xFF00A3FF)
+                              : const Color(0xFFEF4444),
+                          fontSize: 14,
+                          fontWeight: FontWeight.w800,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              )
+            else
+              _TradePanel(
+                formKey: _formKey,
+                controller: _controller,
+                submitted: _submitted,
+                submitting: _submitting,
+                submittedValue: _submittedValue,
+                submitError: _submitError,
+                onSubmit: _submit,
+              ),
             const SizedBox(height: 12),
             _HoldingPanel(
               loading: _loadingHoldings,
@@ -342,7 +382,8 @@ class _OutcomePanel extends StatelessWidget {
                 label: 'Yes',
                 price: item.priceYes,
                 color: const Color(0xFF00A3FF),
-                selected: selectedOutcome == 'Yes',
+                // Dodata tvoja logika za isResolved
+                selected: item.isResolved ? item.outcome == 1 : selectedOutcome == 'Yes',
                 onTap: () => onOutcomeSelected('Yes'),
               ),
               const SizedBox(height: 8),
@@ -350,7 +391,8 @@ class _OutcomePanel extends StatelessWidget {
                 label: 'No',
                 price: item.priceNo,
                 color: const Color(0xFFEF4444),
-                selected: selectedOutcome == 'No',
+                // Dodata tvoja logika (i 2 umesto starog 0 za NO!)
+                selected: item.isResolved ? item.outcome == 2 : selectedOutcome == 'No',
                 onTap: () => onOutcomeSelected('No'),
               ),
             ],

@@ -7,6 +7,7 @@ class Item {
   final double potSizeYes;
   final double potSizeNo;
   final double potSize;
+  final int? outcome;
 
   const Item({
     required this.id,
@@ -17,7 +18,10 @@ class Item {
     required this.potSizeYes,
     required this.potSizeNo,
     required this.potSize,
+    this.outcome,
   });
+
+  bool get isResolved => outcome != null;
 
   factory Item.fromJson(Map<String, dynamic> json) {
     final rawId = json['Id'] ?? json['id'];
@@ -28,6 +32,7 @@ class Item {
     final rawPotSizeYes = json['PotSizeYes'] ?? json['potSizeYes'];
     final rawPotSizeNo = json['PotSizeNo'] ?? json['potSizeNo'];  
     final rawPotSize = json['PotSize'] ?? json['potSize'];
+    final rawOutcome = json['Outcome'] ?? json['outcome'];
 
     return Item(
       id: rawId?.toString() ?? '',
@@ -38,6 +43,7 @@ class Item {
       potSizeYes: _toDouble(rawPotSizeYes) ?? 0,
       potSizeNo: _toDouble(rawPotSizeNo) ?? 0, 
       potSize: _toDouble(rawPotSize) ?? 0,
+      outcome: rawOutcome is int ? rawOutcome : int.tryParse(rawOutcome?.toString() ?? ''),
     );
   }
 
@@ -46,7 +52,7 @@ class Item {
     return categories[_stableNumber % categories.length];
   }
 
-  String get closeLabel => '${3 + _stableNumber % 26} days left';
+  String get closeLabel => isResolved ? 'Resolved' : '${3 + _stableNumber % 26} days left';
 
   String get changeLabel {
     final value = (_stableNumber * 3 % 17) - 8;
