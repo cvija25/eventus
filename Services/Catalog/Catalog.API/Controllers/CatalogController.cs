@@ -50,20 +50,20 @@ public class CatalogController : ControllerBase
     {
         if (dto.Outcome != MarketOutcome.Yes && dto.Outcome != MarketOutcome.No)
             return BadRequest("Invalid outcome. Must be 1 (YES) or 2 (NO).");
-        
+
         var userId = Guid.Parse(User.FindFirst(JwtRegisteredClaimNames.Sub)!.Value);
         var ev = await _eventRepository.GetEventByIdAsync(dto.Id);
-        
+
         if (ev is null)
             return NotFound();
-        
+
         if (ev.OwnerId != userId)
             return Forbid();
-        
+
         await _eventRepository.ResolveEventAsync(dto);
         var mqEvent = new EventResolvedEvent { EventId = dto.Id, Outcome = dto.Outcome };
         await _eventResolvedPublisher.PublishEventResolvedAsync(mqEvent);
-        
+
         return Ok();
     }
 

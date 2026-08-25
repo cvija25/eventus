@@ -89,7 +89,8 @@ public class EventResolvedEventConsumer(
     {
         await using var scope = scopeFactory.CreateAsyncScope();
         var walletRepository = scope.ServiceProvider.GetRequiredService<IWalletRepository>();
-        var transactionRepository = scope.ServiceProvider.GetRequiredService<ITransactionRepository>();
+        var transactionRepository =
+            scope.ServiceProvider.GetRequiredService<ITransactionRepository>();
         var db = scope.ServiceProvider.GetRequiredService<AccountDbContext>();
 
         try
@@ -100,14 +101,23 @@ public class EventResolvedEventConsumer(
             if (evt is null)
             {
                 logger.LogWarning("Received null EventResolved event, discarding.");
-                await _channel!.BasicNackAsync(ea.DeliveryTag, false, false, CancellationToken.None);
+                await _channel!.BasicNackAsync(
+                    ea.DeliveryTag,
+                    false,
+                    false,
+                    CancellationToken.None
+                );
                 return;
             }
 
-            await using var transaction = await db.Database.BeginTransactionAsync(CancellationToken.None);
+            await using var transaction = await db.Database.BeginTransactionAsync(
+                CancellationToken.None
+            );
             try
             {
-                var resolvedTransactions = await transactionRepository.GetTransactionsForEvent(evt.EventId);
+                var resolvedTransactions = await transactionRepository.GetTransactionsForEvent(
+                    evt.EventId
+                );
 
                 var winners = resolvedTransactions
                     .Where(t => (int)t.Outcome == (int)evt.Outcome)
@@ -116,13 +126,13 @@ public class EventResolvedEventConsumer(
                 decimal totalPayout = 0m;
 
                 foreach (var tx in winners)
-                {        
+                {
                     await walletRepository.Deposit(tx.UserId, tx.ShareAmount);
                     totalPayout += tx.ShareAmount;
                 }
 
                 await transaction.CommitAsync(CancellationToken.None);
-                
+
                 logger.LogInformation(
                     "Event resolved payout processed. EventId={EventId}, Outcome={Outcome}, Winners={WinnerCount}, TotalPayout={TotalPayout}",
                     evt.EventId,
