@@ -71,7 +71,7 @@ public class EventRepository : IEventRepository
     public async Task<bool> ResolveEventAsync(ResolveEventDto resolveEventDto)
     {
         var ev = await _context.Events.FindAsync(resolveEventDto.Id);
-        if (ev is null)
+        if (ev is null || ev.Outcome != null)
             return false;
         ev.Outcome = resolveEventDto.Outcome;
         await _context.SaveChangesAsync();
