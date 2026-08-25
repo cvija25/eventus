@@ -4,7 +4,6 @@ using Catalog.Common.Data;
 using Catalog.Common.DTOs;
 using Catalog.Common.Entities;
 using Microsoft.EntityFrameworkCore;
-using Microsoft.Extensions.FileProviders;
 
 namespace Catalog.Common.Repositories;
 

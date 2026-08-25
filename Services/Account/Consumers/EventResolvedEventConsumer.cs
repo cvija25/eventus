@@ -2,8 +2,8 @@ using System.Text;
 using System.Text.Json;
 using Account.Data;
 using Account.Repositories;
-using Contracts; // Ovde se nalazi EventResolvedEvent
-using Contracts.Messaging; // Ovde se pretpostavljam nalazi RabbitMQConstants
+using Contracts;
+using Contracts.Messaging;
 using Microsoft.Extensions.Options;
 using RabbitMQ.Client;
 using RabbitMQ.Client.Events;
