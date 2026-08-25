@@ -156,7 +156,7 @@ public class CommandApprovedConsumer(
         {
             await walletRepository.Withdraw(evt.AccId, evt.Stake);
             await transactionRepository.CreateTransaction(
-                new TransactionDTO(evt.EventId, evt.AccId, evt.ShareAmount, evt.Outcome)
+                new TransactionDTO(evt.EventId, evt.AccId, evt.ShareAmount, evt.Outcome, TransactionType.Buy)
             );
             await transaction.CommitAsync(CancellationToken.None);
         }
@@ -181,7 +181,7 @@ public class CommandApprovedConsumer(
         {
             await walletRepository.Deposit(evt.AccId, evt.SellPrice * evt.ShareAmount);
             await transactionRepository.CreateTransaction(
-                new TransactionDTO(evt.EventId, evt.AccId, -evt.ShareAmount, evt.Outcome)
+                new TransactionDTO(evt.EventId, evt.AccId, evt.ShareAmount, evt.Outcome, TransactionType.Sell)
             );
             await transaction.CommitAsync(CancellationToken.None);
         }

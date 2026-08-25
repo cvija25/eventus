@@ -20,6 +20,31 @@ public class EventRepository : IEventRepository
         _mapper = mapper ?? throw new ArgumentNullException(nameof(mapper));
     }
 
+    private static decimal? SafePrice(decimal numerator, decimal denominator)
+    {
+        if (denominator == 0m)
+            return null;
+
+        return numerator / denominator;
+    }
+
+    private static EventDto ToEventDto(Event ev)
+    {
+        var dto = new EventDto
+        {
+            Id = ev.Id,
+            Title = ev.Title,
+            OwnerId = ev.OwnerId,
+            PotSizeYes = ev.PotSizeYes,
+            PotSizeNo = ev.PotSizeNo,
+            PotSize = ev.PotSizeYes + ev.PotSizeNo,
+            PriceYes = SafePrice(ev.PotSizeYes, ev.PotSizeYes + ev.PotSizeNo),
+            PriceNo = SafePrice(ev.PotSizeNo, ev.PotSizeYes + ev.PotSizeNo)
+        };
+
+        return dto;
+    }
+
     public async Task<EventDto> CreateEventAsync(CreateEventDto createEventDto, Guid ownerId)
     {
         var newEvent = new Event
@@ -32,17 +57,23 @@ public class EventRepository : IEventRepository
         };
         _context.Events.Add(newEvent);
         await _context.SaveChangesAsync();
-        return _mapper.Map<EventDto>(newEvent);
+        return ToEventDto(newEvent);
     }
 
     public async Task<EventDto?> GetEventByIdAsync(Guid id)
     {
         var ev = await _context.Events.FindAsync(id);
-        return _mapper.Map<EventDto?>(ev);
+        if (ev is null)
+            return null;
+
+        return ToEventDto(ev);
     }
 
-    public async Task<List<EventDto>> GetEventsAsync() =>
-        await _context.Events.ProjectTo<EventDto>(_mapper.ConfigurationProvider).ToListAsync();
+    public async Task<List<EventDto>> GetEventsAsync()
+    {
+        var events = await _context.Events.ToListAsync();
+        return events.Select(ToEventDto).ToList();
+    }
 
     public async Task<bool> UpdateEventAsync(UpdateEventDto updateEventDto)
     {
