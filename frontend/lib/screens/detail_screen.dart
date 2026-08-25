@@ -245,18 +245,6 @@ class _DetailScreenState extends State<DetailScreen> {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Row(
-                    children: [
-                      _Pill(label: item.category),
-                      const SizedBox(width: 8),
-                      Text(
-                        item.closeLabel,
-                        style: const TextStyle(
-                            color: Colors.white54, fontSize: 12),
-                      ),
-                    ],
-                  ),
-                  const SizedBox(height: 14),
                   Text(
                     item.title,
                     style: const TextStyle(
@@ -298,8 +286,6 @@ class _DetailScreenState extends State<DetailScreen> {
               sellControllers: _sellControllers,
               onSell: _sellHolding,
             ),
-            const SizedBox(height: 12),
-            _InfoPanel(item: item),
           ],
         ),
       ),
@@ -332,42 +318,92 @@ class _OutcomePanel extends StatelessWidget {
               fontWeight: FontWeight.w700,
             ),
           ),
-          const SizedBox(height: 14),
-          ClipRRect(
-            borderRadius: BorderRadius.circular(999),
-            child: LinearProgressIndicator(
-              value: item.priceYes / 100,
-              minHeight: 10,
-              backgroundColor: const Color(0xFF2B1118),
-              valueColor:
-                  const AlwaysStoppedAnimation<Color>(Color(0xFF00A3FF)),
-            ),
-          ),
-          const SizedBox(height: 14),
-          Row(
+          const SizedBox(height: 12),
+          Column(
             children: [
-              Expanded(
-                child: _OutcomeButton(
-                  label: 'Yes',
-                  price: item.priceYes,
-                  color: const Color(0xFF00A3FF),
-                  selected: selectedOutcome == 'Yes',
-                  onTap: () => onOutcomeSelected('Yes'),
-                ),
+              _OutcomeRow(
+                label: 'Yes',
+                price: item.priceYes,
+                color: const Color(0xFF00A3FF),
+                selected: selectedOutcome == 'Yes',
+                onTap: () => onOutcomeSelected('Yes'),
               ),
-              const SizedBox(width: 10),
-              Expanded(
-                child: _OutcomeButton(
-                  label: 'No',
-                  price: item.priceNo,
-                  color: const Color(0xFFEF4444),
-                  selected: selectedOutcome == 'No',
-                  onTap: () => onOutcomeSelected('No'),
-                ),
+              const SizedBox(height: 8),
+              _OutcomeRow(
+                label: 'No',
+                price: item.priceNo,
+                color: const Color(0xFFEF4444),
+                selected: selectedOutcome == 'No',
+                onTap: () => onOutcomeSelected('No'),
               ),
             ],
           ),
         ],
+      ),
+    );
+  }
+}
+
+class _OutcomeRow extends StatelessWidget {
+  final String label;
+  final double price;
+  final Color color;
+  final bool selected;
+  final VoidCallback onTap;
+
+  const _OutcomeRow({
+    required this.label,
+    required this.price,
+    required this.color,
+    required this.selected,
+    required this.onTap,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return GestureDetector(
+      onTap: onTap,
+      child: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+        decoration: BoxDecoration(
+          color: selected ? color.withOpacity(0.12) : const Color(0xFF111827),
+          borderRadius: BorderRadius.circular(10),
+          border: Border.all(
+            color: selected ? color : const Color(0xFF1F2937),
+            width: selected ? 1.5 : 1,
+          ),
+        ),
+        child: Row(
+          children: [
+            Container(
+              width: 10,
+              height: 10,
+              decoration: BoxDecoration(
+                color: color,
+                shape: BoxShape.circle,
+              ),
+            ),
+            const SizedBox(width: 12),
+            Expanded(
+              child: Text(
+                label,
+                style: const TextStyle(
+                  color: Colors.white,
+                  fontSize: 16,
+                  fontWeight: FontWeight.w700,
+                ),
+              ),
+            ),
+            Text(
+              '£${price.toStringAsFixed(2)}',
+              style: TextStyle(
+                color: color,
+                fontSize: 18,
+                fontWeight: FontWeight.w700,
+              ),
+            ),
+          ],
+        ),
       ),
     );
   }
@@ -662,51 +698,7 @@ class _InfoPanel extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return _Panel(
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          const Text(
-            'Market info',
-            style: TextStyle(
-              color: Colors.white,
-              fontSize: 16,
-              fontWeight: FontWeight.w700,
-            ),
-          ),
-          const SizedBox(height: 10),
-          Text(
-            'Owner ${_shortGuid(item.ownerId)} created this event market. The pot is split by the final resolved outcome.',
-            style: const TextStyle(
-                color: Colors.white70, fontSize: 14, height: 1.45),
-          ),
-          const Divider(color: Colors.white12, height: 24),
-          Row(
-            children: [
-              Expanded(
-                  child: _Stat(
-                      label: 'Pot size',
-                      value: '\$${_money(item.potSize.toInt())}')),
-              Expanded(
-                  child: _Stat(
-                      label: 'Liquidity',
-                      value: '\$${_money(item.liquidity)}')),
-            ],
-          ),
-        ],
-      ),
-    );
-  }
-
-  String _money(int value) {
-    if (value >= 1000000) return '${(value / 1000000).toStringAsFixed(1)}M';
-    if (value >= 1000) return '${(value / 1000).toStringAsFixed(0)}K';
-    return value.toString();
-  }
-
-  String _shortGuid(String value) {
-    if (value.length <= 8) return value;
-    return value.substring(0, 8);
+    return const SizedBox.shrink();
   }
 }
 
@@ -774,38 +766,50 @@ class _OutcomeButton extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return GestureDetector(
-        onTap: onTap,
-        child: Container(
-          padding: const EdgeInsets.symmetric(vertical: 12),
-          decoration: BoxDecoration(
-            color: selected ? color.withOpacity(0.28) : color.withOpacity(0.16),
-            borderRadius: BorderRadius.circular(8),
-            border: Border.all(
-                color: selected ? color : color.withOpacity(0.5),
-                width: selected ? 2 : 1),
+      onTap: onTap,
+      child: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+        decoration: BoxDecoration(
+          color: selected ? color.withOpacity(0.12) : const Color(0xFF111827),
+          borderRadius: BorderRadius.circular(10),
+          border: Border.all(
+            color: selected ? color : const Color(0xFF1F2937),
+            width: selected ? 1.5 : 1,
           ),
-          child: Column(
-            children: [
-              Text(
-                label,
-                style: TextStyle(
-                  color: color,
-                  fontSize: 13,
-                  fontWeight: FontWeight.w800,
-                ),
+        ),
+        child: Row(
+          children: [
+            Container(
+              width: 10,
+              height: 10,
+              decoration: BoxDecoration(
+                color: color,
+                shape: BoxShape.circle,
               ),
-              const SizedBox(height: 3),
-              Text(
-                '${(price * 100).toStringAsFixed(0)} cents',
+            ),
+            const SizedBox(width: 12),
+            Expanded(
+              child: Text(
+                label,
                 style: const TextStyle(
                   color: Colors.white,
-                  fontSize: 17,
-                  fontWeight: FontWeight.w800,
+                  fontSize: 16,
+                  fontWeight: FontWeight.w700,
                 ),
               ),
-            ],
-          ),
-        ));
+            ),
+            Text(
+              '£${price.toStringAsFixed(2)}',
+              style: TextStyle(
+                color: color,
+                fontSize: 18,
+                fontWeight: FontWeight.w700,
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
   }
 }
 

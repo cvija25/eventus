@@ -43,57 +43,30 @@ class ItemCard extends StatelessWidget {
               ],
             ),
             const SizedBox(height: 12),
-            Row(
-              children: [
-                _MetaPill(label: item.category),
-                const SizedBox(width: 8),
-                Text(
-                  '\$${_formatMoney(item.potSize)} Pot',
-                  style: const TextStyle(color: Colors.white54, fontSize: 12),
-                ),
-                const Spacer(),
-                Text(
-                  item.changeLabel,
-                  style: TextStyle(
-                    color: item.isPositiveChange
-                        ? const Color(0xFF22C55E)
-                        : const Color(0xFFEF4444),
-                    fontSize: 12,
-                    fontWeight: FontWeight.w700,
-                  ),
-                ),
-              ],
-            ),
-            const SizedBox(height: 12),
-            ClipRRect(
-              borderRadius: BorderRadius.circular(999),
-              child: LinearProgressIndicator(
-                value: item.priceYes / 100,
-                minHeight: 7,
-                backgroundColor: const Color(0xFF263244),
-                valueColor:
-                    const AlwaysStoppedAnimation<Color>(Color(0xFF00A3FF)),
+            Container(
+              padding: const EdgeInsets.symmetric(vertical: 4),
+              decoration: BoxDecoration(
+                color: const Color(0xFF0B1018),
+                borderRadius: BorderRadius.circular(8),
               ),
-            ),
-            const SizedBox(height: 12),
-            Row(
-              children: [
-                Expanded(
-                  child: _TradeButton(
+              child: Column(
+                children: [
+                  _PriceLine(
                     label: 'Yes',
                     price: item.priceYes,
                     color: const Color(0xFF00A3FF),
                   ),
-                ),
-                const SizedBox(width: 8),
-                Expanded(
-                  child: _TradeButton(
+                  const Divider(
+                    height: 1,
+                    color: Color(0xFF1F2937),
+                  ),
+                  _PriceLine(
                     label: 'No',
                     price: item.priceNo,
                     color: const Color(0xFFEF4444),
                   ),
-                ),
-              ],
+                ],
+              ),
             ),
           ],
         ),
@@ -138,37 +111,12 @@ class _MarketIcon extends StatelessWidget {
   }
 }
 
-class _MetaPill extends StatelessWidget {
-  final String label;
-
-  const _MetaPill({required this.label});
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-      decoration: BoxDecoration(
-        color: const Color(0xFF111827),
-        borderRadius: BorderRadius.circular(6),
-      ),
-      child: Text(
-        label,
-        style: const TextStyle(
-          color: Colors.white70,
-          fontSize: 11,
-          fontWeight: FontWeight.w600,
-        ),
-      ),
-    );
-  }
-}
-
-class _TradeButton extends StatelessWidget {
+class _PriceLine extends StatelessWidget {
   final String label;
   final double price;
   final Color color;
 
-  const _TradeButton({
+  const _PriceLine({
     required this.label,
     required this.price,
     required this.color,
@@ -176,31 +124,30 @@ class _TradeButton extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Container(
-      height: 38,
-      decoration: BoxDecoration(
-        color: color.withOpacity(0.16),
-        borderRadius: BorderRadius.circular(7),
-        border: Border.all(color: color.withOpacity(0.45)),
-      ),
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
       child: Row(
-        mainAxisAlignment: MainAxisAlignment.center,
         children: [
-          Text(
-            label,
-            style: TextStyle(
-              color: color,
-              fontSize: 13,
-              fontWeight: FontWeight.w800,
+          SizedBox(
+            width: 36,
+            child: Text(
+              label,
+              style: TextStyle(
+                color: color,
+                fontSize: 12,
+                fontWeight: FontWeight.w700,
+              ),
             ),
           ),
-          const SizedBox(width: 6),
-          Text(
-            '${price*100} cents',
-            style: const TextStyle(
-              color: Colors.white,
-              fontSize: 13,
-              fontWeight: FontWeight.w700,
+          Expanded(
+            child: Text(
+              '${(price * 100).toStringAsFixed(0)}¢',
+              textAlign: TextAlign.right,
+              style: const TextStyle(
+                color: Colors.white,
+                fontSize: 15,
+                fontWeight: FontWeight.w700,
+              ),
             ),
           ),
         ],
