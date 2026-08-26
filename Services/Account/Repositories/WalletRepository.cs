@@ -41,7 +41,7 @@ public class WalletRepository(AccountDbContext db) : IWalletRepository
 
     public async Task CreateWalletIfMissing(Guid userId)
     {
-        if (await db.Wallets.FindAsync(userId) == null)
+        if (await db.Wallets.FindAsync(userId) != null)
             return;
         var wallet = new Wallet { AccountId = userId };
         db.Wallets.Add(wallet);
