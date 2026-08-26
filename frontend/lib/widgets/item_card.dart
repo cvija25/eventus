@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import '../models/item.dart';
+import '../utils/color_utils.dart';
 
 class ItemCard extends StatelessWidget {
   final Item item;
@@ -98,10 +99,10 @@ class _MarketIcon extends StatelessWidget {
       width: 42,
       height: 42,
       decoration: BoxDecoration(
-        color: Color.fromRGBO((color.toARGB32() >> 16) & 0xFF, (color.toARGB32() >> 8) & 0xFF, color.toARGB32() & 0xFF, 0.14),
+        color: Color.fromRGBO((argbFromColor(color) >> 16) & 0xFF, (argbFromColor(color) >> 8) & 0xFF, argbFromColor(color) & 0xFF, 0.14),
         borderRadius: BorderRadius.circular(8),
         border: Border.all(
-          color: Color.fromRGBO((color.toARGB32() >> 16) & 0xFF, (color.toARGB32() >> 8) & 0xFF, color.toARGB32() & 0xFF, 0.45),
+          color: Color.fromRGBO((argbFromColor(color) >> 16) & 0xFF, (argbFromColor(color) >> 8) & 0xFF, argbFromColor(color) & 0xFF, 0.45),
         ),
       ),
       child: Icon(Icons.insights, color: color, size: 22),
