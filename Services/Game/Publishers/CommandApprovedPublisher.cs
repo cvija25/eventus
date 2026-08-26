@@ -8,15 +8,15 @@ using RabbitMQ.Client;
 
 namespace Game.Publishers;
 
-public class BetApprovedPublisher : IAsyncDisposable
+public class CommandApprovedPublisher : IAsyncDisposable
 {
     private readonly IChannel _channel;
     private readonly IConnection _connection;
-    private readonly ILogger<BetApprovedPublisher> _logger;
+    private readonly ILogger<CommandApprovedPublisher> _logger;
 
-    public BetApprovedPublisher(
+    public CommandApprovedPublisher(
         IOptions<RabbitMqOptions> options,
-        ILogger<BetApprovedPublisher> logger
+        ILogger<CommandApprovedPublisher> logger
     )
     {
         _logger = logger;
@@ -33,7 +33,7 @@ public class BetApprovedPublisher : IAsyncDisposable
         _connection = factory.CreateConnectionAsync().Result;
         _channel = _connection.CreateChannelAsync().Result;
         _channel
-            .QueueDeclareAsync(RabbitMQConstants.BetApprovedQueue, true, false, false)
+            .QueueDeclareAsync(RabbitMQConstants.CommandApprovedQueue, true, false, false)
             .GetAwaiter()
             .GetResult();
     }
@@ -49,21 +49,25 @@ public class BetApprovedPublisher : IAsyncDisposable
 
     public async Task PublishBetApprovedAsync(BetApprovedEvent evt)
     {
-        var json = JsonSerializer.Serialize(evt);
+        await PublishAsync(MessageTypes.BetApproved, evt);
+    }
+
+    public async Task PublishSellSharesApprovedAsync(SellSharesApprovedEvent evt)
+    {
+        await PublishAsync(MessageTypes.SellSharesApproved, evt);
+    }
+
+    private async Task PublishAsync<T>(string type, T evt)
+    {
+        var json = JsonSerializer.Serialize(MessageEnvelope.Create(type, evt));
         var body = Encoding.UTF8.GetBytes(json);
 
-        _logger.LogInformation(
-            "Publishing BetApprovedEvent: AccId={AccId}, Stake={Stake}, IsApproved={IsApproved}, Json={Json}",
-            evt.AccId,
-            evt.Stake,
-            evt.IsApproved,
-            json
-        );
+        _logger.LogInformation("Publishing command result: Type={Type}, Json={Json}", type, json);
 
         var props = new BasicProperties { Persistent = true, ContentType = "application/json" };
         await _channel.BasicPublishAsync(
             "",
-            RabbitMQConstants.BetApprovedQueue,
+            RabbitMQConstants.CommandApprovedQueue,
             false,
             props,
             body

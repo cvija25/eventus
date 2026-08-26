@@ -116,13 +116,14 @@ class _HomeScreenState extends State<HomeScreen> {
                     onPressed: () {
                       if (loggedIn) {
                         AuthService.instance.logout();
-                        ScaffoldMessenger.of(context).showSnackBar(
-                          const SnackBar(
-                            content: Text('Logged out'),
-                            backgroundColor: Color(0xFF111827),
-                            behavior: SnackBarBehavior.floating,
-                          ),
-                        );
+                            final messenger = ScaffoldMessenger.maybeOf(context);
+                            messenger?.showSnackBar(
+                              const SnackBar(
+                                content: Text('Logged out'),
+                                backgroundColor: Color(0xFF111827),
+                                behavior: SnackBarBehavior.floating,
+                              ),
+                            );
                       } else {
                         Navigator.push(
                           context,
@@ -191,10 +192,6 @@ class _HomeScreenState extends State<HomeScreen> {
             child: ListView(
               padding: const EdgeInsets.fromLTRB(12, 8, 12, 24),
               children: [
-                const _MarketHeader(),
-                const SizedBox(height: 12),
-                const _CategoryRail(),
-                const SizedBox(height: 12),
                 for (final item in items) ...[
                   ItemCard(
                     item: item,
@@ -220,78 +217,3 @@ class _HomeScreenState extends State<HomeScreen> {
   }
 }
 
-class _MarketHeader extends StatelessWidget {
-  const _MarketHeader();
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      padding: const EdgeInsets.all(14),
-      decoration: BoxDecoration(
-        color: const Color(0xFF0D1320),
-        borderRadius: BorderRadius.circular(8),
-        border: Border.all(color: const Color(0xFF1F2937)),
-      ),
-      child: const Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Text(
-            'Prediction markets',
-            style: TextStyle(
-              color: Colors.white,
-              fontSize: 22,
-              fontWeight: FontWeight.w700,
-            ),
-          ),
-          SizedBox(height: 6),
-          Text(
-            'Trade simple Yes or No outcomes.',
-            style: TextStyle(color: Colors.white60, fontSize: 13),
-          ),
-        ],
-      ),
-    );
-  }
-}
-
-class _CategoryRail extends StatelessWidget {
-  const _CategoryRail();
-
-  @override
-  Widget build(BuildContext context) {
-    const categories = ['Trending', 'Politics', 'Crypto', 'Sports', 'Macro'];
-
-    return SingleChildScrollView(
-      scrollDirection: Axis.horizontal,
-      child: Row(
-        children: [
-          for (final category in categories) ...[
-            Container(
-              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-              decoration: BoxDecoration(
-                color: category == 'Trending'
-                    ? const Color(0xFF00A3FF)
-                    : const Color(0xFF111827),
-                borderRadius: BorderRadius.circular(8),
-                border: Border.all(
-                  color: category == 'Trending'
-                      ? const Color(0xFF00A3FF)
-                      : const Color(0xFF1F2937),
-                ),
-              ),
-              child: Text(
-                category,
-                style: TextStyle(
-                  color: category == 'Trending' ? Colors.white : Colors.white70,
-                  fontSize: 13,
-                  fontWeight: FontWeight.w600,
-                ),
-              ),
-            ),
-            const SizedBox(width: 8),
-          ],
-        ],
-      ),
-    );
-  }
-}

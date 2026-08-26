@@ -9,7 +9,7 @@ void main() {
     expect(find.byType(MaterialApp), findsOneWidget);
   });
 
-  testWidgets('Profile screen shows account info, inline deposit action, and held shares',
+  testWidgets('Profile screen shows account info and keeps deposit action',
       (WidgetTester tester) async {
     await tester.pumpWidget(
       const MaterialApp(

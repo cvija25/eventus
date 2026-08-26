@@ -2,6 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import '../models/item.dart';
 import '../services/api_service.dart';
+import 'balance_screen.dart';
+import '../utils/color_utils.dart';
 
 class DetailScreen extends StatefulWidget {
   final Item item;
@@ -15,24 +17,143 @@ class DetailScreen extends StatefulWidget {
 class _DetailScreenState extends State<DetailScreen> {
   final ApiService _api = ApiService();
   final TextEditingController _controller = TextEditingController();
+  final Map<MarketOutcome, TextEditingController> _sellControllers = {
+    MarketOutcome.yes: TextEditingController(),
+    MarketOutcome.no: TextEditingController(),
+  };
   final GlobalKey<FormState> _formKey = GlobalKey<FormState>();
   late Item _item;
   bool _submitted = false;
   bool _submitting = false;
+  bool _loadingHoldings = false;
   int? _submittedValue;
   String? _submitError;
   String? _selectedOutcome;
+  List<_EventHoldingSummary> _myHoldings = const [];
 
   @override
   void initState() {
     super.initState();
     _item = widget.item;
+    _loadMyEventHoldings();
   }
 
   @override
   void dispose() {
     _controller.dispose();
+    for (final controller in _sellControllers.values) {
+      controller.dispose();
+    }
     super.dispose();
+  }
+
+  double _toDouble(dynamic value) {
+    if (value is num) {
+      return value.toDouble();
+    }
+    if (value is String) {
+      return double.tryParse(value) ?? 0.0;
+    }
+    return 0.0;
+  }
+
+  Future<void> _loadMyEventHoldings() async {
+    setState(() {
+      _loadingHoldings = true;
+    });
+
+    try {
+      final transactions = await _api.fetchTransactions();
+      final byOutcome = <MarketOutcome, double>{
+        MarketOutcome.yes: 0,
+        MarketOutcome.no: 0,
+      };
+
+      for (final tx in transactions) {
+        final eventId = (tx['eventId'] ?? tx['event_id'] ?? '').toString();
+        if (eventId != _item.id) continue;
+
+        final outcomeValue = tx['outcome'] ?? tx['Outcome'] ?? 1;
+        final outcome = outcomeValue == 2 || outcomeValue.toString() == '2'
+            ? MarketOutcome.no
+            : MarketOutcome.yes;
+        final amount = _toDouble(
+          tx['shareAmount'] ?? tx['share_amount'] ?? tx['ShareAmount'],
+        );
+
+        // Transaction type: 1 = Buy (add), 2 = Sell (subtract). Default to Buy when parsing fails.
+        final rawType = tx['type'] ?? tx['Type'] ?? tx['transactionType'] ?? tx['TransactionType'];
+        int typeInt;
+        if (rawType is int) {
+          typeInt = rawType;
+        } else if (rawType is String) {
+          typeInt = int.tryParse(rawType) ?? 1;
+        } else {
+          typeInt = 1;
+        }
+
+        final signedAmount = typeInt == 2 ? -amount : amount;
+        byOutcome[outcome] = (byOutcome[outcome] ?? 0) + signedAmount;
+      }
+
+      final rows = <_EventHoldingSummary>[];
+      final yesAmount = byOutcome[MarketOutcome.yes] ?? 0;
+      final noAmount = byOutcome[MarketOutcome.no] ?? 0;
+
+      if (yesAmount > 0) {
+        rows.add(_EventHoldingSummary(outcome: MarketOutcome.yes, shares: yesAmount));
+      }
+      if (noAmount > 0) {
+        rows.add(_EventHoldingSummary(outcome: MarketOutcome.no, shares: noAmount));
+      }
+
+      if (!context.mounted) return;
+      setState(() {
+        _myHoldings = rows;
+        _loadingHoldings = false;
+      });
+    } catch (_) {
+      if (!context.mounted) return;
+      setState(() {
+        _myHoldings = const [];
+        _loadingHoldings = false;
+      });
+    }
+  }
+
+  Future<void> _sellHolding(MarketOutcome outcome) async {
+    final controller = _sellControllers[outcome]!;
+    final shares = double.tryParse(controller.text.trim());
+
+    if (shares == null || shares <= 0) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Enter a valid share amount greater than 0'),
+          backgroundColor: Color(0xFFB00020),
+        ),
+      );
+      return;
+    }
+
+    try {
+      await _api.sellShares(
+        eventId: _item.id,
+        shares: shares,
+        outcome: outcome == MarketOutcome.yes ? 'Yes' : 'No',
+      );
+      controller.clear();
+      await _loadMyEventHoldings();
+      if (!context.mounted) return;
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        final m = ScaffoldMessenger.maybeOf(context);
+        m?.showSnackBar(const SnackBar(content: Text('Sell request sent')));
+      });
+    } catch (e) {
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        final m = ScaffoldMessenger.maybeOf(context);
+        m?.showSnackBar(SnackBar(content: Text('Sell failed: $e')));
+      });
+    }
   }
 
   Future<void> _submit() async {
@@ -61,23 +182,26 @@ class _DetailScreenState extends State<DetailScreen> {
           outcome: _selectedOutcome!,
         );
         await _refreshMarket();
-        if (!mounted) return;
+        if (!context.mounted) return;
 
         setState(() {
           _submitted = true;
           _submitting = false;
         });
 
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('Stake submitted: $value'),
-            backgroundColor: const Color(0xFF111827),
-            behavior: SnackBarBehavior.floating,
-            duration: const Duration(seconds: 2),
-          ),
-        );
+        WidgetsBinding.instance.addPostFrameCallback((_) {
+          final m = ScaffoldMessenger.maybeOf(context);
+          m?.showSnackBar(
+            SnackBar(
+              content: Text('Stake submitted: $value'),
+              backgroundColor: const Color(0xFF111827),
+              behavior: SnackBarBehavior.floating,
+              duration: const Duration(seconds: 2),
+            ),
+          );
+        });
       } catch (error) {
-        if (!mounted) return;
+        if (!context.mounted) return;
 
         setState(() {
           _submitting = false;
@@ -95,7 +219,7 @@ class _DetailScreenState extends State<DetailScreen> {
     for (var attempt = 0; attempt < 5; attempt++) {
       await Future<void>.delayed(const Duration(milliseconds: 500));
       final updatedItem = await _api.fetchItem(_item.id);
-      if (!mounted) return;
+      if (!context.mounted) return;
 
       setState(() {
         _item = updatedItem;
@@ -138,18 +262,6 @@ class _DetailScreenState extends State<DetailScreen> {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Row(
-                    children: [
-                      _Pill(label: item.category),
-                      const SizedBox(width: 8),
-                      Text(
-                        item.closeLabel,
-                        style: const TextStyle(
-                            color: Colors.white54, fontSize: 12),
-                      ),
-                    ],
-                  ),
-                  const SizedBox(height: 14),
                   Text(
                     item.title,
                     style: const TextStyle(
@@ -185,7 +297,12 @@ class _DetailScreenState extends State<DetailScreen> {
               onSubmit: _submit,
             ),
             const SizedBox(height: 12),
-            _InfoPanel(item: item),
+            _HoldingPanel(
+              loading: _loadingHoldings,
+              holdings: _myHoldings,
+              sellControllers: _sellControllers,
+              onSell: _sellHolding,
+            ),
           ],
         ),
       ),
@@ -218,42 +335,92 @@ class _OutcomePanel extends StatelessWidget {
               fontWeight: FontWeight.w700,
             ),
           ),
-          const SizedBox(height: 14),
-          ClipRRect(
-            borderRadius: BorderRadius.circular(999),
-            child: LinearProgressIndicator(
-              value: item.priceYes / 100,
-              minHeight: 10,
-              backgroundColor: const Color(0xFF2B1118),
-              valueColor:
-                  const AlwaysStoppedAnimation<Color>(Color(0xFF00A3FF)),
-            ),
-          ),
-          const SizedBox(height: 14),
-          Row(
+          const SizedBox(height: 12),
+          Column(
             children: [
-              Expanded(
-                child: _OutcomeButton(
-                  label: 'Yes',
-                  price: item.priceYes,
-                  color: const Color(0xFF00A3FF),
-                  selected: selectedOutcome == 'Yes',
-                  onTap: () => onOutcomeSelected('Yes'),
-                ),
+              _OutcomeRow(
+                label: 'Yes',
+                price: item.priceYes,
+                color: const Color(0xFF00A3FF),
+                selected: selectedOutcome == 'Yes',
+                onTap: () => onOutcomeSelected('Yes'),
               ),
-              const SizedBox(width: 10),
-              Expanded(
-                child: _OutcomeButton(
-                  label: 'No',
-                  price: item.priceNo,
-                  color: const Color(0xFFEF4444),
-                  selected: selectedOutcome == 'No',
-                  onTap: () => onOutcomeSelected('No'),
-                ),
+              const SizedBox(height: 8),
+              _OutcomeRow(
+                label: 'No',
+                price: item.priceNo,
+                color: const Color(0xFFEF4444),
+                selected: selectedOutcome == 'No',
+                onTap: () => onOutcomeSelected('No'),
               ),
             ],
           ),
         ],
+      ),
+    );
+  }
+}
+
+class _OutcomeRow extends StatelessWidget {
+  final String label;
+  final double price;
+  final Color color;
+  final bool selected;
+  final VoidCallback onTap;
+
+  const _OutcomeRow({
+    required this.label,
+    required this.price,
+    required this.color,
+    required this.selected,
+    required this.onTap,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return GestureDetector(
+      onTap: onTap,
+      child: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+        decoration: BoxDecoration(
+          color: selected ? Color.fromRGBO((argbFromColor(color) >> 16) & 0xFF, (argbFromColor(color) >> 8) & 0xFF, argbFromColor(color) & 0xFF, 0.12) : const Color(0xFF111827),
+          borderRadius: BorderRadius.circular(10),
+          border: Border.all(
+            color: selected ? color : const Color(0xFF1F2937),
+            width: selected ? 1.5 : 1,
+          ),
+        ),
+        child: Row(
+          children: [
+            Container(
+              width: 10,
+              height: 10,
+              decoration: BoxDecoration(
+                color: color,
+                shape: BoxShape.circle,
+              ),
+            ),
+            const SizedBox(width: 12),
+            Expanded(
+              child: Text(
+                label,
+                style: const TextStyle(
+                  color: Colors.white,
+                  fontSize: 16,
+                  fontWeight: FontWeight.w700,
+                ),
+              ),
+            ),
+            Text(
+              '£${price.toStringAsFixed(2)}',
+              style: TextStyle(
+                color: color,
+                fontSize: 18,
+                fontWeight: FontWeight.w700,
+              ),
+            ),
+          ],
+        ),
       ),
     );
   }
@@ -405,10 +572,30 @@ class _TradePanel extends StatelessWidget {
   }
 }
 
-class _InfoPanel extends StatelessWidget {
-  final Item item;
+class _EventHoldingSummary {
+  final MarketOutcome outcome;
+  final double shares;
 
-  const _InfoPanel({required this.item});
+  const _EventHoldingSummary({
+    required this.outcome,
+    required this.shares,
+  });
+
+  String get label => outcome == MarketOutcome.yes ? 'YES' : 'NO';
+}
+
+class _HoldingPanel extends StatelessWidget {
+  final bool loading;
+  final List<_EventHoldingSummary> holdings;
+  final Map<MarketOutcome, TextEditingController> sellControllers;
+  final Future<void> Function(MarketOutcome outcome) onSell;
+
+  const _HoldingPanel({
+    required this.loading,
+    required this.holdings,
+    required this.sellControllers,
+    required this.onSell,
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -417,48 +604,111 @@ class _InfoPanel extends StatelessWidget {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           const Text(
-            'Market info',
+            'Your shares on this event',
             style: TextStyle(
               color: Colors.white,
               fontSize: 16,
               fontWeight: FontWeight.w700,
             ),
           ),
-          const SizedBox(height: 10),
-          Text(
-            'Owner ${_shortGuid(item.ownerId)} created this event market. The pot is split by the final resolved outcome.',
-            style: const TextStyle(
-                color: Colors.white70, fontSize: 14, height: 1.45),
-          ),
-          const Divider(color: Colors.white12, height: 24),
-          Row(
-            children: [
-              Expanded(
-                  child: _Stat(
-                      label: 'Pot size',
-                      value: '\$${_money(item.potSize.toInt())}')),
-              Expanded(
-                  child: _Stat(
-                      label: 'Liquidity',
-                      value: '\$${_money(item.liquidity)}')),
-            ],
-          ),
+          const SizedBox(height: 12),
+          if (loading)
+            const Center(
+              child: Padding(
+                padding: EdgeInsets.symmetric(vertical: 8),
+                child: CircularProgressIndicator(
+                  color: Color(0xFF00A3FF),
+                  strokeWidth: 2,
+                ),
+              ),
+            )
+          else if (holdings.isEmpty)
+            const Text(
+              'You do not currently hold shares for this event.',
+              style: TextStyle(color: Colors.white60),
+            )
+          else
+            ...holdings.map((holding) {
+              final controller = sellControllers[holding.outcome]!;
+              return Container(
+                margin: const EdgeInsets.only(bottom: 10),
+                padding: const EdgeInsets.all(12),
+                decoration: BoxDecoration(
+                  color: const Color(0xFF111827),
+                  borderRadius: BorderRadius.circular(10),
+                ),
+                child: Row(
+                  children: [
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            'Outcome: ${holding.label}',
+                            style: const TextStyle(
+                              color: Colors.white,
+                              fontWeight: FontWeight.w600,
+                            ),
+                          ),
+                          const SizedBox(height: 4),
+                          Text(
+                            '${holding.shares.toStringAsFixed(2)} shares',
+                            style: const TextStyle(
+                              color: Color(0xFF00A3FF),
+                              fontWeight: FontWeight.bold,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                    const SizedBox(width: 8),
+                    SizedBox(
+                      width: 96,
+                      child: TextFormField(
+                        controller: controller,
+                        keyboardType: const TextInputType.numberWithOptions(
+                          decimal: true,
+                        ),
+                        style: const TextStyle(color: Colors.white),
+                        decoration: InputDecoration(
+                          hintText: 'Shares',
+                          hintStyle: const TextStyle(color: Colors.white38),
+                          filled: true,
+                          fillColor: const Color(0xFF0D1320),
+                          border: OutlineInputBorder(
+                            borderRadius: BorderRadius.circular(8),
+                            borderSide: BorderSide.none,
+                          ),
+                          contentPadding: const EdgeInsets.symmetric(
+                            horizontal: 10,
+                            vertical: 10,
+                          ),
+                        ),
+                      ),
+                    ),
+                    const SizedBox(width: 8),
+                    ElevatedButton(
+                      onPressed: () => onSell(holding.outcome),
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: const Color(0xFFFF7A59),
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 12,
+                          vertical: 14,
+                        ),
+                      ),
+                      child: const Text('Sell'),
+                    ),
+                  ],
+                ),
+              );
+            }),
         ],
       ),
     );
   }
-
-  String _money(int value) {
-    if (value >= 1000000) return '${(value / 1000000).toStringAsFixed(1)}M';
-    if (value >= 1000) return '${(value / 1000).toStringAsFixed(0)}K';
-    return value.toString();
-  }
-
-  String _shortGuid(String value) {
-    if (value.length <= 8) return value;
-    return value.substring(0, 8);
-  }
 }
+
+
 
 class _Panel extends StatelessWidget {
   final Widget child;
@@ -480,108 +730,3 @@ class _Panel extends StatelessWidget {
   }
 }
 
-class _Pill extends StatelessWidget {
-  final String label;
-
-  const _Pill({required this.label});
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 9, vertical: 5),
-      decoration: BoxDecoration(
-        color: const Color(0xFF111827),
-        borderRadius: BorderRadius.circular(6),
-        border: Border.all(color: const Color(0xFF1F2937)),
-      ),
-      child: Text(
-        label,
-        style: const TextStyle(
-          color: Colors.white70,
-          fontSize: 12,
-          fontWeight: FontWeight.w700,
-        ),
-      ),
-    );
-  }
-}
-
-class _OutcomeButton extends StatelessWidget {
-  final String label;
-  final double price;
-  final Color color;
-  final bool selected;
-  final VoidCallback onTap;
-
-  const _OutcomeButton({
-    required this.label,
-    required this.price,
-    required this.color,
-    required this.selected,
-    required this.onTap,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    return GestureDetector(
-        onTap: onTap,
-        child: Container(
-          padding: const EdgeInsets.symmetric(vertical: 12),
-          decoration: BoxDecoration(
-            color: selected ? color.withOpacity(0.28) : color.withOpacity(0.16),
-            borderRadius: BorderRadius.circular(8),
-            border: Border.all(
-                color: selected ? color : color.withOpacity(0.5),
-                width: selected ? 2 : 1),
-          ),
-          child: Column(
-            children: [
-              Text(
-                label,
-                style: TextStyle(
-                  color: color,
-                  fontSize: 13,
-                  fontWeight: FontWeight.w800,
-                ),
-              ),
-              const SizedBox(height: 3),
-              Text(
-                '${(price * 100).toStringAsFixed(0)} cents',
-                style: const TextStyle(
-                  color: Colors.white,
-                  fontSize: 17,
-                  fontWeight: FontWeight.w800,
-                ),
-              ),
-            ],
-          ),
-        ));
-  }
-}
-
-class _Stat extends StatelessWidget {
-  final String label;
-  final String value;
-
-  const _Stat({required this.label, required this.value});
-
-  @override
-  Widget build(BuildContext context) {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Text(label,
-            style: const TextStyle(color: Colors.white38, fontSize: 12)),
-        const SizedBox(height: 4),
-        Text(
-          value,
-          style: const TextStyle(
-            color: Colors.white,
-            fontSize: 15,
-            fontWeight: FontWeight.w800,
-          ),
-        ),
-      ],
-    );
-  }
-}

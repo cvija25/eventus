@@ -7,12 +7,12 @@ using RabbitMQ.Client;
 
 namespace Account.Publishers;
 
-public class BetPlacedPublisher : IAsyncDisposable
+public class SellSharesPublisher : IAsyncDisposable
 {
     private readonly IChannel _channel;
     private readonly IConnection _connection;
 
-    public BetPlacedPublisher(IOptions<RabbitMqOptions> options)
+    public SellSharesPublisher(IOptions<RabbitMqOptions> options)
     {
         var rabbitOptions = options.Value;
 
@@ -42,9 +42,9 @@ public class BetPlacedPublisher : IAsyncDisposable
         await _connection.DisposeAsync();
     }
 
-    public async Task PublishBetPlacedAsync(BetPlacedEvent evt)
+    public async Task PublishSellSharesAsync(SellSharesEvent evt)
     {
-        var json = JsonSerializer.Serialize(MessageEnvelope.Create(MessageTypes.BetPlaced, evt));
+        var json = JsonSerializer.Serialize(MessageEnvelope.Create(MessageTypes.SellShares, evt));
         var body = Encoding.UTF8.GetBytes(json);
 
         var props = new BasicProperties { Persistent = true, ContentType = "application/json" };

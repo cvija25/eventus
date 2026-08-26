@@ -42,8 +42,12 @@ public class EventRepository : IEventRepository
         return _mapper.Map<EventDto?>(ev);
     }
 
-    public async Task<List<EventDto>> GetEventsAsync() =>
-        await _context.Events.ProjectTo<EventDto>(_mapper.ConfigurationProvider).ToListAsync();
+    public async Task<List<EventDto>> GetEventsAsync()
+    {
+        return await _context
+            .Events.ProjectTo<EventDto>(_mapper.ConfigurationProvider)
+            .ToListAsync();
+    }
 
     public async Task<bool> UpdateEventAsync(UpdateEventDto updateEventDto)
     {

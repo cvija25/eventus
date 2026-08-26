@@ -9,4 +9,5 @@ public class Transaction
     public Guid EventId { get; set; }
     public decimal ShareAmount { get; set; }
     public MarketOutcome Outcome { get; set; }
+    public TransactionType Type { get; set; }
 }

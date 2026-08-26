@@ -8,11 +8,11 @@ namespace Game.Handlers;
 public class BetPlacedHandler
 {
     private readonly CatalogGrpcClient _catalog_client;
-    private readonly BetApprovedPublisher _publisher;
+    private readonly CommandApprovedPublisher _publisher;
     private readonly ILogger<BetPlacedHandler> _logger;
 
     public BetPlacedHandler(
-        BetApprovedPublisher publisher,
+        CommandApprovedPublisher publisher,
         CatalogGrpcClient client,
         ILogger<BetPlacedHandler> logger
     )

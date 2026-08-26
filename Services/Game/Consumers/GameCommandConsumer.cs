@@ -12,15 +12,16 @@ using RabbitMQ.Client.Events;
 
 namespace Game.Consumers;
 
-public class BetPlacedConsumer(
-    ILogger<BetPlacedConsumer> logger,
+public class GameCommandConsumer(
+    ILogger<GameCommandConsumer> logger,
     IOptions<RabbitMqOptions> rabbitOptions,
     IServiceScopeFactory scopeFactory
 ) : BackgroundService
 {
     private IChannel? _channel;
     private IConnection? _connection;
-    private BetPlacedHandler? _handler;
+    private BetPlacedHandler? _betHandler;
+    private SellSharesHandler? _sellSharesHandler;
     private IServiceScope? _scope;
 
     protected override async Task ExecuteAsync(CancellationToken stoppingToken)
@@ -32,7 +33,7 @@ public class BetPlacedConsumer(
             }
             catch (Exception ex) when (!stoppingToken.IsCancellationRequested)
             {
-                logger.LogError(ex, "BetPlacedConsumer failed. Retrying in 5s...");
+                logger.LogError(ex, "Game command consumer failed. Retrying in 5s...");
                 await Task.Delay(TimeSpan.FromSeconds(5), stoppingToken);
             }
     }
@@ -56,18 +57,23 @@ public class BetPlacedConsumer(
         _scope = scopeFactory.CreateScope();
         var catalogClient = _scope.ServiceProvider.GetRequiredService<CatalogGrpcClient>();
         var loggerFactory = _scope.ServiceProvider.GetRequiredService<ILoggerFactory>();
-        var publisherLogger = loggerFactory.CreateLogger<BetApprovedPublisher>();
-        var handlerLogger = loggerFactory.CreateLogger<BetPlacedHandler>();
-        _handler = new BetPlacedHandler(
-            new BetApprovedPublisher(rabbitOptions, publisherLogger),
+        var publisherLogger = loggerFactory.CreateLogger<CommandApprovedPublisher>();
+        var publisher = new CommandApprovedPublisher(rabbitOptions, publisherLogger);
+        _betHandler = new BetPlacedHandler(
+            publisher,
             catalogClient,
-            handlerLogger
+            loggerFactory.CreateLogger<BetPlacedHandler>()
+        );
+        _sellSharesHandler = new SellSharesHandler(
+            publisher,
+            catalogClient,
+            loggerFactory.CreateLogger<SellSharesHandler>()
         );
 
         await _channel.BasicQosAsync(0, 10, false, stoppingToken);
 
         await _channel.QueueDeclareAsync(
-            RabbitMQConstants.BetPlacedQueue,
+            RabbitMQConstants.GameCommandQueue,
             true,
             false,
             false,
@@ -75,7 +81,7 @@ public class BetPlacedConsumer(
         );
 
         await _channel.QueueDeclareAsync(
-            RabbitMQConstants.BetApprovedQueue,
+            RabbitMQConstants.CommandApprovedQueue,
             true,
             false,
             false,
@@ -86,13 +92,13 @@ public class BetPlacedConsumer(
         consumer.ReceivedAsync += OnMessageReceivedAsync;
 
         await _channel.BasicConsumeAsync(
-            RabbitMQConstants.BetPlacedQueue,
+            RabbitMQConstants.GameCommandQueue,
             false,
             consumer,
             stoppingToken
         );
 
-        logger.LogInformation("BetPlacedConsumer started.");
+        logger.LogInformation("Game command consumer started.");
 
         var tcs = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
 
@@ -114,18 +120,23 @@ public class BetPlacedConsumer(
         {
             var body = eventArgs.Body.ToArray();
             var json = Encoding.UTF8.GetString(body);
-            var betPlaced =
-                JsonSerializer.Deserialize<BetPlacedEvent>(json)
-                ?? throw new JsonException("Failed to deserialize BetPlacedEvent");
+            var command =
+                JsonSerializer.Deserialize<MessageEnvelope>(json)
+                ?? throw new JsonException("Failed to deserialize game command.");
 
-            logger.LogInformation(
-                "Received bet: {EventId}, {OwnerId}, {Stake}",
-                betPlaced.EventId,
-                betPlaced.OwnerId,
-                betPlaced.Stake
-            );
-
-            await _handler!.ProcessBetPlacedAsync(betPlaced);
+            switch (command.Type)
+            {
+                case MessageTypes.BetPlaced:
+                    await _betHandler!.ProcessBetPlacedAsync(command.Deserialize<BetPlacedEvent>());
+                    break;
+                case MessageTypes.SellShares:
+                    await _sellSharesHandler!.ProcessSellSharesAsync(
+                        command.Deserialize<SellSharesEvent>()
+                    );
+                    break;
+                default:
+                    throw new JsonException($"Unknown game command type '{command.Type}'.");
+            }
 
             await _channel!.BasicAckAsync(eventArgs.DeliveryTag, false, CancellationToken.None);
         }

@@ -5,7 +5,7 @@ using Game.GrpcClients;
 var builder = WebApplication.CreateBuilder(args);
 
 builder.Services.AddControllers();
-builder.Services.AddHostedService<BetPlacedConsumer>();
+builder.Services.AddHostedService<GameCommandConsumer>();
 builder.Services.Configure<RabbitMqOptions>(builder.Configuration.GetSection("RabbitMq"));
 builder.Services.AddGrpcClient<Catalog.GRPC.Catalog.CatalogClient>(o =>
 {

@@ -2,7 +2,7 @@ namespace Contracts;
 
 public class RabbitMQConstants
 {
-    public const string BetPlacedQueue = "bet-placed";
-    public const string BetApprovedQueue = "bet-approved";
+    public const string GameCommandQueue = "command-request";
+    public const string CommandApprovedQueue = "command-response";
     public const string EventResolvedQueue = "event-resolved";
 }

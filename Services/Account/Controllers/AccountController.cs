@@ -11,7 +11,8 @@ namespace Account.Controllers;
 [ApiController]
 [Route("/api/v1/account")]
 public class AccountController(
-    BetPlacedPublisher publisher,
+    BetPlacedPublisher betPublisher,
+    SellSharesPublisher sharesPublisher,
     IWalletRepository walletRepository,
     ITransactionRepository transactionRepository,
     ILogger<AccountController> logger
@@ -23,14 +24,60 @@ public class AccountController(
         return Ok("Hello World, from Account!");
     }
 
-    [HttpPost("bet")]
+    [HttpPost("sell-shares")]
+    [Authorize]
+    public async Task<ActionResult<string>> PublishSellShares([FromBody] SellSharesRequest request)
+    {
+        if (request.Shares <= 0)
+            return BadRequest("Shares must be greater than zero");
+
+        if (!Enum.IsDefined(request.Outcome))
+        {
+            logger.LogWarning(
+                "Invalid game outcome: Outcome={Outcome}, EventId={EventId}",
+                request.Outcome,
+                request.EventId
+            );
+            return BadRequest("Outcome must be Yes (1) or No (2)");
+        }
+
+        var ownerId = Guid.Parse(User.FindFirst(JwtRegisteredClaimNames.Sub)!.Value);
+        var transactions = await transactionRepository.GetTransactionsForUser(ownerId);
+        var availableShares = transactions
+            .Where(transaction =>
+                transaction.EventId == request.EventId && transaction.Outcome == request.Outcome
+            )
+            .Sum(transaction => transaction.ShareAmount);
+
+        if (availableShares < request.Shares)
+            return Conflict("You do not own enough shares for this sale");
+
+        logger.LogInformation(
+            "Sell shares request received: AccountId={AccountId}, Shares={Shares}",
+            ownerId,
+            request.Shares
+        );
+
+        var evt = new SellSharesEvent
+        {
+            OwnerId = ownerId,
+            EventId = request.EventId,
+            Shares = request.Shares,
+            Outcome = request.Outcome,
+        };
+
+        await sharesPublisher.PublishSellSharesAsync(evt);
+        return Ok("Sell shares event published");
+    }
+
+    [HttpPost("buy")]
     [Authorize]
     public async Task<ActionResult<string>> PublishBet([FromBody] BetPlacedRequest request)
     {
         if (request.Stake <= 0)
         {
             logger.LogWarning(
-                "Invalid bet stake: Stake={Stake}, EventId={EventId}",
+                "Invalid buy stake: Stake={Stake}, EventId={EventId}",
                 request.Stake,
                 request.EventId
             );
@@ -51,7 +98,7 @@ public class AccountController(
         var funds = await walletRepository.GetBalance(ownerId);
 
         logger.LogInformation(
-            "Bet request received: AccountId={AccountId}, Stake={Stake}, CurrentBalance={CurrentBalance}",
+            "Buy request received: AccountId={AccountId}, Stake={Stake}, CurrentBalance={CurrentBalance}",
             ownerId,
             request.Stake,
             funds?.Amount ?? 0m
@@ -76,8 +123,8 @@ public class AccountController(
             Outcome = request.Outcome,
         };
 
-        await publisher.PublishBetPlacedAsync(evt);
-        return Ok("Bet event published");
+        await betPublisher.PublishBetPlacedAsync(evt);
+        return Ok("Buy event published");
     }
 
     [HttpGet("balance")]

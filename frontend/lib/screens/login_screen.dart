@@ -36,7 +36,8 @@ class _LoginScreenState extends State<LoginScreen> {
   }
 
   void _showSnackBar(String message, {bool isError = false}) {
-    ScaffoldMessenger.of(context).showSnackBar(
+    final messenger = ScaffoldMessenger.maybeOf(context);
+    messenger?.showSnackBar(
       SnackBar(
         content: Text(message),
         backgroundColor: isError ? const Color(0xFFB00020) : const Color(0xFF111827),
@@ -58,7 +59,7 @@ class _LoginScreenState extends State<LoginScreen> {
           password: _passwordController.text,
           isAdmin: false,
         );
-        if (!mounted) return;
+        if (!context.mounted) return;
         _showSnackBar('Account created. You can now log in.');
         setState(() {
           _isRegisterMode = false;
@@ -70,15 +71,18 @@ class _LoginScreenState extends State<LoginScreen> {
           password: _passwordController.text,
         );
         await AuthService.instance.login(token);
-        if (!mounted) return;
-        _showSnackBar('Login successful.');
-        Navigator.pop(context);
+        if (!context.mounted) return;
+        WidgetsBinding.instance.addPostFrameCallback((_) {
+          if (!context.mounted) return;
+          _showSnackBar('Login successful.');
+          Navigator.pop(context);
+        });
       }
     } catch (error) {
-      if (!mounted) return;
+      if (!context.mounted) return;
       _showSnackBar(error.toString().replaceFirst('Exception: ', ''), isError: true);
     } finally {
-      if (mounted) setState(() => _isSubmitting = false);
+      if (context.mounted) setState(() => _isSubmitting = false);
     }
   }
 
