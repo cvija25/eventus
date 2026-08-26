@@ -50,7 +50,8 @@ public class EventRepository : IEventRepository
         var ev = await _context.Events.FindAsync(updateEventDto.Id);
         if (ev is null)
             return false;
-
+        if (updateEventDto.Pot != null)
+            ev.Pot = updateEventDto.Pot.Value;
         if (updateEventDto.PoolYes.HasValue)
             ev.PoolYes = updateEventDto.PoolYes.Value;
         if (updateEventDto.PoolNo.HasValue)
