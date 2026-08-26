@@ -13,17 +13,30 @@ message GetEventPriceRequest {
   string event_id = 1;
 }
 message GetEventPriceResponse {
-  optional int64 price_yes = 1;
-  optional int64 price_no = 2;
-  optional int64 pot_size = 3;
-  string pot_size_yes = 4;
-  string pot_size_no = 5;
+  string pot = 6;
+  string pool_yes = 7;
+  string pool_no = 8;
+  string price_yes = 9;
+  string price_no = 10;
+  
+  reserved 1;
+  reserved 2;
+  reserved 3;
+  reserved 4;
+  reserved 5;
 }
 
 message UpdateEventPriceRequest {
   string event_id = 1;
-  string pot_size_yes = 5;
-  string pot_size_no = 6;
+  string pool_yes = 7;
+  string pool_no = 8;
+  string pot = 9;
+
+  reserved 2;
+  reserved 3;
+  reserved 4;
+  reserved 5;
+  reserved 6;
 }
 
 message UpdateEventPriceResponse {

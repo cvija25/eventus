@@ -10,17 +10,20 @@ public class CatalogGrpcClient(CatalogProto.CatalogClient client)
 
     public async Task<UpdateEventPriceResponse> UpdateEventPriceAsync(
         Guid eventId,
-        decimal? potSizeYes = null,
-        decimal? potSizeNo = null
+        decimal? pot = null,
+        decimal? poolYes = null,
+        decimal? poolNo = null
     )
     {
         var request = new UpdateEventPriceRequest { EventId = eventId.ToString() };
-        if (potSizeYes.HasValue)
-            request.PotSizeYes = potSizeYes.Value.ToString(
+        if (pot.HasValue)
+            request.Pot = pot.Value.ToString(System.Globalization.CultureInfo.InvariantCulture);
+        if (poolYes.HasValue)
+            request.PoolYes = poolYes.Value.ToString(
                 System.Globalization.CultureInfo.InvariantCulture
             );
-        if (potSizeNo.HasValue)
-            request.PotSizeNo = potSizeNo.Value.ToString(
+        if (poolNo.HasValue)
+            request.PoolNo = poolNo.Value.ToString(
                 System.Globalization.CultureInfo.InvariantCulture
             );
         return await client.UpdateEventPriceAsync(request);

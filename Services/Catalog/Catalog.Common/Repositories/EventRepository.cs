@@ -11,8 +11,8 @@ public class EventRepository : IEventRepository
 {
     private readonly IEventContext _context;
     private readonly IMapper _mapper;
-    private const int InitialPrice = 50;
-    private const int InitialPotSize = 2;
+    private const decimal InitialPot = 1m;
+    private const decimal InitialPool = 1m;
 
     public EventRepository(IEventContext context, IMapper mapper)
     {
@@ -27,8 +27,9 @@ public class EventRepository : IEventRepository
             Id = Guid.NewGuid(),
             Title = createEventDto.Title,
             OwnerId = ownerId,
-            PotSizeYes = 1m,
-            PotSizeNo = 1m,
+            Pot = InitialPot,
+            PoolYes = InitialPool,
+            PoolNo = InitialPool,
         };
         _context.Events.Add(newEvent);
         await _context.SaveChangesAsync();
@@ -49,11 +50,12 @@ public class EventRepository : IEventRepository
         var ev = await _context.Events.FindAsync(updateEventDto.Id);
         if (ev is null)
             return false;
-
-        if (updateEventDto.PotSizeYes.HasValue)
-            ev.PotSizeYes = updateEventDto.PotSizeYes.Value;
-        if (updateEventDto.PotSizeNo.HasValue)
-            ev.PotSizeNo = updateEventDto.PotSizeNo.Value;
+        if (updateEventDto.Pot != null)
+            ev.Pot = updateEventDto.Pot.Value;
+        if (updateEventDto.PoolYes.HasValue)
+            ev.PoolYes = updateEventDto.PoolYes.Value;
+        if (updateEventDto.PoolNo.HasValue)
+            ev.PoolNo = updateEventDto.PoolNo.Value;
         if (updateEventDto.Title != null)
             ev.Title = updateEventDto.Title;
 
