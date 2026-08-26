@@ -54,7 +54,7 @@ public class CatalogController : ControllerBase
         if (ev.OwnerId != userId)
             return Forbid();
         await _eventRepository.ResolveEventAsync(dto);
-        var mqEvent = new EventResolvedEvent { EventId = dto.Id, Outcome = EventOutcome.No };
+        var mqEvent = new EventResolvedEvent { EventId = dto.Id, Outcome = dto.Outcome };
         await _eventResolvedPublisher.PublishEventResolvedAsync(mqEvent);
         return Ok();
     }
