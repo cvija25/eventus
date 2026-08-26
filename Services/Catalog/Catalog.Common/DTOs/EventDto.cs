@@ -7,7 +7,7 @@ public record EventDto
     public Guid OwnerId { get; init; }
     public decimal? PriceYes { get; init; }
     public decimal? PriceNo { get; init; }
-    public decimal? PotSize { get; init; }
-    public decimal PotSizeYes { get; init; }
-    public decimal PotSizeNo { get; init; }
+    public decimal? Pot { get; init; }
+    public decimal PoolYes { get; init; }
+    public decimal PoolNo { get; init; }
 }
