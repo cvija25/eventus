@@ -153,7 +153,8 @@ class _BalanceScreenState extends State<BalanceScreen> {
     final value = double.tryParse(text);
 
     if (value == null || value <= 0) {
-      ScaffoldMessenger.of(context).showSnackBar(
+      final messenger = ScaffoldMessenger.maybeOf(context);
+      messenger?.showSnackBar(
         const SnackBar(
           content: Text('Enter a valid amount greater than 0'),
           backgroundColor: Color(0xFFB00020),
@@ -167,14 +168,16 @@ class _BalanceScreenState extends State<BalanceScreen> {
       _amountController.clear();
       await _loadBalance();
       if (!context.mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Deposit successful')),
-      );
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        final m = ScaffoldMessenger.maybeOf(context);
+        m?.showSnackBar(const SnackBar(content: Text('Deposit successful')));
+      });
     } catch (e) {
       if (!context.mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Deposit failed: $e')),
-      );
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        final m = ScaffoldMessenger.maybeOf(context);
+        m?.showSnackBar(SnackBar(content: Text('Deposit failed: $e')));
+      });
     }
   }
 
@@ -394,10 +397,10 @@ class _BalanceScreenState extends State<BalanceScreen> {
                                 title: GestureDetector(
                                   onTap: () async {
                                     try {
+                                      final navigator = Navigator.of(context);
                                       final item = await _api.fetchItem(eventId);
                                       if (!context.mounted) return;
-                                      await Navigator.push(
-                                        context,
+                                      await navigator.push(
                                         MaterialPageRoute(
                                           builder: (_) => DetailScreen(item: item),
                                         ),
@@ -406,11 +409,10 @@ class _BalanceScreenState extends State<BalanceScreen> {
                                       await _loadBalance();
                                     } catch (e) {
                                       if (!context.mounted) return;
-                                      ScaffoldMessenger.of(context).showSnackBar(
-                                        SnackBar(
-                                          content: Text('Could not open event: $e'),
-                                        ),
-                                      );
+                                      WidgetsBinding.instance.addPostFrameCallback((_) {
+                                        final m = ScaffoldMessenger.maybeOf(context);
+                                        m?.showSnackBar(SnackBar(content: Text('Could not open event: $e')));
+                                      });
                                     }
                                   },
                                   child: Row(

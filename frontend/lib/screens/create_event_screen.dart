@@ -21,7 +21,8 @@ class _CreateEventScreenState extends State<CreateEventScreen> {
   }
 
   void _showSnackBar(String message, {bool isError = false}) {
-    ScaffoldMessenger.of(context).showSnackBar(
+    final messenger = ScaffoldMessenger.maybeOf(context);
+    messenger?.showSnackBar(
       SnackBar(
         content: Text(message),
         backgroundColor: isError ? const Color(0xFFB00020) : const Color(0xFF111827),
@@ -38,7 +39,10 @@ class _CreateEventScreenState extends State<CreateEventScreen> {
     try {
       final item = await _api.createEvent(title: _titleController.text.trim());
       if (!context.mounted) return;
-      Navigator.pop(context, item);
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (!context.mounted) return;
+        Navigator.pop(context, item);
+      });
     } catch (error) {
       if (!context.mounted) return;
       _showSnackBar(error.toString().replaceFirst('Exception: ', ''), isError: true);

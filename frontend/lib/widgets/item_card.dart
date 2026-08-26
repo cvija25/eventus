@@ -98,9 +98,21 @@ class _MarketIcon extends StatelessWidget {
       width: 42,
       height: 42,
       decoration: BoxDecoration(
-        color: color.withOpacity(0.14),
+        color: Color.fromRGBO(
+          (((color.r * 255.0).round()).clamp(0, 255)).toInt(),
+          (((color.g * 255.0).round()).clamp(0, 255)).toInt(),
+          (((color.b * 255.0).round()).clamp(0, 255)).toInt(),
+          0.14,
+        ),
         borderRadius: BorderRadius.circular(8),
-        border: Border.all(color: color.withOpacity(0.45)),
+        border: Border.all(
+          color: Color.fromRGBO(
+            (((color.r * 255.0).round()).clamp(0, 255)).toInt(),
+            (((color.g * 255.0).round()).clamp(0, 255)).toInt(),
+            (((color.b * 255.0).round()).clamp(0, 255)).toInt(),
+            0.45,
+          ),
+        ),
       ),
       child: Icon(Icons.insights, color: color, size: 22),
     );

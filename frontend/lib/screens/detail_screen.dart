@@ -143,14 +143,15 @@ class _DetailScreenState extends State<DetailScreen> {
       controller.clear();
       await _loadMyEventHoldings();
       if (!context.mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Sell request sent')),
-      );
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        final m = ScaffoldMessenger.maybeOf(context);
+        m?.showSnackBar(const SnackBar(content: Text('Sell request sent')));
+      });
     } catch (e) {
-      if (!context.mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Sell failed: $e')),
-      );
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        final m = ScaffoldMessenger.maybeOf(context);
+        m?.showSnackBar(SnackBar(content: Text('Sell failed: $e')));
+      });
     }
   }
 
@@ -187,14 +188,17 @@ class _DetailScreenState extends State<DetailScreen> {
           _submitting = false;
         });
 
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('Stake submitted: $value'),
-            backgroundColor: const Color(0xFF111827),
-            behavior: SnackBarBehavior.floating,
-            duration: const Duration(seconds: 2),
-          ),
-        );
+        WidgetsBinding.instance.addPostFrameCallback((_) {
+          final m = ScaffoldMessenger.maybeOf(context);
+          m?.showSnackBar(
+            SnackBar(
+              content: Text('Stake submitted: $value'),
+              backgroundColor: const Color(0xFF111827),
+              behavior: SnackBarBehavior.floating,
+              duration: const Duration(seconds: 2),
+            ),
+          );
+        });
       } catch (error) {
         if (!context.mounted) return;
 
@@ -378,7 +382,14 @@ class _OutcomeRow extends StatelessWidget {
       child: Container(
         padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
         decoration: BoxDecoration(
-          color: selected ? color.withOpacity(0.12) : const Color(0xFF111827),
+          color: selected
+              ? Color.fromRGBO(
+                  (((color.r * 255.0).round()).clamp(0, 255)).toInt(),
+                  (((color.g * 255.0).round()).clamp(0, 255)).toInt(),
+                  (((color.b * 255.0).round()).clamp(0, 255)).toInt(),
+                  0.12,
+                )
+              : const Color(0xFF111827),
           borderRadius: BorderRadius.circular(10),
           border: Border.all(
             color: selected ? color : const Color(0xFF1F2937),

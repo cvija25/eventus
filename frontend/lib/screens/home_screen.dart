@@ -116,13 +116,14 @@ class _HomeScreenState extends State<HomeScreen> {
                     onPressed: () {
                       if (loggedIn) {
                         AuthService.instance.logout();
-                        ScaffoldMessenger.of(context).showSnackBar(
-                          const SnackBar(
-                            content: Text('Logged out'),
-                            backgroundColor: Color(0xFF111827),
-                            behavior: SnackBarBehavior.floating,
-                          ),
-                        );
+                            final messenger = ScaffoldMessenger.maybeOf(context);
+                            messenger?.showSnackBar(
+                              const SnackBar(
+                                content: Text('Logged out'),
+                                backgroundColor: Color(0xFF111827),
+                                behavior: SnackBarBehavior.floating,
+                              ),
+                            );
                       } else {
                         Navigator.push(
                           context,
