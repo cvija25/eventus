@@ -132,6 +132,7 @@ services:
       - "8084:8080"
     depends_on:
       - identity-db
+      - account
 
   identity-db:
     image: mongo:8

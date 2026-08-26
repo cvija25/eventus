@@ -1,3 +1,4 @@
+using Identity.API.Clients;
 using Identity.API.DTOs;
 using Identity.API.Repositories;
 using Identity.API.Services;
@@ -8,8 +9,11 @@ namespace Identity.API.Controllers;
 
 [ApiController]
 [Route("/api/v1/identity")]
-public class IdentityController(IUserRepository userRepository, JwtService jwtService)
-    : ControllerBase
+public class IdentityController(
+    IUserRepository userRepository,
+    JwtService jwtService,
+    AccountClient accountClient
+) : ControllerBase
 {
     [HttpPost("register")]
     public async Task<IActionResult> Register([FromBody] RegisterRequest request)
@@ -17,6 +21,7 @@ public class IdentityController(IUserRepository userRepository, JwtService jwtSe
         try
         {
             var user = await userRepository.CreateUserAsync(request);
+            await accountClient.CreateWalletAsync(Guid.Parse(user.Id));
             return CreatedAtAction(
                 nameof(Register),
                 new RegisterResponse(user.Id, user.Name, user.Email, user.Role)
