@@ -1,3 +1,5 @@
+using Contracts;
+
 namespace Catalog.Common.DTOs;
 
 public record EventDto
@@ -10,4 +12,5 @@ public record EventDto
     public decimal? Pot { get; init; }
     public decimal PoolYes { get; init; }
     public decimal PoolNo { get; init; }
+    public MarketOutcome? Outcome { get; init; }
 }

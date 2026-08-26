@@ -42,6 +42,34 @@ class AuthService extends ChangeNotifier {
     return null;
   }
 
+  String? get userId {
+    final token = _token;
+    if (token == null || token.split('.').length < 2) {
+      return null;
+    }
+
+    try {
+      final payload = token.split('.')[1];
+      final normalized = payload.padRight(
+          payload.length + ((4 - payload.length % 4) % 4), '=');
+      final decoded = utf8.decode(base64Url.decode(normalized));
+      final data = jsonDecode(decoded) as Map<String, dynamic>;
+
+      final sub = data['sub'] ??
+          data['nameid'] ??
+          data[
+              'http://schemas.xmlsoap.org/ws/2005/05/identity/claims/nameidentifier'];
+
+      if (sub is String && sub.trim().isNotEmpty) {
+        return sub;
+      }
+    } catch (_) {
+      return null;
+    }
+
+    return null;
+  }
+
   Future<void> init() async {
     final prefs = await SharedPreferences.getInstance();
     _token = prefs.getString(_tokenKey);

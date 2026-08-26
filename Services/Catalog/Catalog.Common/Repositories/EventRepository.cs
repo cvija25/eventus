@@ -4,6 +4,7 @@ using Catalog.Common.Data;
 using Catalog.Common.DTOs;
 using Catalog.Common.Entities;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.FileProviders;
 
 namespace Catalog.Common.Repositories;
 
@@ -52,7 +53,7 @@ public class EventRepository : IEventRepository
     public async Task<bool> UpdateEventAsync(UpdateEventDto updateEventDto)
     {
         var ev = await _context.Events.FindAsync(updateEventDto.Id);
-        if (ev is null)
+        if (ev is null || ev.Outcome != null)
             return false;
         if (updateEventDto.Pot != null)
             ev.Pot = updateEventDto.Pot.Value;
@@ -70,7 +71,7 @@ public class EventRepository : IEventRepository
     public async Task<bool> ResolveEventAsync(ResolveEventDto resolveEventDto)
     {
         var ev = await _context.Events.FindAsync(resolveEventDto.Id);
-        if (ev is null)
+        if (ev is null || ev.Outcome != null)
             return false;
         ev.Outcome = resolveEventDto.Outcome;
         await _context.SaveChangesAsync();
