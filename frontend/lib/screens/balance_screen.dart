@@ -11,12 +11,14 @@ class ShareHolding {
     required this.userId,
     required this.shareAmount,
     required this.outcome,
+    required this.type,
   });
 
   final String eventId;
   final String userId;
   final double shareAmount;
   final MarketOutcome outcome;
+  final int type;
 
   String get outcomeLabel => outcome == MarketOutcome.yes ? 'YES' : 'NO';
 }
@@ -109,6 +111,16 @@ class _BalanceScreenState extends State<BalanceScreen> {
                       ? MarketOutcome.no
                       : MarketOutcome.yes;
 
+                      final rawType = item['type'] ?? item['Type'] ?? item['transactionType'] ?? item['TransactionType'];
+                      int typeInt;
+                      if (rawType is int) {
+                        typeInt = rawType;
+                      } else if (rawType is String) {
+                        typeInt = int.tryParse(rawType) ?? 1;
+                      } else {
+                        typeInt = 1;
+                      }
+
               if (eventId.isEmpty || userId.isEmpty) {
                 return null;
               }
@@ -118,6 +130,7 @@ class _BalanceScreenState extends State<BalanceScreen> {
                 userId: userId,
                 shareAmount: shareAmount,
                 outcome: outcome,
+                type: typeInt,
               );
             })
             .whereType<ShareHolding>()
@@ -345,7 +358,7 @@ class _BalanceScreenState extends State<BalanceScreen> {
                           final holdings = entry.value;
                           final totalShares = holdings.fold<double>(
                             0,
-                            (sum, holding) => sum + holding.shareAmount,
+                            (sum, holding) => sum + (holding.type == 2 ? -holding.shareAmount : holding.shareAmount),
                           );
                           final expanded = _expandedEventIds.contains(eventId);
 
@@ -487,8 +500,8 @@ class _BalanceScreenState extends State<BalanceScreen> {
                                           ),
                                           Text(
                                             '${holding.shareAmount.toStringAsFixed(2)}',
-                                            style: const TextStyle(
-                                              color: Color(0xFF00A3FF),
+                                            style: TextStyle(
+                                              color: holding.type == 2 ? Colors.redAccent : const Color(0xFF00A3FF),
                                               fontWeight: FontWeight.bold,
                                             ),
                                           ),

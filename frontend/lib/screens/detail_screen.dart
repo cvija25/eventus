@@ -80,7 +80,19 @@ class _DetailScreenState extends State<DetailScreen> {
           tx['shareAmount'] ?? tx['share_amount'] ?? tx['ShareAmount'],
         );
 
-        byOutcome[outcome] = (byOutcome[outcome] ?? 0) + amount;
+        // Transaction type: 1 = Buy (add), 2 = Sell (subtract). Default to Buy when parsing fails.
+        final rawType = tx['type'] ?? tx['Type'] ?? tx['transactionType'] ?? tx['TransactionType'];
+        int typeInt;
+        if (rawType is int) {
+          typeInt = rawType;
+        } else if (rawType is String) {
+          typeInt = int.tryParse(rawType) ?? 1;
+        } else {
+          typeInt = 1;
+        }
+
+        final signedAmount = typeInt == 2 ? -amount : amount;
+        byOutcome[outcome] = (byOutcome[outcome] ?? 0) + signedAmount;
       }
 
       final rows = <_EventHoldingSummary>[];
