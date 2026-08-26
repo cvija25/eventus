@@ -41,8 +41,8 @@ public class SellSharesHandler
 
         var sellPrice = calculatePayout(reserveYes, reserveNo, sellShares.Shares);
         reserveYes += sellShares.Shares - sellPrice;
-        reserveNo  -= sellPrice;
-        pot        -= sellPrice;
+        reserveNo -= sellPrice;
+        pot -= sellPrice;
 
         var updateResult = await _catalog_client.UpdateEventPriceAsync(
             eventId,

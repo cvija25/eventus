@@ -120,7 +120,8 @@ public class GameCommandConsumer(
         {
             var body = eventArgs.Body.ToArray();
             var json = Encoding.UTF8.GetString(body);
-            var command = JsonSerializer.Deserialize<MessageEnvelope>(json)
+            var command =
+                JsonSerializer.Deserialize<MessageEnvelope>(json)
                 ?? throw new JsonException("Failed to deserialize game command.");
 
             switch (command.Type)

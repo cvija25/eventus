@@ -100,7 +100,8 @@ public class CommandApprovedConsumer(
         try
         {
             var json = Encoding.UTF8.GetString(ea.Body.ToArray());
-            var result = JsonSerializer.Deserialize<MessageEnvelope>(json)
+            var result =
+                JsonSerializer.Deserialize<MessageEnvelope>(json)
                 ?? throw new JsonException("Failed to deserialize command result.");
 
             switch (result.Type)
@@ -149,14 +150,23 @@ public class CommandApprovedConsumer(
         AccountDbContext db
     )
     {
-        if (!evt.IsApproved) return;
+        if (!evt.IsApproved)
+            return;
 
-        await using var transaction = await db.Database.BeginTransactionAsync(CancellationToken.None);
+        await using var transaction = await db.Database.BeginTransactionAsync(
+            CancellationToken.None
+        );
         try
         {
             await walletRepository.Withdraw(evt.AccId, evt.Stake);
             await transactionRepository.CreateTransaction(
-                new TransactionDTO(evt.EventId, evt.AccId, evt.ShareAmount, evt.Outcome, TransactionType.Buy)
+                new TransactionDTO(
+                    evt.EventId,
+                    evt.AccId,
+                    evt.ShareAmount,
+                    evt.Outcome,
+                    TransactionType.Buy
+                )
             );
             await transaction.CommitAsync(CancellationToken.None);
         }
@@ -174,14 +184,23 @@ public class CommandApprovedConsumer(
         AccountDbContext db
     )
     {
-        if (!evt.IsApproved) return;
+        if (!evt.IsApproved)
+            return;
 
-        await using var transaction = await db.Database.BeginTransactionAsync(CancellationToken.None);
+        await using var transaction = await db.Database.BeginTransactionAsync(
+            CancellationToken.None
+        );
         try
         {
             await walletRepository.Deposit(evt.AccId, evt.SellPrice * evt.ShareAmount);
             await transactionRepository.CreateTransaction(
-                new TransactionDTO(evt.EventId, evt.AccId, evt.ShareAmount, evt.Outcome, TransactionType.Sell)
+                new TransactionDTO(
+                    evt.EventId,
+                    evt.AccId,
+                    evt.ShareAmount,
+                    evt.Outcome,
+                    TransactionType.Sell
+                )
             );
             await transaction.CommitAsync(CancellationToken.None);
         }

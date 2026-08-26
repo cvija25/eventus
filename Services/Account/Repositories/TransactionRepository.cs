@@ -18,7 +18,7 @@ public class TransactionRepository(AccountDbContext context, IMapper mapper)
             AccountId = transactionDto.UserId,
             Outcome = transactionDto.Outcome,
             ShareAmount = transactionDto.ShareAmount,
-            Type = transactionDto.Type
+            Type = transactionDto.Type,
         };
         context.Transactions.Add(transaction);
         var rows = await context.SaveChangesAsync();

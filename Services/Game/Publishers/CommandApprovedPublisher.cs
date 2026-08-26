@@ -62,11 +62,7 @@ public class CommandApprovedPublisher : IAsyncDisposable
         var json = JsonSerializer.Serialize(MessageEnvelope.Create(type, evt));
         var body = Encoding.UTF8.GetBytes(json);
 
-        _logger.LogInformation(
-            "Publishing command result: Type={Type}, Json={Json}",
-            type,
-            json
-        );
+        _logger.LogInformation("Publishing command result: Type={Type}, Json={Json}", type, json);
 
         var props = new BasicProperties { Persistent = true, ContentType = "application/json" };
         await _channel.BasicPublishAsync(

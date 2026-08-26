@@ -70,15 +70,14 @@ public class AccountController(
         return Ok("Sell shares event published");
     }
 
-
-    [HttpPost("bet")]
+    [HttpPost("buy")]
     [Authorize]
     public async Task<ActionResult<string>> PublishBet([FromBody] BetPlacedRequest request)
     {
         if (request.Stake <= 0)
         {
             logger.LogWarning(
-                "Invalid bet stake: Stake={Stake}, EventId={EventId}",
+                "Invalid buy stake: Stake={Stake}, EventId={EventId}",
                 request.Stake,
                 request.EventId
             );
@@ -99,7 +98,7 @@ public class AccountController(
         var funds = await walletRepository.GetBalance(ownerId);
 
         logger.LogInformation(
-            "Bet request received: AccountId={AccountId}, Stake={Stake}, CurrentBalance={CurrentBalance}",
+            "Buy request received: AccountId={AccountId}, Stake={Stake}, CurrentBalance={CurrentBalance}",
             ownerId,
             request.Stake,
             funds?.Amount ?? 0m
@@ -125,7 +124,7 @@ public class AccountController(
         };
 
         await betPublisher.PublishBetPlacedAsync(evt);
-        return Ok("Bet event published");
+        return Ok("Buy event published");
     }
 
     [HttpGet("balance")]

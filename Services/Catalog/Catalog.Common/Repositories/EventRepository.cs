@@ -20,8 +20,6 @@ public class EventRepository : IEventRepository
         _mapper = mapper ?? throw new ArgumentNullException(nameof(mapper));
     }
 
-    
-
     public async Task<EventDto> CreateEventAsync(CreateEventDto createEventDto, Guid ownerId)
     {
         var newEvent = new Event
@@ -46,7 +44,9 @@ public class EventRepository : IEventRepository
 
     public async Task<List<EventDto>> GetEventsAsync()
     {
-        return await _context.Events.ProjectTo<EventDto>(_mapper.ConfigurationProvider).ToListAsync();
+        return await _context
+            .Events.ProjectTo<EventDto>(_mapper.ConfigurationProvider)
+            .ToListAsync();
     }
 
     public async Task<bool> UpdateEventAsync(UpdateEventDto updateEventDto)

@@ -27,8 +27,8 @@ class ApiService {
     };
   }
 
-  static String get _accountUrl =>
-      'http://$_host:$_gatewayPort/account/api/v1/account/bet';
+    static String get _accountUrl =>
+      'http://$_host:$_gatewayPort/account/api/v1/account/buy';
   static String get _depositUrl =>
       'http://$_host:$_gatewayPort/account/api/v1/account/deposit';
   Future<List<Item>> fetchItems() async {

@@ -49,6 +49,12 @@ public class BetPlacedPublisher : IAsyncDisposable
 
         var props = new BasicProperties { Persistent = true, ContentType = "application/json" };
 
-        await _channel.BasicPublishAsync("", RabbitMQConstants.GameCommandQueue, false, props, body);
+        await _channel.BasicPublishAsync(
+            "",
+            RabbitMQConstants.GameCommandQueue,
+            false,
+            props,
+            body
+        );
     }
 }
