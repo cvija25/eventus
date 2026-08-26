@@ -12,9 +12,8 @@ public class EventContext(DbContextOptions<EventContext> options)
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
         base.OnModelCreating(modelBuilder);
-
-        modelBuilder.Entity<Event>().Property(e => e.PotSizeYes).HasDefaultValue(1m);
-
-        modelBuilder.Entity<Event>().Property(e => e.PotSizeNo).HasDefaultValue(1m);
+        modelBuilder.Entity<Event>().Property(e => e.Pot).HasDefaultValue(1m);
+        modelBuilder.Entity<Event>().Property(e => e.PoolYes).HasDefaultValue(1m);
+        modelBuilder.Entity<Event>().Property(e => e.PoolNo).HasDefaultValue(1m);
     }
 }

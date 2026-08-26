@@ -17,8 +17,9 @@ builder.Services.AddAutoMapper(configuration =>
         .CreateMap<UpdateEventPriceRequest, UpdateEventDto>()
         .ConstructUsing(src => new UpdateEventDto(
             Guid.Parse(src.EventId),
-            decimal.Parse(src.PotSizeYes, CultureInfo.InvariantCulture),
-            decimal.Parse(src.PotSizeNo, CultureInfo.InvariantCulture)
+            decimal.Parse(src.Pot, CultureInfo.InvariantCulture),
+            decimal.Parse(src.PoolYes, CultureInfo.InvariantCulture),
+            decimal.Parse(src.PoolNo, CultureInfo.InvariantCulture)
         ))
         .ForAllMembers(opt => opt.Ignore());
 });

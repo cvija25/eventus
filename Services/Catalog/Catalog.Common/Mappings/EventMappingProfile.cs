@@ -10,8 +10,12 @@ public class EventMappingProfile : Profile
     {
         CreateMap<Event, EventDto>()
             .ForMember(
-                dest => dest.PotSize,
-                opt => opt.MapFrom(src => src.PotSizeNo + src.PotSizeYes)
+                dest => dest.PriceYes,
+                opt => opt.MapFrom(src => src.PoolNo / (src.PoolYes + src.PoolNo))
+            )
+            .ForMember(
+                dest => dest.PriceNo,
+                opt => opt.MapFrom(src => src.PoolYes / (src.PoolYes + src.PoolNo))
             );
     }
 }

@@ -29,34 +29,38 @@ public class BetPlacedHandler
         var eventId = betPlaced.EventId;
         var market = await _catalog_client.GetEventPriceAsync(eventId);
 
-        var yesPot = decimal.Parse(market.PotSizeYes, CultureInfo.InvariantCulture);
+        var poolYes = decimal.Parse(market.PoolYes, CultureInfo.InvariantCulture);
 
-        var noPot = decimal.Parse(market.PotSizeNo, CultureInfo.InvariantCulture);
+        var poolNo = decimal.Parse(market.PoolNo, CultureInfo.InvariantCulture);
 
-        var totalPot = yesPot + noPot;
+        var pot = decimal.Parse(market.Pot, CultureInfo.InvariantCulture);
+        var stake = betPlaced.Stake;
 
-        // 2. Calculate price BEFORE adding the current stake
-        var selectedPrice = betPlaced.Outcome switch
-        {
-            MarketOutcome.Yes => yesPot / totalPot,
-            MarketOutcome.No => noPot / totalPot,
-            _ => throw new InvalidOperationException(
-                $"Invalid market outcome: {betPlaced.Outcome}"
-            ),
-        };
-        // TODO: user must by a whole number of shares(?)
-        var sharesReceived = betPlaced.Stake / selectedPrice;
+        // increase pot
+        pot += stake;
 
-        // 3. Add stake to the selected outcome pot
+        //mint shares
+        poolYes += stake;
+        poolNo += stake;
+        var sharesReceived = 0m;
         if (betPlaced.Outcome == MarketOutcome.Yes)
-            yesPot += betPlaced.Stake;
+        {
+            var newPoolYes = 1 / poolNo;
+            sharesReceived = poolYes - newPoolYes;
+            poolYes = newPoolYes;
+        }
         else
-            noPot += betPlaced.Stake;
+        {
+            var newPoolNo = 1 / poolYes;
+            sharesReceived = poolNo - newPoolNo;
+            poolNo = newPoolNo;
+        }
 
         var updateResult = await _catalog_client.UpdateEventPriceAsync(
             eventId,
-            potSizeYes: yesPot,
-            potSizeNo: noPot
+            pot: pot,
+            poolYes: poolYes,
+            poolNo: poolNo
         );
 
         if (!updateResult.Success)
