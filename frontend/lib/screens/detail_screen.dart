@@ -106,13 +106,13 @@ class _DetailScreenState extends State<DetailScreen> {
         rows.add(_EventHoldingSummary(outcome: MarketOutcome.no, shares: noAmount));
       }
 
-      if (!mounted) return;
+      if (!context.mounted) return;
       setState(() {
         _myHoldings = rows;
         _loadingHoldings = false;
       });
     } catch (_) {
-      if (!mounted) return;
+      if (!context.mounted) return;
       setState(() {
         _myHoldings = const [];
         _loadingHoldings = false;
@@ -142,12 +142,12 @@ class _DetailScreenState extends State<DetailScreen> {
       );
       controller.clear();
       await _loadMyEventHoldings();
-      if (!mounted) return;
+      if (!context.mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text('Sell request sent')),
       );
     } catch (e) {
-      if (!mounted) return;
+      if (!context.mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(content: Text('Sell failed: $e')),
       );
@@ -180,7 +180,7 @@ class _DetailScreenState extends State<DetailScreen> {
           outcome: _selectedOutcome!,
         );
         await _refreshMarket();
-        if (!mounted) return;
+        if (!context.mounted) return;
 
         setState(() {
           _submitted = true;
@@ -196,7 +196,7 @@ class _DetailScreenState extends State<DetailScreen> {
           ),
         );
       } catch (error) {
-        if (!mounted) return;
+        if (!context.mounted) return;
 
         setState(() {
           _submitting = false;
@@ -214,7 +214,7 @@ class _DetailScreenState extends State<DetailScreen> {
     for (var attempt = 0; attempt < 5; attempt++) {
       await Future<void>.delayed(const Duration(milliseconds: 500));
       final updatedItem = await _api.fetchItem(_item.id);
-      if (!mounted) return;
+      if (!context.mounted) return;
 
       setState(() {
         _item = updatedItem;
@@ -703,16 +703,7 @@ class _HoldingPanel extends StatelessWidget {
   }
 }
 
-class _InfoPanel extends StatelessWidget {
-  final Item item;
 
-  const _InfoPanel({required this.item});
-
-  @override
-  Widget build(BuildContext context) {
-    return const SizedBox.shrink();
-  }
-}
 
 class _Panel extends StatelessWidget {
   final Widget child;
@@ -734,120 +725,3 @@ class _Panel extends StatelessWidget {
   }
 }
 
-class _Pill extends StatelessWidget {
-  final String label;
-
-  const _Pill({required this.label});
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 9, vertical: 5),
-      decoration: BoxDecoration(
-        color: const Color(0xFF111827),
-        borderRadius: BorderRadius.circular(6),
-        border: Border.all(color: const Color(0xFF1F2937)),
-      ),
-      child: Text(
-        label,
-        style: const TextStyle(
-          color: Colors.white70,
-          fontSize: 12,
-          fontWeight: FontWeight.w700,
-        ),
-      ),
-    );
-  }
-}
-
-class _OutcomeButton extends StatelessWidget {
-  final String label;
-  final double price;
-  final Color color;
-  final bool selected;
-  final VoidCallback onTap;
-
-  const _OutcomeButton({
-    required this.label,
-    required this.price,
-    required this.color,
-    required this.selected,
-    required this.onTap,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    return GestureDetector(
-      onTap: onTap,
-      child: Container(
-        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
-        decoration: BoxDecoration(
-          color: selected ? color.withOpacity(0.12) : const Color(0xFF111827),
-          borderRadius: BorderRadius.circular(10),
-          border: Border.all(
-            color: selected ? color : const Color(0xFF1F2937),
-            width: selected ? 1.5 : 1,
-          ),
-        ),
-        child: Row(
-          children: [
-            Container(
-              width: 10,
-              height: 10,
-              decoration: BoxDecoration(
-                color: color,
-                shape: BoxShape.circle,
-              ),
-            ),
-            const SizedBox(width: 12),
-            Expanded(
-              child: Text(
-                label,
-                style: const TextStyle(
-                  color: Colors.white,
-                  fontSize: 16,
-                  fontWeight: FontWeight.w700,
-                ),
-              ),
-            ),
-            Text(
-              '£${price.toStringAsFixed(2)}',
-              style: TextStyle(
-                color: color,
-                fontSize: 18,
-                fontWeight: FontWeight.w700,
-              ),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-}
-
-class _Stat extends StatelessWidget {
-  final String label;
-  final String value;
-
-  const _Stat({required this.label, required this.value});
-
-  @override
-  Widget build(BuildContext context) {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Text(label,
-            style: const TextStyle(color: Colors.white38, fontSize: 12)),
-        const SizedBox(height: 4),
-        Text(
-          value,
-          style: const TextStyle(
-            color: Colors.white,
-            fontSize: 15,
-            fontWeight: FontWeight.w800,
-          ),
-        ),
-      ],
-    );
-  }
-}

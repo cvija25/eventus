@@ -74,11 +74,7 @@ class ItemCard extends StatelessWidget {
     );
   }
 
-  String _formatMoney(double value) {
-    if (value >= 1000000) return '${(value / 1000000).toStringAsFixed(1)}M';
-    if (value >= 1000) return '${(value / 1000).toStringAsFixed(0)}K';
-    return value.toString();
-  }
+  // _formatMoney removed (not used)
 }
 
 class _MarketIcon extends StatelessWidget {

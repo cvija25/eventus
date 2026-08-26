@@ -37,13 +37,13 @@ class _CreateEventScreenState extends State<CreateEventScreen> {
 
     try {
       final item = await _api.createEvent(title: _titleController.text.trim());
-      if (!mounted) return;
+      if (!context.mounted) return;
       Navigator.pop(context, item);
     } catch (error) {
-      if (!mounted) return;
+      if (!context.mounted) return;
       _showSnackBar(error.toString().replaceFirst('Exception: ', ''), isError: true);
     } finally {
-      if (mounted) setState(() => _isSubmitting = false);
+      if (context.mounted) setState(() => _isSubmitting = false);
     }
   }
 

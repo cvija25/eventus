@@ -69,13 +69,13 @@ class _BalanceScreenState extends State<BalanceScreen> {
 
     try {
       final balance = await _api.fetchBalance();
-      if (!mounted) return;
+      if (!context.mounted) return;
       setState(() {
         _balance = balance;
         _isLoading = false;
       });
     } catch (e) {
-      if (!mounted) return;
+      if (!context.mounted) return;
       setState(() {
         _errorMessage = e.toString();
         _isLoading = false;
@@ -91,7 +91,7 @@ class _BalanceScreenState extends State<BalanceScreen> {
 
     try {
       final transactions = await _api.fetchTransactions();
-      if (!mounted) return;
+      if (!context.mounted) return;
 
       setState(() {
         _shareHoldings = transactions
@@ -139,7 +139,7 @@ class _BalanceScreenState extends State<BalanceScreen> {
         _transactionsLoading = false;
       });
     } catch (e) {
-      if (!mounted) return;
+      if (!context.mounted) return;
       setState(() {
         _shareHoldings = const [];
         _transactionsLoading = false;
@@ -166,12 +166,12 @@ class _BalanceScreenState extends State<BalanceScreen> {
       await _api.depositToAccount(amount: value);
       _amountController.clear();
       await _loadBalance();
-      if (!mounted) return;
+      if (!context.mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text('Deposit successful')),
       );
     } catch (e) {
-      if (!mounted) return;
+      if (!context.mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(content: Text('Deposit failed: $e')),
       );
@@ -395,7 +395,7 @@ class _BalanceScreenState extends State<BalanceScreen> {
                                   onTap: () async {
                                     try {
                                       final item = await _api.fetchItem(eventId);
-                                      if (!mounted) return;
+                                      if (!context.mounted) return;
                                       await Navigator.push(
                                         context,
                                         MaterialPageRoute(
@@ -405,7 +405,7 @@ class _BalanceScreenState extends State<BalanceScreen> {
                                       await _loadTransactions();
                                       await _loadBalance();
                                     } catch (e) {
-                                      if (!mounted) return;
+                                      if (!context.mounted) return;
                                       ScaffoldMessenger.of(context).showSnackBar(
                                         SnackBar(
                                           content: Text('Could not open event: $e'),
@@ -456,7 +456,7 @@ class _BalanceScreenState extends State<BalanceScreen> {
                                           ),
                                         ),
                                         Text(
-                                          '${totalShares.toStringAsFixed(2)}',
+                                          totalShares.toStringAsFixed(2),
                                           style: const TextStyle(
                                             color: Color(0xFF00A3FF),
                                             fontWeight: FontWeight.bold,
@@ -499,7 +499,7 @@ class _BalanceScreenState extends State<BalanceScreen> {
                                             ),
                                           ),
                                           Text(
-                                            '${holding.shareAmount.toStringAsFixed(2)}',
+                                            holding.shareAmount.toStringAsFixed(2),
                                             style: TextStyle(
                                               color: holding.type == 2 ? Colors.redAccent : const Color(0xFF00A3FF),
                                               fontWeight: FontWeight.bold,
@@ -508,7 +508,7 @@ class _BalanceScreenState extends State<BalanceScreen> {
                                         ],
                                       ),
                                     );
-                                  }).toList(),
+                                  }),
                                 ],
                               ),
                             ),

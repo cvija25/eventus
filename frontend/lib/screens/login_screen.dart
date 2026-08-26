@@ -58,7 +58,7 @@ class _LoginScreenState extends State<LoginScreen> {
           password: _passwordController.text,
           isAdmin: false,
         );
-        if (!mounted) return;
+        if (!context.mounted) return;
         _showSnackBar('Account created. You can now log in.');
         setState(() {
           _isRegisterMode = false;
@@ -70,15 +70,15 @@ class _LoginScreenState extends State<LoginScreen> {
           password: _passwordController.text,
         );
         await AuthService.instance.login(token);
-        if (!mounted) return;
+        if (!context.mounted) return;
         _showSnackBar('Login successful.');
         Navigator.pop(context);
       }
     } catch (error) {
-      if (!mounted) return;
+      if (!context.mounted) return;
       _showSnackBar(error.toString().replaceFirst('Exception: ', ''), isError: true);
     } finally {
-      if (mounted) setState(() => _isSubmitting = false);
+      if (context.mounted) setState(() => _isSubmitting = false);
     }
   }
 
