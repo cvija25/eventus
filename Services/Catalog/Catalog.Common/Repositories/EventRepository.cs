@@ -4,6 +4,7 @@ using Catalog.Common.Data;
 using Catalog.Common.DTOs;
 using Catalog.Common.Entities;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.FileProviders;
 
 namespace Catalog.Common.Repositories;
 
@@ -42,17 +43,12 @@ public class EventRepository : IEventRepository
         return _mapper.Map<EventDto?>(ev);
     }
 
-<<<<<<< HEAD
     public async Task<List<EventDto>> GetEventsAsync()
     {
         return await _context
             .Events.ProjectTo<EventDto>(_mapper.ConfigurationProvider)
             .ToListAsync();
     }
-=======
-    public async Task<List<EventDto>> GetEventsAsync() =>
-        await _context.Events.ProjectTo<EventDto>(_mapper.ConfigurationProvider).ToListAsync();
->>>>>>> d7c8d5c (Expose resolved events and lock betting on resolved events in UI)
 
     public async Task<bool> UpdateEventAsync(UpdateEventDto updateEventDto)
     {
