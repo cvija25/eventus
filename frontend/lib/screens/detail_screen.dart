@@ -382,14 +382,7 @@ class _OutcomeRow extends StatelessWidget {
       child: Container(
         padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
         decoration: BoxDecoration(
-          color: selected
-              ? Color.fromRGBO(
-                  (((color.r * 255.0).round()).clamp(0, 255)).toInt(),
-                  (((color.g * 255.0).round()).clamp(0, 255)).toInt(),
-                  (((color.b * 255.0).round()).clamp(0, 255)).toInt(),
-                  0.12,
-                )
-              : const Color(0xFF111827),
+          color: selected ? Color.fromRGBO((color.toARGB32() >> 16) & 0xFF, (color.toARGB32() >> 8) & 0xFF, color.toARGB32() & 0xFF, 0.12) : const Color(0xFF111827),
           borderRadius: BorderRadius.circular(10),
           border: Border.all(
             color: selected ? color : const Color(0xFF1F2937),
