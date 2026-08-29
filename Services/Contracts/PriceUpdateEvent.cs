@@ -1,6 +1,6 @@
 namespace Contracts;
 
-public class PriceChangedEvent
+public class PriceUpdateEvent
 {
     public Guid EventId { get; init; }
     public decimal PriceYes { get; init; }

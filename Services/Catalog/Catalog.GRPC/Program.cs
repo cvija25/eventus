@@ -2,14 +2,18 @@ using System.Globalization;
 using Catalog.Common.DTOs;
 using Catalog.Common.Extensions;
 using Catalog.GRPC;
+using Catalog.GRPC.Publishers;
 using Catalog.GRPC.Services;
+using Contracts.Messaging;
 
 var builder = WebApplication.CreateBuilder(args);
 
 // Add services to the container.
 builder.Services.AddGrpc();
 builder.Services.AddGrpcReflection();
+builder.Services.AddSingleton<PriceUpdatePublisher>();
 builder.Services.AddCatalogCommon(builder.Configuration);
+builder.Services.Configure<RabbitMqOptions>(builder.Configuration.GetSection("RabbitMq"));
 builder.Services.AddAutoMapper(configuration =>
 {
     configuration.CreateMap<EventDto, GetEventPriceResponse>().ReverseMap();

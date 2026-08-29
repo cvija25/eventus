@@ -54,14 +54,6 @@ public class SellSharesHandler
         if (!updateResult.Success)
             throw new InvalidOperationException($"Catalog rejected pot update for event {eventId}");
 
-        var priceChangedEvent = new PriceChangedEvent
-        {
-            EventId = eventId,
-            PriceYes = poolNo / (poolYes + poolNo),
-            PriceNo = poolYes / (poolYes + poolNo),
-        };
-        _publisher.PublishPriceChangedAsync(priceChangedEvent);
-
         _logger.LogInformation(
             "Shares sold: EventId={EventId}, AccountId={AccountId}, Outcome={Outcome}, Shares={Shares}, SellPrice={SellPrice}",
             sellShares.EventId,

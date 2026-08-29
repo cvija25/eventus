@@ -66,14 +66,6 @@ public class BetPlacedHandler
         if (!updateResult.Success)
             throw new InvalidOperationException($"Catalog rejected pot update for event {eventId}");
 
-        var priceChangedEvent = new PriceChangedEvent
-        {
-            EventId = eventId,
-            PriceYes = poolNo / (poolYes + poolNo),
-            PriceNo = poolYes / (poolYes + poolNo),
-        };
-        _publisher.PublishPriceChangedAsync(priceChangedEvent);
-
         // 5. Log the calculated shares
         _logger.LogInformation(
             "Bet executed: EventId={EventId}, AccountId={AccountId}, Outcome={Outcome}, Stake={Stake}, SharesReceived={SharesReceived}",

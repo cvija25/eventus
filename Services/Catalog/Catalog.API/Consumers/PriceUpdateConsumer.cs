@@ -9,8 +9,8 @@ using RabbitMQ.Client.Events;
 
 namespace Catalog.API.Consumers;
 
-public class PriceChangedConsumer(
-    ILogger<PriceChangedConsumer> logger,
+public class PriceUpdateConsumer(
+    ILogger<PriceUpdateConsumer> logger,
     ISseBroadcaster broadcaster,
     IOptions<RabbitMqOptions> rabbitOptions
 ) : BackgroundService
@@ -51,7 +51,7 @@ public class PriceChangedConsumer(
         await _channel.BasicQosAsync(0, 10, false, stoppingToken);
 
         await _channel.QueueDeclareAsync(
-            RabbitMQConstants.CommandApprovedQueue,
+            RabbitMQConstants.PriceUpdateQueue,
             true,
             false,
             false,
@@ -62,7 +62,7 @@ public class PriceChangedConsumer(
         consumer.ReceivedAsync += OnMessageReceivedAsync;
 
         await _channel.BasicConsumeAsync(
-            RabbitMQConstants.CommandApprovedQueue,
+            RabbitMQConstants.PriceUpdateQueue,
             false,
             consumer,
             stoppingToken
@@ -95,9 +95,9 @@ public class PriceChangedConsumer(
 
             switch (result.Type)
             {
-                case MessageTypes.PriceChanged:
+                case MessageTypes.PriceUpdate:
                     logger.LogInformation("usaoooooooo");
-                    ProcessPriceChanged(result.Deserialize<PriceChangedEvent>());
+                    ProcessPriceUpdate(result.Deserialize<PriceUpdateEvent>());
                     break;
                 default:
                     throw new JsonException($"Unknown command result type '{result.Type}'.");
@@ -120,7 +120,7 @@ public class PriceChangedConsumer(
         }
     }
 
-    private void ProcessPriceChanged(PriceChangedEvent evt)
+    private void ProcessPriceUpdate(PriceUpdateEvent evt)
     {
         logger.LogInformation("poslaoooo {}", evt);
         broadcaster.PublishPriceUpdate(evt.EventId, evt.PriceYes, evt.PriceNo);

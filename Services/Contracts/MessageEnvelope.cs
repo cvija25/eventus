@@ -22,5 +22,5 @@ public static class MessageTypes
     public const string SellShares = "sell-shares";
     public const string BetApproved = "bet-approved";
     public const string SellSharesApproved = "sell-shares-approved";
-    public const string PriceChanged = "price-changed";
+    public const string PriceUpdate = "price-update";
 }

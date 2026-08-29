@@ -20,7 +20,7 @@ builder.Services.AddCors(options =>
 
 builder.Services.AddControllers();
 builder.Services.AddCatalogCommon(builder.Configuration);
-builder.Services.AddHostedService<PriceChangedConsumer>();
+builder.Services.AddHostedService<PriceUpdateConsumer>();
 builder.Services.AddSingleton<ISseBroadcaster, SseBroadcaster>();
 builder.Services.AddScoped<IEventResolvedPublisher, EventResolvedPublisher>();
 builder.Services.Configure<RabbitMqOptions>(builder.Configuration.GetSection("RabbitMq"));

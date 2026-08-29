@@ -2,21 +2,20 @@ using System.Text;
 using System.Text.Json;
 using Contracts;
 using Contracts.Messaging;
-using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 using RabbitMQ.Client;
 
-namespace Game.Publishers;
+namespace Catalog.GRPC.Publishers;
 
-public class CommandApprovedPublisher : IAsyncDisposable
+public class PriceUpdatePublisher : IAsyncDisposable
 {
     private readonly IChannel _channel;
     private readonly IConnection _connection;
-    private readonly ILogger<CommandApprovedPublisher> _logger;
+    private readonly ILogger<PriceUpdatePublisher> _logger;
 
-    public CommandApprovedPublisher(
+    public PriceUpdatePublisher(
         IOptions<RabbitMqOptions> options,
-        ILogger<CommandApprovedPublisher> logger
+        ILogger<PriceUpdatePublisher> logger
     )
     {
         _logger = logger;
@@ -33,7 +32,7 @@ public class CommandApprovedPublisher : IAsyncDisposable
         _connection = factory.CreateConnectionAsync().Result;
         _channel = _connection.CreateChannelAsync().Result;
         _channel
-            .QueueDeclareAsync(RabbitMQConstants.CommandApprovedQueue, true, false, false)
+            .QueueDeclareAsync(RabbitMQConstants.PriceUpdateQueue, true, false, false)
             .GetAwaiter()
             .GetResult();
     }
@@ -47,14 +46,9 @@ public class CommandApprovedPublisher : IAsyncDisposable
         await _connection.DisposeAsync();
     }
 
-    public async Task PublishBetApprovedAsync(BetApprovedEvent evt)
+    public async Task PublishPriceUpdateAsync(PriceUpdateEvent evt)
     {
-        await PublishAsync(MessageTypes.BetApproved, evt);
-    }
-
-    public async Task PublishSellSharesApprovedAsync(SellSharesApprovedEvent evt)
-    {
-        await PublishAsync(MessageTypes.SellSharesApproved, evt);
+        await PublishAsync(MessageTypes.PriceUpdate, evt);
     }
 
     private async Task PublishAsync<T>(string type, T evt)
@@ -67,7 +61,7 @@ public class CommandApprovedPublisher : IAsyncDisposable
         var props = new BasicProperties { Persistent = true, ContentType = "application/json" };
         await _channel.BasicPublishAsync(
             "",
-            RabbitMQConstants.CommandApprovedQueue,
+            RabbitMQConstants.PriceUpdateQueue,
             false,
             props,
             body
