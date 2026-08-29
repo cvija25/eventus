@@ -35,24 +35,32 @@ public class SellSharesHandler
     {
         var eventId = sellShares.EventId;
         var market = await _catalog_client.GetEventPriceAsync(eventId);
-        var reserveYes = decimal.Parse(market.PoolYes, CultureInfo.InvariantCulture);
-        var reserveNo = decimal.Parse(market.PoolNo, CultureInfo.InvariantCulture);
+        var poolYes = decimal.Parse(market.PoolYes, CultureInfo.InvariantCulture);
+        var poolNo = decimal.Parse(market.PoolNo, CultureInfo.InvariantCulture);
         var pot = decimal.Parse(market.Pot, CultureInfo.InvariantCulture);
 
-        var sellPrice = calculatePayout(reserveYes, reserveNo, sellShares.Shares);
-        reserveYes += sellShares.Shares - sellPrice;
-        reserveNo -= sellPrice;
+        var sellPrice = calculatePayout(poolYes, poolNo, sellShares.Shares);
+        poolYes += sellShares.Shares - sellPrice;
+        poolNo -= sellPrice;
         pot -= sellPrice;
 
         var updateResult = await _catalog_client.UpdateEventPriceAsync(
             eventId,
             pot: pot,
-            poolYes: reserveYes,
-            poolNo: reserveNo
+            poolYes: poolYes,
+            poolNo: poolNo
         );
 
         if (!updateResult.Success)
             throw new InvalidOperationException($"Catalog rejected pot update for event {eventId}");
+
+        var priceChangedEvent = new PriceChangedEvent
+        {
+            EventId = eventId,
+            PriceYes = poolNo / (poolYes + poolNo),
+            PriceNo = poolYes / (poolYes + poolNo),
+        };
+        _publisher.PublishPriceChangedAsync(priceChangedEvent);
 
         _logger.LogInformation(
             "Shares sold: EventId={EventId}, AccountId={AccountId}, Outcome={Outcome}, Shares={Shares}, SellPrice={SellPrice}",
