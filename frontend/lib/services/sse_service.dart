@@ -43,7 +43,7 @@ class SseService {
         try {
           final text = utf8.decode(chunk);
           // small summary for logs
-          final summary = text.length > 200 ? text.substring(0, 200) + '...' : text;
+          final summary = text.length > 200 ? '${text.substring(0, 200)}...' : text;
           debugPrint('SSE chunk received (${text.length} bytes): ${summary.replaceAll('\n', '\\n')}');
 
           _buffer.write(text);
