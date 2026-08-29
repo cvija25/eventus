@@ -1,5 +1,6 @@
 using System.IdentityModel.Tokens.Jwt;
 using Catalog.API.Publishers;
+using Catalog.API.Services;
 using Catalog.Common.DTOs;
 using Catalog.Common.Repositories;
 using Contracts;
@@ -12,6 +13,24 @@ namespace Catalog.API.Controllers;
 [Route("/api/v1/catalog/events")]
 public class CatalogController : ControllerBase
 {
+    private readonly IEventRepository _eventRepository;
+    private readonly IEventResolvedPublisher _eventResolvedPublisher;
+    private readonly ISseBroadcaster _sseBroadcaster;
+    private ILogger<CatalogController> _logger;
+
+    public CatalogController(
+        IEventRepository eventRepository,
+        IEventResolvedPublisher publisher,
+        ISseBroadcaster sseBroadcaster,
+        ILogger<CatalogController> logger
+    )
+    {
+        _eventRepository = eventRepository;
+        _eventResolvedPublisher = publisher;
+        _sseBroadcaster = sseBroadcaster;
+        _logger = logger;
+    }
+
     [HttpGet("{id}")]
     [ProducesResponseType(typeof(EventDto), StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status404NotFound)]
@@ -67,12 +86,9 @@ public class CatalogController : ControllerBase
         return Ok();
     }
 
-    private readonly IEventRepository _eventRepository;
-    private readonly IEventResolvedPublisher _eventResolvedPublisher;
-
-    public CatalogController(IEventRepository eventRepository, EventResolvedPublisher publisher)
+    [HttpGet("stream")]
+    public async Task StreamPrices()
     {
-        _eventRepository = eventRepository;
-        _eventResolvedPublisher = publisher;
+        await _sseBroadcaster.SubscribeAsync(Response, HttpContext.RequestAborted);
     }
 }

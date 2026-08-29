@@ -3,6 +3,8 @@ import '../models/item.dart';
 import '../services/api_service.dart';
 import '../services/auth_service.dart';
 import '../widgets/item_card.dart';
+import '../services/sse_service.dart';
+import 'dart:async';
 import 'create_event_screen.dart';
 import 'detail_screen.dart';
 import 'login_screen.dart';
@@ -18,17 +20,62 @@ class HomeScreen extends StatefulWidget {
 class _HomeScreenState extends State<HomeScreen> {
   final ApiService _api = ApiService();
   late Future<List<Item>> _itemsFuture;
+  final Map<String, Map<String, double>> _prices = {};
+  StreamSubscription<Map<String, dynamic>>? _sseSub;
 
   @override
   void initState() {
     super.initState();
     _itemsFuture = _api.fetchItems();
+    // connect to SSE and keep latest prices in memory
+    SseService.instance.connect().then((_) {
+      _sseSub = SseService.instance.priceStream.listen((data) {
+        try {
+          final type = data['type'] ?? '';
+          if (type != 'price') return;
+          final eventId =
+              (data['eventId'] ?? data['id'] ?? '').toString().toLowerCase();
+          if (eventId.isEmpty) return;
+          final priceYes = data['priceYes'] ?? data['price_yes'];
+          final priceNo = data['priceNo'] ?? data['price_no'];
+          final pYes = priceYes is num
+              ? priceYes.toDouble()
+              : double.tryParse(priceYes?.toString() ?? '');
+          final pNo = priceNo is num
+              ? priceNo.toDouble()
+              : double.tryParse(priceNo?.toString() ?? '');
+          debugPrint(
+              'SSE price event received: $eventId priceYes=$pYes priceNo=$pNo');
+          if (pYes == null && pNo == null) return;
+          _prices[eventId] = {
+            if (pYes != null) 'priceYes': pYes,
+            if (pNo != null) 'priceNo': pNo,
+          };
+          if (mounted) setState(() {});
+        } catch (_) {}
+      });
+    });
+  }
+
+  @override
+  void dispose() {
+    _sseSub?.cancel();
+    super.dispose();
   }
 
   void _refresh() {
     setState(() {
       _itemsFuture = _api.fetchItems();
     });
+  }
+
+  Item _withLivePrice(Item item) {
+    final live = _prices[item.id.toLowerCase()];
+    if (live == null) return item;
+    return item.copyWith(
+      priceYes: live['priceYes'] ?? item.priceYes,
+      priceNo: live['priceNo'] ?? item.priceNo,
+    );
   }
 
   @override
@@ -116,14 +163,14 @@ class _HomeScreenState extends State<HomeScreen> {
                     onPressed: () {
                       if (loggedIn) {
                         AuthService.instance.logout();
-                            final messenger = ScaffoldMessenger.maybeOf(context);
-                            messenger?.showSnackBar(
-                              const SnackBar(
-                                content: Text('Logged out'),
-                                backgroundColor: Color(0xFF111827),
-                                behavior: SnackBarBehavior.floating,
-                              ),
-                            );
+                        final messenger = ScaffoldMessenger.maybeOf(context);
+                        messenger?.showSnackBar(
+                          const SnackBar(
+                            content: Text('Logged out'),
+                            backgroundColor: Color(0xFF111827),
+                            behavior: SnackBarBehavior.floating,
+                          ),
+                        );
                       } else {
                         Navigator.push(
                           context,
@@ -194,7 +241,7 @@ class _HomeScreenState extends State<HomeScreen> {
               children: [
                 for (final item in items) ...[
                   ItemCard(
-                    item: item,
+                    item: _withLivePrice(item),
                     onTap: () async {
                       await Navigator.push(
                         context,
@@ -216,4 +263,3 @@ class _HomeScreenState extends State<HomeScreen> {
     );
   }
 }
-

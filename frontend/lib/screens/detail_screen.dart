@@ -5,6 +5,9 @@ import '../services/api_service.dart';
 import 'balance_screen.dart';
 import '../utils/color_utils.dart';
 import '../services/auth_service.dart';
+import '../services/sse_service.dart';
+
+import 'dart:async';
 
 class DetailScreen extends StatefulWidget {
   final Item item;
@@ -32,16 +35,49 @@ class _DetailScreenState extends State<DetailScreen> {
   String? _selectedOutcome;
   List<_EventHoldingSummary> _myHoldings = const [];
   bool _isResolving = false;
+  StreamSubscription<Map<String, dynamic>>? _sseSub;
 
   @override
   void initState() {
     super.initState();
     _item = widget.item;
     _loadMyEventHoldings();
+    // Connect to SSE and listen for price updates for this event
+    SseService.instance.connect().then((_) {
+      _sseSub = SseService.instance.priceStream.listen((data) {
+        try {
+          final type = data['type'] ?? '';
+          if (type != 'price') return;
+          final eventId =
+              (data['eventId'] ?? data['id'] ?? '').toString().toLowerCase();
+          if (eventId != _item.id.toLowerCase()) return;
+          final priceYes = data['priceYes'] ?? data['price_yes'];
+          final priceNo = data['priceNo'] ?? data['price_no'];
+          final pYes = priceYes is num
+              ? priceYes.toDouble()
+              : double.tryParse(priceYes?.toString() ?? '');
+          final pNo = priceNo is num
+              ? priceNo.toDouble()
+              : double.tryParse(priceNo?.toString() ?? '');
+          debugPrint(
+              'SSE price event matched: $eventId priceYes=$pYes priceNo=$pNo');
+          if (pYes != null || pNo != null) {
+            if (!mounted) return;
+            setState(() {
+              _item = _item.copyWith(
+                priceYes: pYes ?? _item.priceYes,
+                priceNo: pNo ?? _item.priceNo,
+              );
+            });
+          }
+        } catch (_) {}
+      });
+    });
   }
 
   @override
   void dispose() {
+    _sseSub?.cancel();
     _controller.dispose();
     for (final controller in _sellControllers.values) {
       controller.dispose();
@@ -504,7 +540,6 @@ class _OutcomePanel extends StatelessWidget {
                 label: 'Yes',
                 price: item.priceYes,
                 color: const Color(0xFF00A3FF),
-                // Dodata tvoja logika za isResolved
                 selected: item.isResolved ? item.outcome == 1 : selectedOutcome == 'Yes',
                 onTap: () => onOutcomeSelected('Yes'),
               ),
@@ -546,7 +581,10 @@ class _OutcomeRow extends StatelessWidget {
       child: Container(
         padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
         decoration: BoxDecoration(
-          color: selected ? Color.fromRGBO((argbFromColor(color) >> 16) & 0xFF, (argbFromColor(color) >> 8) & 0xFF, argbFromColor(color) & 0xFF, 0.12) : const Color(0xFF111827),
+          color: selected
+              ? Color.fromRGBO((argbFromColor(color) >> 16) & 0xFF,
+                  (argbFromColor(color) >> 8) & 0xFF, argbFromColor(color) & 0xFF, 0.12)
+              : const Color(0xFF111827),
           borderRadius: BorderRadius.circular(10),
           border: Border.all(
             color: selected ? color : const Color(0xFF1F2937),
@@ -871,8 +909,6 @@ class _HoldingPanel extends StatelessWidget {
   }
 }
 
-
-
 class _Panel extends StatelessWidget {
   final Widget child;
 
@@ -892,4 +928,3 @@ class _Panel extends StatelessWidget {
     );
   }
 }
-

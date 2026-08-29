@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import '../services/api_service.dart';
 import '../services/auth_service.dart';
+import '../services/sse_service.dart';
+import 'dart:async';
 import 'detail_screen.dart';
 
 enum MarketOutcome { yes, no }
@@ -40,6 +42,7 @@ class _BalanceScreenState extends State<BalanceScreen> {
   bool _transactionsLoading = true;
   String? _errorMessage;
   String? _transactionsError;
+  StreamSubscription<Map<String, dynamic>>? _sseSub;
 
   String get _accountName =>
       AuthService.instance.currentUserName ?? 'Guest User';
@@ -49,6 +52,9 @@ class _BalanceScreenState extends State<BalanceScreen> {
     super.initState();
     _loadBalance();
     _loadTransactions();
+    SseService.instance.connect().then((_) {
+      _sseSub = SseService.instance.priceStream.listen((_) {});
+    });
   }
 
   double _toDouble(dynamic value) {
@@ -183,6 +189,7 @@ class _BalanceScreenState extends State<BalanceScreen> {
 
   @override
   void dispose() {
+    _sseSub?.cancel();
     _amountController.dispose();
     super.dispose();
   }

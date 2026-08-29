@@ -1,5 +1,7 @@
 using System.Text;
+using Catalog.API.Consumers;
 using Catalog.API.Publishers;
+using Catalog.API.Services;
 using Catalog.Common.Extensions;
 using Contracts.Messaging;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
@@ -18,7 +20,9 @@ builder.Services.AddCors(options =>
 
 builder.Services.AddControllers();
 builder.Services.AddCatalogCommon(builder.Configuration);
-builder.Services.AddSingleton<EventResolvedPublisher>();
+builder.Services.AddHostedService<PriceUpdateConsumer>();
+builder.Services.AddSingleton<ISseBroadcaster, SseBroadcaster>();
+builder.Services.AddScoped<IEventResolvedPublisher, EventResolvedPublisher>();
 builder.Services.Configure<RabbitMqOptions>(builder.Configuration.GetSection("RabbitMq"));
 
 builder

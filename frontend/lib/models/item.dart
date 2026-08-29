@@ -23,6 +23,30 @@ class Item {
 
   bool get isResolved => outcome != null;
 
+  Item copyWith({
+    String? id,
+    String? title,
+    String? ownerId,
+    double? priceYes,
+    double? priceNo,
+    double? potSizeYes,
+    double? potSizeNo,
+    double? potSize,
+    int? outcome,
+  }) {
+    return Item(
+      id: id ?? this.id,
+      title: title ?? this.title,
+      ownerId: ownerId ?? this.ownerId,
+      priceYes: priceYes ?? this.priceYes,
+      priceNo: priceNo ?? this.priceNo,
+      potSizeYes: potSizeYes ?? this.potSizeYes,
+      potSizeNo: potSizeNo ?? this.potSizeNo,
+      potSize: potSize ?? this.potSize,
+      outcome: outcome ?? this.outcome,
+    );
+  }
+
   factory Item.fromJson(Map<String, dynamic> json) {
     final rawId = json['Id'] ?? json['id'];
     final rawTitle = json['Title'] ?? json['title'];
