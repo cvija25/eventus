@@ -56,6 +56,11 @@ public class CommandApprovedPublisher : IAsyncDisposable
     {
         await PublishAsync(MessageTypes.SellSharesApproved, evt);
     }
+    
+    public async Task PublishPriceChangedAsync(PriceChangedEvent evt)
+    {
+        await PublishAsync(MessageTypes.PriceChanged, evt);
+    }
 
     private async Task PublishAsync<T>(string type, T evt)
     {
