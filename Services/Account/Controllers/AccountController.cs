@@ -115,6 +115,8 @@ public class AccountController(
             return Conflict("Not enough credits in account");
         }
 
+        await walletRepository.DepositReserveFund(ownerId, request.Stake);
+
         var evt = new BetPlacedEvent
         {
             OwnerId = ownerId,
