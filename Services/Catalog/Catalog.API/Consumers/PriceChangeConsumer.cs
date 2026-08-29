@@ -42,7 +42,7 @@ public class PriceChangedConsumer(
             Port = options.Port,
             UserName = options.UserName,
             Password = options.Password,
-            VirtualHost = options.VirtualHost
+            VirtualHost = options.VirtualHost,
         };
 
         _connection = await factory.CreateConnectionAsync(stoppingToken);
@@ -122,7 +122,7 @@ public class PriceChangedConsumer(
 
     private void ProcessPriceChanged(PriceChangedEvent evt)
     {
-        logger.LogInformation("poslaoooo {}",evt);
+        logger.LogInformation("poslaoooo {}", evt);
         broadcaster.PublishPriceUpdate(evt.EventId, evt.PriceYes, evt.PriceNo);
     }
 

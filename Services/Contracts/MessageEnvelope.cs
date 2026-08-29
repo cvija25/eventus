@@ -12,7 +12,7 @@ public sealed record MessageEnvelope(Guid MessageId, string Type, string Payload
     public T Deserialize<T>()
     {
         return JsonSerializer.Deserialize<T>(Payload)
-               ?? throw new JsonException($"Envelope payload for '{Type}' is invalid.");
+            ?? throw new JsonException($"Envelope payload for '{Type}' is invalid.");
     }
 }
 

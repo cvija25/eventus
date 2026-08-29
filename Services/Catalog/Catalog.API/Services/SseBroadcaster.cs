@@ -25,17 +25,18 @@ public class SseBroadcaster : ISseBroadcaster
         response.Headers["X-Accel-Buffering"] = "no";
 
         using var pingTimer = new PeriodicTimer(TimeSpan.FromSeconds(15));
-        var pingTask = Task.Run(async () =>
-        {
-            try
+        var pingTask = Task.Run(
+            async () =>
             {
-                while (await pingTimer.WaitForNextTickAsync(cancellationToken))
-                    channel.Writer.TryWrite(":ping\n\n");
-            }
-            catch (OperationCanceledException)
-            {
-            }
-        }, cancellationToken);
+                try
+                {
+                    while (await pingTimer.WaitForNextTickAsync(cancellationToken))
+                        channel.Writer.TryWrite(":ping\n\n");
+                }
+                catch (OperationCanceledException) { }
+            },
+            cancellationToken
+        );
 
         try
         {
@@ -64,7 +65,7 @@ public class SseBroadcaster : ISseBroadcaster
             type = "price",
             eventId = eventId.ToString(),
             priceYes,
-            priceNo
+            priceNo,
         };
 
         var json = JsonSerializer.Serialize(payload);

@@ -18,8 +18,12 @@ public class CatalogController : ControllerBase
     private readonly ISseBroadcaster _sseBroadcaster;
     private ILogger<CatalogController> _logger;
 
-    public CatalogController(IEventRepository eventRepository, IEventResolvedPublisher publisher,
-        ISseBroadcaster sseBroadcaster, ILogger<CatalogController> logger)
+    public CatalogController(
+        IEventRepository eventRepository,
+        IEventResolvedPublisher publisher,
+        ISseBroadcaster sseBroadcaster,
+        ILogger<CatalogController> logger
+    )
     {
         _eventRepository = eventRepository;
         _eventResolvedPublisher = publisher;
