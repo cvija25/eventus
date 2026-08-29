@@ -89,7 +89,6 @@ public class CatalogController : ControllerBase
     [HttpGet("stream")]
     public async Task StreamPrices()
     {
-        _logger.LogInformation("nova konekcijaaa");
         await _sseBroadcaster.SubscribeAsync(Response, HttpContext.RequestAborted);
     }
 }

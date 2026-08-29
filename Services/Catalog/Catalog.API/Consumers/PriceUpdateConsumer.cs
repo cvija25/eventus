@@ -96,7 +96,6 @@ public class PriceUpdateConsumer(
             switch (result.Type)
             {
                 case MessageTypes.PriceUpdate:
-                    logger.LogInformation("usaoooooooo");
                     ProcessPriceUpdate(result.Deserialize<PriceUpdateEvent>());
                     break;
                 default:
@@ -122,7 +121,6 @@ public class PriceUpdateConsumer(
 
     private void ProcessPriceUpdate(PriceUpdateEvent evt)
     {
-        logger.LogInformation("poslaoooo {}", evt);
         broadcaster.PublishPriceUpdate(evt.EventId, evt.PriceYes, evt.PriceNo);
     }
 
