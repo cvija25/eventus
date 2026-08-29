@@ -8,10 +8,6 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <Protobuf Include="..\..\Contracts\Protos\catalog.proto" GrpcServices="Server" />
-  </ItemGroup>
-
-  <ItemGroup>
     <PackageReference Include="Grpc.AspNetCore" Version="2.64.0" />
     <PackageReference Include="Grpc.AspNetCore.Server.Reflection" Version="2.80.0" />
     <PackageReference Include="Microsoft.EntityFrameworkCore.Design" Version="10.0.4">
@@ -29,5 +25,17 @@
     <Content Include="..\..\.dockerignore">
       <Link>.dockerignore</Link>
     </Content>
+  </ItemGroup>
+
+  <ItemGroup>
+    <Protobuf Include="..\..\Common\Protos\catalog.proto">
+      <GrpcServices>Server</GrpcServices>
+      <Access>Public</Access>
+      <ProtoCompile>True</ProtoCompile>
+      <CompileOutputs>True</CompileOutputs>
+      <OutputDir>obj\Debug/net10.0/</OutputDir>
+      <Generator>MSBuild:Compile</Generator>
+      <Link>Protos\catalog.proto</Link>
+    </Protobuf>
   </ItemGroup>
 </Project>

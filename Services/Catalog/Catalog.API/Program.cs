@@ -3,7 +3,7 @@ using Catalog.API.Consumers;
 using Catalog.API.Publishers;
 using Catalog.API.Services;
 using Catalog.Common.Extensions;
-using Contracts.Messaging;
+using Common.Messaging;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.IdentityModel.Tokens;
 

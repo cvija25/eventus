@@ -2,7 +2,7 @@ using AutoMapper;
 using Catalog.Common.DTOs;
 using Catalog.Common.Repositories;
 using Catalog.GRPC.Publishers;
-using Contracts;
+using Common.Enums;
 using Grpc.Core;
 
 namespace Catalog.GRPC.Services;

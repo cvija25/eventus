@@ -4,7 +4,7 @@ using Account.Data;
 using Account.Mappings;
 using Account.Publishers;
 using Account.Repositories;
-using Contracts.Messaging;
+using Common.Messaging;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;

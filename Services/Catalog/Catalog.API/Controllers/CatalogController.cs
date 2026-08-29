@@ -3,7 +3,8 @@ using Catalog.API.Publishers;
 using Catalog.API.Services;
 using Catalog.Common.DTOs;
 using Catalog.Common.Repositories;
-using Contracts;
+using Common.Enums;
+using Common.Messaging;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 

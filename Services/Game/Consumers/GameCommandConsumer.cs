@@ -1,7 +1,6 @@
 using System.Text;
 using System.Text.Json;
-using Contracts;
-using Contracts.Messaging;
+using Common.Messaging;
 using Game.GrpcClients;
 using Game.Handlers;
 using Game.Publishers;

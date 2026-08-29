@@ -1,5 +1,6 @@
 using System.Globalization;
-using Contracts;
+using Common.Enums;
+using Common.Messaging;
 using Game.GrpcClients;
 using Game.Publishers;
 

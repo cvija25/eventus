@@ -1,4 +1,4 @@
-using Contracts.Messaging;
+using Common.Messaging;
 using Game.Consumers;
 using Game.GrpcClients;
 

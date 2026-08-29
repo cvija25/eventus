@@ -1,6 +1,6 @@
 using System.Text.Json;
 
-namespace Contracts;
+namespace Common.Messaging;
 
 public sealed record MessageEnvelope(Guid MessageId, string Type, string Payload)
 {

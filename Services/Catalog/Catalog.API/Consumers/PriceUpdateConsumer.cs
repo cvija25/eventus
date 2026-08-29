@@ -1,8 +1,7 @@
 using System.Text;
 using System.Text.Json;
 using Catalog.API.Services;
-using Contracts;
-using Contracts.Messaging;
+using Common.Messaging;
 using Microsoft.Extensions.Options;
 using RabbitMQ.Client;
 using RabbitMQ.Client.Events;
