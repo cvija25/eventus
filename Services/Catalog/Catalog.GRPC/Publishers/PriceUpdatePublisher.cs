@@ -1,70 +1,20 @@
 using System.Text;
 using System.Text.Json;
-using Contracts;
-using Contracts.Messaging;
+using Common.Messaging;
 using Microsoft.Extensions.Options;
 using RabbitMQ.Client;
 
 namespace Catalog.GRPC.Publishers;
 
-public class PriceUpdatePublisher : IAsyncDisposable
+public class PriceUpdatePublisher(
+    IOptions<RabbitMqOptions> options,
+    ILogger<PriceUpdatePublisher> logger
+) : MessageQueuePublisher(options, logger), IPriceUpdatePublisher
 {
-    private readonly IChannel _channel;
-    private readonly IConnection _connection;
-    private readonly ILogger<PriceUpdatePublisher> _logger;
-
-    public PriceUpdatePublisher(
-        IOptions<RabbitMqOptions> options,
-        ILogger<PriceUpdatePublisher> logger
-    )
-    {
-        _logger = logger;
-        var rabbitOptions = options.Value;
-
-        var factory = new ConnectionFactory
-        {
-            HostName = rabbitOptions.HostName,
-            Port = rabbitOptions.Port,
-            UserName = rabbitOptions.UserName,
-            Password = rabbitOptions.Password,
-        };
-
-        _connection = factory.CreateConnectionAsync().Result;
-        _channel = _connection.CreateChannelAsync().Result;
-        _channel
-            .QueueDeclareAsync(RabbitMQConstants.PriceUpdateQueue, true, false, false)
-            .GetAwaiter()
-            .GetResult();
-    }
-
-    public async ValueTask DisposeAsync()
-    {
-        await _channel.CloseAsync();
-        await _connection.CloseAsync();
-
-        await _channel.DisposeAsync();
-        await _connection.DisposeAsync();
-    }
+    protected override string QueueName => RabbitMQConstants.PriceUpdateQueue;
 
     public async Task PublishPriceUpdateAsync(PriceUpdateEvent evt)
     {
         await PublishAsync(MessageTypes.PriceUpdate, evt);
-    }
-
-    private async Task PublishAsync<T>(string type, T evt)
-    {
-        var json = JsonSerializer.Serialize(MessageEnvelope.Create(type, evt));
-        var body = Encoding.UTF8.GetBytes(json);
-
-        _logger.LogInformation("Publishing command result: Type={Type}, Json={Json}", type, json);
-
-        var props = new BasicProperties { Persistent = true, ContentType = "application/json" };
-        await _channel.BasicPublishAsync(
-            "",
-            RabbitMQConstants.PriceUpdateQueue,
-            false,
-            props,
-            body
-        );
     }
 }

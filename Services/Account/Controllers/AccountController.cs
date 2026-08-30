@@ -1,8 +1,8 @@
-using System.IdentityModel.Tokens.Jwt;
 using Account.DTOs;
 using Account.Publishers;
 using Account.Repositories;
-using Contracts;
+using Common.Messaging;
+using Common.Web;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 
@@ -11,10 +11,10 @@ namespace Account.Controllers;
 [ApiController]
 [Route("/api/v1/account")]
 public class AccountController(
-    BetPlacedPublisher betPublisher,
-    SellSharesPublisher sharesPublisher,
+    IGameCommandPublisher publisher,
     IWalletRepository walletRepository,
     ITransactionRepository transactionRepository,
+    ICurrentUser currentUser,
     ILogger<AccountController> logger
 ) : ControllerBase
 {
@@ -41,7 +41,9 @@ public class AccountController(
             return BadRequest("Outcome must be Yes (1) or No (2)");
         }
 
-        var ownerId = Guid.Parse(User.FindFirst(JwtRegisteredClaimNames.Sub)!.Value);
+        if (currentUser.UserId is not { } ownerId)
+            return Unauthorized();
+
         var transactions = await transactionRepository.GetTransactionsForUser(ownerId);
         var availableShares = transactions
             .Where(transaction =>
@@ -66,7 +68,7 @@ public class AccountController(
             Outcome = request.Outcome,
         };
 
-        await sharesPublisher.PublishSellSharesAsync(evt);
+        await publisher.PublishSellSharesAsync(evt);
         return Ok("Sell shares event published");
     }
 
@@ -94,7 +96,9 @@ public class AccountController(
             return BadRequest("Outcome must be Yes (1) or No (2)");
         }
 
-        var ownerId = Guid.Parse(User.FindFirst(JwtRegisteredClaimNames.Sub)!.Value);
+        if (currentUser.UserId is not { } ownerId)
+            return Unauthorized();
+
         var funds = await walletRepository.GetBalance(ownerId);
 
         logger.LogInformation(
@@ -125,7 +129,7 @@ public class AccountController(
             Outcome = request.Outcome,
         };
 
-        await betPublisher.PublishBetPlacedAsync(evt);
+        await publisher.PublishBetPlacedAsync(evt);
         return Ok("Buy event published");
     }
 
@@ -133,7 +137,9 @@ public class AccountController(
     [Authorize]
     public async Task<ActionResult<object?>> GetBalance()
     {
-        var ownerId = Guid.Parse(User.FindFirst(JwtRegisteredClaimNames.Sub)!.Value);
+        if (currentUser.UserId is not { } ownerId)
+            return Unauthorized();
+
         var result = await walletRepository.GetBalance(ownerId);
 
         logger.LogInformation(
@@ -152,7 +158,9 @@ public class AccountController(
     [Authorize]
     public async Task<ActionResult<object?>> GetTransactions()
     {
-        var ownerId = Guid.Parse(User.FindFirst(JwtRegisteredClaimNames.Sub)!.Value);
+        if (currentUser.UserId is not { } ownerId)
+            return Unauthorized();
+
         var result = await transactionRepository.GetTransactionsForUser(ownerId);
         logger.LogInformation("Transactions requested: AccountId={AccountId}", ownerId);
 
@@ -168,7 +176,9 @@ public class AccountController(
         [FromBody] DepositRequest request
     )
     {
-        var ownerId = Guid.Parse(User.FindFirst(JwtRegisteredClaimNames.Sub)!.Value);
+        if (currentUser.UserId is not { } ownerId)
+            return Unauthorized();
+
         logger.LogInformation(
             "Deposit requested: AccountId={AccountId}, Amount={Amount}",
             ownerId,

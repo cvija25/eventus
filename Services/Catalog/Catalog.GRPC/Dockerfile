@@ -9,7 +9,8 @@ ARG BUILD_CONFIGURATION=Release
 WORKDIR /src
 COPY ["Catalog/Catalog.GRPC/Catalog.GRPC.csproj", "Catalog/Catalog.GRPC/"]
 COPY ["Catalog/Catalog.Common/Catalog.Common.csproj", "Catalog/Catalog.Common/"]
-COPY ["Contracts/Contracts.csproj", "Contracts/"]
+COPY ["Common/Common.csproj", "Common/"]
+COPY ["Common.Messaging/Common.Messaging.csproj", "Common.Messaging/"]
 RUN dotnet restore "Catalog/Catalog.GRPC/Catalog.GRPC.csproj"
 COPY . .
 WORKDIR "/src/Catalog/Catalog.GRPC"

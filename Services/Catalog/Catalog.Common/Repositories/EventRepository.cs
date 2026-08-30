@@ -50,11 +50,11 @@ public class EventRepository : IEventRepository
             .ToListAsync();
     }
 
-    public async Task<bool> UpdateEventAsync(UpdateEventDto updateEventDto)
+    public async Task<EventDto?> UpdateEventAsync(UpdateEventDto updateEventDto)
     {
         var ev = await _context.Events.FindAsync(updateEventDto.Id);
         if (ev is null || ev.Outcome != null)
-            return false;
+            return null;
         if (updateEventDto.Pot != null)
             ev.Pot = updateEventDto.Pot.Value;
         if (updateEventDto.PoolYes.HasValue)
@@ -65,7 +65,7 @@ public class EventRepository : IEventRepository
             ev.Title = updateEventDto.Title;
 
         await _context.SaveChangesAsync();
-        return true;
+        return _mapper.Map<EventDto>(ev);
     }
 
     public async Task<bool> ResolveEventAsync(ResolveEventDto resolveEventDto)

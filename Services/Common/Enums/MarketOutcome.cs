@@ -1,4 +1,4 @@
-namespace Contracts;
+namespace Common.Enums;
 
 public enum MarketOutcome
 {
