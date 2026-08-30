@@ -34,6 +34,7 @@ builder.Services.AddDbContext<AccountDbContext>(opt =>
 );
 builder.Services.AddScoped<IWalletRepository, WalletRepository>();
 builder.Services.AddScoped<ITransactionRepository, TransactionRepository>();
+builder.Services.AddScoped<ICommandApprovedHandler, CommandApprovedHandler>();
 builder.Services.AddAutoMapper(cfg => cfg.AddProfile<TransactionMappingProfile>());
 
 builder
