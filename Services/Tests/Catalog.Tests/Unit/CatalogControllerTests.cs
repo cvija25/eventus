@@ -15,6 +15,7 @@ namespace Catalog.Tests.Unit;
 public class CatalogControllerTests
 {
     private readonly IEventRepository _repository = Substitute.For<IEventRepository>();
+    private readonly IPriceHistoryRepository _history = Substitute.For<IPriceHistoryRepository>();
     private readonly IEventResolvedPublisher _publisher = Substitute.For<IEventResolvedPublisher>();
     private readonly ISseBroadcaster _broadcaster = Substitute.For<ISseBroadcaster>();
     private readonly ICurrentUser _currentUser = Substitute.For<ICurrentUser>();
@@ -27,6 +28,7 @@ public class CatalogControllerTests
         _currentUser.UserId.Returns(_userId);
         _controller = new CatalogController(
             _repository,
+            _history,
             _publisher,
             _broadcaster,
             _currentUser,
@@ -170,6 +172,37 @@ public class CatalogControllerTests
             .PublishEventResolvedAsync(
                 Arg.Is<EventResolvedEvent>(e => e.EventId == ev.Id && e.Outcome == MarketOutcome.No)
             );
+    }
+
+    [Fact]
+    public async Task GetHistory_returns_the_recorded_prices_for_the_event()
+    {
+        var eventId = Guid.NewGuid();
+        List<PriceHistoryDto> recorded =
+        [
+            new(eventId, 0.5m, 0.5m, DateTime.UtcNow.AddMinutes(-1)),
+            new(eventId, 0.75m, 0.25m, DateTime.UtcNow),
+        ];
+        _history.GetHistory(eventId).Returns(recorded);
+
+        var result = await _controller.GetHistory(eventId);
+
+        Assert.Same(recorded, Assert.IsType<OkObjectResult>(result.Result).Value);
+        await _history.Received(1).GetHistory(eventId);
+    }
+
+    [Fact]
+    public async Task GetHistory_for_an_event_with_no_prices_is_an_empty_list_not_a_404()
+    {
+        // The frontend charts this directly; a 404 for a market that simply has not traded yet
+        // would be an error case for an ordinary, expected state.
+        _history.GetHistory(Arg.Any<Guid>()).Returns([]);
+
+        var result = await _controller.GetHistory(Guid.NewGuid());
+
+        Assert.Empty(
+            Assert.IsType<List<PriceHistoryDto>>(Assert.IsType<OkObjectResult>(result.Result).Value)
+        );
     }
 
     [Fact]

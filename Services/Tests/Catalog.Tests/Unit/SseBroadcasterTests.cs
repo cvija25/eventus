@@ -3,6 +3,7 @@ using System.Text;
 using System.Text.Json;
 using Catalog.API.Consumers;
 using Catalog.API.Services;
+using Catalog.Common.Repositories;
 using Common.Messaging;
 using Eventus.Testing;
 using Microsoft.AspNetCore.Http;
@@ -169,7 +170,8 @@ public class SseBroadcasterTests
     public void PriceUpdateHandler_forwards_the_message_to_the_broadcaster()
     {
         var broadcaster = Substitute.For<ISseBroadcaster>();
-        var handler = new PriceUpdateHandler(broadcaster);
+        var history = Substitute.For<IPriceHistoryRepository>();
+        var handler = new PriceUpdateHandler(broadcaster, history);
         var evt = new PriceUpdateEvent
         {
             EventId = Guid.NewGuid(),
@@ -177,8 +179,10 @@ public class SseBroadcasterTests
             PriceNo = 0.3m,
         };
 
-        handler.ProcessPriceUpdate(evt);
+        handler.ProcessPriceUpdateAsync(evt);
 
+        // The broadcast happens synchronously, before the handler's first await, so live
+        // subscribers are not made to wait on the history write.
         broadcaster.Received(1).PublishPriceUpdate(evt.EventId, 0.7m, 0.3m);
     }
 }

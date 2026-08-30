@@ -1,6 +1,7 @@
 using System.Text.Json;
 using Catalog.API.Consumers;
 using Common.Messaging;
+using Contracts.Messaging;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging.Abstractions;
 using Microsoft.Extensions.Options;
@@ -15,7 +16,13 @@ public class ConsumerDispatchTests
         : PriceUpdateConsumer(
             NullLogger<PriceUpdateConsumer>.Instance,
             Substitute.For<IServiceScopeFactory>(),
-            Options.Create(new RabbitMqOptions())
+            Options.Create(
+                new KafkaOptions
+                {
+                    BootstrapServers = "unused:9092",
+                    PriceUpdateTopic = KafkaConstants.PriceUpdateTopic,
+                }
+            )
         )
     {
         public Task Dispatch(MessageEnvelope envelope, IServiceProvider services) =>
@@ -45,7 +52,7 @@ public class ConsumerDispatchTests
 
         _handler
             .Received(1)
-            .ProcessPriceUpdate(
+            .ProcessPriceUpdateAsync(
                 Arg.Is<PriceUpdateEvent>(e =>
                     e.EventId == evt.EventId && e.PriceYes == 0.75m && e.PriceNo == 0.25m
                 )
@@ -64,6 +71,6 @@ public class ConsumerDispatchTests
             )
         );
 
-        _handler.DidNotReceive().ProcessPriceUpdate(Arg.Any<PriceUpdateEvent>());
+        _handler.DidNotReceive().ProcessPriceUpdateAsync(Arg.Any<PriceUpdateEvent>());
     }
 }

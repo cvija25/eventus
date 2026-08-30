@@ -27,6 +27,8 @@ public abstract class CatalogDatabaseTest(PostgresFixture postgres) : IAsyncLife
 
     protected EventContext Context { get; private set; } = null!;
     protected IEventRepository Repository { get; private set; } = null!;
+    protected HistoryContext HistoryContext { get; private set; } = null!;
+    protected IPriceHistoryRepository History { get; private set; } = null!;
 
     /// <summary>Both Catalog profiles, matching what the gRPC host composes at startup.</summary>
     protected IMapper Mapper { get; } =
@@ -45,6 +47,11 @@ public abstract class CatalogDatabaseTest(PostgresFixture postgres) : IAsyncLife
         Context = NewContext();
         await Context.Database.MigrateAsync();
         Repository = new EventRepository(Context, Mapper);
+
+        // Catalog spans two contexts over one database; each carries its own migrations.
+        HistoryContext = NewHistoryContext();
+        await HistoryContext.Database.MigrateAsync();
+        History = new PriceHistoryRepository(HistoryContext, Mapper);
     }
 
     /// <summary>
@@ -54,5 +61,12 @@ public abstract class CatalogDatabaseTest(PostgresFixture postgres) : IAsyncLife
     protected EventContext NewContext() =>
         new(new DbContextOptionsBuilder<EventContext>().UseNpgsql(_connectionString).Options);
 
-    public async Task DisposeAsync() => await Context.DisposeAsync();
+    protected HistoryContext NewHistoryContext() =>
+        new(new DbContextOptionsBuilder<HistoryContext>().UseNpgsql(_connectionString).Options);
+
+    public async Task DisposeAsync()
+    {
+        await Context.DisposeAsync();
+        await HistoryContext.DisposeAsync();
+    }
 }

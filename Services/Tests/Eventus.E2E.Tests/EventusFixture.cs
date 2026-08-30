@@ -1,5 +1,6 @@
 using Account.Data;
 using Catalog.Common.Data;
+using Common.Messaging;
 using Eventus.Testing;
 using Grpc.Net.Client;
 using Identity.API.Clients;
@@ -37,6 +38,7 @@ public sealed class EventusFixture : IAsyncLifetime
     private readonly PostgresFixture _postgres = new();
     private readonly RabbitMqFixture _rabbit = new();
     private readonly MongoFixture _mongo = new();
+    private readonly KafkaFixture _kafka = new();
 
     private readonly List<IAsyncDisposable> _factories = [];
     private readonly List<string> _environmentKeys = [];
@@ -114,7 +116,8 @@ public sealed class EventusFixture : IAsyncLifetime
         await Task.WhenAll(
             _postgres.InitializeAsync(),
             _rabbit.InitializeAsync(),
-            _mongo.InitializeAsync()
+            _mongo.InitializeAsync(),
+            _kafka.InitializeAsync()
         );
 
         var catalogDb = await _postgres.CreateDatabaseAsync("e2e_catalog");
@@ -134,6 +137,11 @@ public sealed class EventusFixture : IAsyncLifetime
             new Dictionary<string, string?>
             {
                 ["ConnectionStrings:CatalogDb"] = catalogDb,
+                // The price-update stream runs over Kafka. Catalog.GRPC publishes with
+                // Acks.All, so an unreachable broker would stall every trade rather than
+                // merely losing the price broadcast.
+                ["Kafka:BootstrapServers"] = _kafka.BootstrapServers,
+                ["Kafka:PriceUpdateTopic"] = KafkaConstants.PriceUpdateTopic,
                 ["ConnectionStrings:AccountDb"] = accountDb,
                 ["ConnectionStrings:IdentityDb"] = _mongo.ConnectionString,
                 ["ApiEndpoints:Account"] = "http://account/api/v1/account/",
@@ -169,10 +177,21 @@ public sealed class EventusFixture : IAsyncLifetime
 
     private static async Task MigrateCatalogAsync(string connectionString)
     {
-        await using var context = new EventContext(
-            new DbContextOptionsBuilder<EventContext>().UseNpgsql(connectionString).Options
+        await using (
+            var events = new EventContext(
+                new DbContextOptionsBuilder<EventContext>().UseNpgsql(connectionString).Options
+            )
+        )
+        {
+            await events.Database.MigrateAsync();
+        }
+
+        // Migrated up front, like EventContext above, so the two Catalog hosts do not race each
+        // other applying the same migrations on startup.
+        await using var history = new HistoryContext(
+            new DbContextOptionsBuilder<HistoryContext>().UseNpgsql(connectionString).Options
         );
-        await context.Database.MigrateAsync();
+        await history.Database.MigrateAsync();
     }
 
     private static async Task MigrateAccountAsync(string connectionString)
@@ -211,6 +230,11 @@ public sealed class EventusFixture : IAsyncLifetime
         foreach (var variable in _environmentKeys)
             Environment.SetEnvironmentVariable(variable, null);
 
-        await Task.WhenAll(_mongo.DisposeAsync(), _rabbit.DisposeAsync(), _postgres.DisposeAsync());
+        await Task.WhenAll(
+            _mongo.DisposeAsync(),
+            _rabbit.DisposeAsync(),
+            _kafka.DisposeAsync(),
+            _postgres.DisposeAsync()
+        );
     }
 }

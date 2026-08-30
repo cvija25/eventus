@@ -5,6 +5,7 @@ using Catalog.API.Publishers;
 using Catalog.GRPC.Publishers;
 using Common.Enums;
 using Common.Messaging;
+using Contracts.Messaging;
 using Eventus.Testing;
 using Game.Consumers;
 using Game.Publishers;
@@ -30,8 +31,9 @@ namespace Eventus.E2E.Tests;
 /// than the full <see cref="EventusFixture"/>.
 /// </para>
 /// </summary>
-public class MessagingContractTests(RabbitMqFixture rabbit)
+public class MessagingContractTests(RabbitMqFixture rabbit, KafkaFixture kafka)
     : IClassFixture<RabbitMqFixture>,
+        IClassFixture<KafkaFixture>,
         IAsyncLifetime
 {
     private readonly List<IAsyncDisposable> _disposables = [];
@@ -49,6 +51,15 @@ public class MessagingContractTests(RabbitMqFixture rabbit)
             catch (ObjectDisposedException) { }
         }
     }
+
+    private IOptions<KafkaOptions> KafkaSettings() =>
+        Microsoft.Extensions.Options.Options.Create(
+            new KafkaOptions
+            {
+                BootstrapServers = kafka.BootstrapServers,
+                PriceUpdateTopic = KafkaConstants.PriceUpdateTopic,
+            }
+        );
 
     private IOptions<RabbitMqOptions> Options() =>
         Microsoft.Extensions.Options.Options.Create(
@@ -265,16 +276,18 @@ public class MessagingContractTests(RabbitMqFixture rabbit)
         await consumer.StopAsync(CancellationToken.None);
     }
 
-    // ---- Catalog.GRPC -> Catalog.API: the price queue --------------------------------
+    // ---- Catalog.GRPC -> Catalog.API: the price topic --------------------------------
 
     [Fact]
     public async Task A_price_update_published_by_the_grpc_host_is_received_by_the_api()
     {
+        // This is the one flow that runs over Kafka rather than RabbitMQ, so it is also the one
+        // where publisher and consumer have to agree on a topic name instead of a queue name.
         var (scopes, handler) = HandlerFor<IPriceUpdateHandler>();
         var consumer = new PriceUpdateConsumer(
             NullLogger<PriceUpdateConsumer>.Instance,
             scopes,
-            Options()
+            KafkaSettings()
         );
         await consumer.StartAsync(CancellationToken.None);
 
@@ -284,13 +297,21 @@ public class MessagingContractTests(RabbitMqFixture rabbit)
             PriceYes = 0.75m,
             PriceNo = 0.25m,
         };
-        await Track(new PriceUpdatePublisher(Options(), NullLogger<PriceUpdatePublisher>.Instance))
+        await Track(
+                new PriceUpdatePublisher(KafkaSettings(), NullLogger<PriceUpdatePublisher>.Instance)
+            )
             .PublishPriceUpdateAsync(evt);
 
-        await Delivered(handler, "the API to receive the price update");
+        // Kafka has to create the topic and assign the group a partition first, which is slower
+        // to get going than a RabbitMQ queue.
+        await WaitFor.UntilAsync(
+            () => Task.FromResult(handler.ReceivedCalls().Any()),
+            "the API to receive the price update",
+            TimeSpan.FromSeconds(90)
+        );
         handler
             .Received(1)
-            .ProcessPriceUpdate(
+            .ProcessPriceUpdateAsync(
                 Arg.Is<PriceUpdateEvent>(e => e.EventId == evt.EventId && e.PriceYes == 0.75m)
             );
 
