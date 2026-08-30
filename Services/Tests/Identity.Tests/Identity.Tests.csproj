@@ -1,7 +1,0 @@
-<Project Sdk="Microsoft.NET.Sdk">
-  <ItemGroup>
-    <ProjectReference Include="..\..\Identity\Identity.API\Identity.API.csproj" />
-    <ProjectReference Include="..\..\Common.Web\Common.Web.csproj" />
-    <ProjectReference Include="..\Testing.Common\Testing.Common.csproj" />
-  </ItemGroup>
-</Project>
