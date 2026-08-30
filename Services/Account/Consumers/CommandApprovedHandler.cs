@@ -21,7 +21,7 @@ public class CommandApprovedHandler(
         }
 
         await using var transaction = await dbContext.Database.BeginTransactionAsync(
-            CancellationToken.None
+            ct
         );
         try
         {
@@ -36,11 +36,11 @@ public class CommandApprovedHandler(
                     TransactionType.Buy
                 )
             );
-            await transaction.CommitAsync(CancellationToken.None);
+            await transaction.CommitAsync(ct);
         }
         catch
         {
-            await transaction.RollbackAsync(CancellationToken.None);
+            await transaction.RollbackAsync(ct);
             throw;
         }
     }
