@@ -12,7 +12,7 @@ builder.Services.AddGrpcClient<Catalog.GRPC.Catalog.CatalogClient>(o =>
 {
     o.Address = new Uri(builder.Configuration["GrpcSettings:CatalogUrl"]!);
 });
-builder.Services.AddScoped<CatalogGrpcClient>();
+builder.Services.AddScoped<ICatalogGrpcClient, CatalogGrpcClient>();
 builder.Services.AddScoped<IGameCommandHandler, GameCommandHandler>();
 builder.Services.AddSingleton<ICommandApprovedPublisher, CommandApprovedPublisher>();
 

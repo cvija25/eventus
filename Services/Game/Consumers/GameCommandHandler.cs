@@ -7,7 +7,7 @@ using Game.Publishers;
 namespace Game.Consumers;
 
 public class GameCommandHandler(
-    CatalogGrpcClient catalogGrpcClient,
+    ICatalogGrpcClient catalogGrpcClient,
     ICommandApprovedPublisher commandApprovedPublisher,
     ILogger<GameCommandHandler> logger
 ) : IGameCommandHandler

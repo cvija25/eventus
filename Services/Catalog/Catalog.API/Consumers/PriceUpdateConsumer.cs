@@ -23,8 +23,7 @@ public class PriceUpdateConsumer(
         {
             case MessageTypes.PriceUpdate:
                 handler.ProcessPriceUpdate(envelope.Deserialize<PriceUpdateEvent>());
-                return Task.CompletedTask; //hack
-                break;
+                return Task.CompletedTask;
             default:
                 throw new JsonException($"Unknown command result type '{envelope.Type}'.");
         }

@@ -23,27 +23,16 @@ public class EventResolvedHandler(
                 .Where(t => (int)t.Outcome == (int)evt.Outcome)
                 .ToList();
 
-            decimal totalPayout = 0m;
-
             foreach (var tx in winners)
             {
                 await walletRepository.Deposit(tx.UserId, tx.ShareAmount);
-                totalPayout += tx.ShareAmount;
             }
 
-            await transaction.CommitAsync(CancellationToken.None);
-            // TODO
-            // logger.LogInformation(
-            //     "Event resolved payout processed. EventId={EventId}, Outcome={Outcome}, Winners={WinnerCount}, TotalPayout={TotalPayout}",
-            //     evt.EventId,
-            //     evt.Outcome,
-            //     winners.Count,
-            //     totalPayout
-            // );
+            await transaction.CommitAsync(ct);
         }
         catch
         {
-            await transaction.RollbackAsync(CancellationToken.None);
+            await transaction.RollbackAsync(ct);
             throw;
         }
     }
