@@ -1,20 +1,16 @@
-using System.Text;
-using System.Text.Json;
 using Common.Messaging;
+using Contracts.Messaging;
 using Microsoft.Extensions.Options;
-using RabbitMQ.Client;
 
 namespace Catalog.GRPC.Publishers;
 
 public class PriceUpdatePublisher(
-    IOptions<RabbitMqOptions> options,
+    IOptions<KafkaOptions> options,
     ILogger<PriceUpdatePublisher> logger
-) : MessageQueuePublisher(options, logger), IPriceUpdatePublisher
+) : MessageQueueKafkaPublisher(options, logger), IPriceUpdatePublisher
 {
-    protected override string QueueName => RabbitMQConstants.PriceUpdateQueue;
+    protected override string TopicName => KafkaConstants.PriceUpdateTopic;
 
-    public async Task PublishPriceUpdateAsync(PriceUpdateEvent evt)
-    {
-        await PublishAsync(MessageTypes.PriceUpdate, evt);
-    }
+    public Task PublishPriceUpdateAsync(PriceUpdateEvent evt) =>
+        PublishAsync(MessageTypes.PriceUpdate, evt, evt.EventId.ToString());
 }
