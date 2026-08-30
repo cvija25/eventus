@@ -3,6 +3,7 @@ using Catalog.Common.DTOs;
 using Catalog.Common.Repositories;
 using Catalog.GRPC.Publishers;
 using Common.Enums;
+using Common.Messaging;
 using Grpc.Core;
 
 namespace Catalog.GRPC.Services;

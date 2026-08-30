@@ -8,7 +8,8 @@ ARG BUILD_CONFIGURATION=Release
 WORKDIR /src
 COPY ["Catalog/Catalog.API/Catalog.API.csproj", "Catalog/Catalog.API/"]
 COPY ["Catalog/Catalog.Common/Catalog.Common.csproj", "Catalog/Catalog.Common/"]
-COPY ["Contracts/Contracts.csproj", "Contracts/"]
+COPY ["Common/Common.csproj", "Common/"]
+COPY ["Common.Messaging/Common.Messaging.csproj", "Common.Messaging/"]
 RUN dotnet restore "Catalog/Catalog.API/Catalog.API.csproj"
 COPY . .
 WORKDIR "/src/Catalog/Catalog.API"
