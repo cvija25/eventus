@@ -39,17 +39,38 @@ public class CatalogService(
     {
         logger.LogInformation("Received UpdateEventPrice");
         var dto = mapper.Map<UpdateEventDto>(request);
-        var succeeded = await eventRepository.UpdateEventAsync(dto);
-        var poolYes = dto.PoolYes.HasValue ? dto.PoolYes.Value : 0;
-        ;
-        var poolNo = dto.PoolNo.HasValue ? dto.PoolNo.Value : 0;
-        var evt = new PriceUpdateEvent
+        var updated = await eventRepository.UpdateEventAsync(dto);
+
+        if (updated is null)
         {
-            EventId = dto.Id,
-            PriceYes = poolNo / (poolYes + poolNo),
-            PriceNo = poolYes / (poolYes + poolNo),
-        };
-        await publisher.PublishPriceUpdateAsync(evt);
-        return new UpdateEventPriceResponse { Success = succeeded };
+            logger.LogWarning(
+                "UpdateEventPrice rejected: EventId={EventId} not found or already resolved",
+                dto.Id
+            );
+            return new UpdateEventPriceResponse { Success = false };
+        }
+
+        // Broadcast the persisted pools, not the request: a partial update leaves the
+        // untouched pools at their stored values.
+        if (updated.PoolYes + updated.PoolNo == 0m)
+        {
+            logger.LogWarning(
+                "Skipping price broadcast: EventId={EventId} has no liquidity",
+                updated.Id
+            );
+        }
+        else
+        {
+            await publisher.PublishPriceUpdateAsync(
+                new PriceUpdateEvent
+                {
+                    EventId = updated.Id,
+                    PriceYes = updated.PriceYes ?? 0m,
+                    PriceNo = updated.PriceNo ?? 0m,
+                }
+            );
+        }
+
+        return new UpdateEventPriceResponse { Success = true };
     }
 }

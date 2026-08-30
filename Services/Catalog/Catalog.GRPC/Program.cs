@@ -35,3 +35,5 @@ app.MapGrpcService<CatalogService>();
 app.MapGrpcReflectionService();
 
 app.Run();
+
+public partial class Program { }

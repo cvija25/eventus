@@ -5,6 +5,7 @@ using Account.Mappings;
 using Account.Publishers;
 using Account.Repositories;
 using Common.Messaging;
+using Common.Web;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
@@ -20,6 +21,7 @@ builder.Services.AddCors(options =>
 });
 
 builder.Services.AddControllers();
+builder.Services.AddCurrentUser();
 builder.Services.AddHostedService<CommandApprovedConsumer>();
 builder.Services.AddHostedService<EventResolvedEventConsumer>();
 builder.Services.AddSingleton<IGameCommandPublisher, GameCommandPublisher>();
@@ -82,3 +84,5 @@ app.UseAuthentication();
 app.UseAuthorization();
 app.MapControllers();
 app.Run();
+
+public partial class Program { }

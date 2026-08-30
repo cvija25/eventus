@@ -4,6 +4,7 @@ using Catalog.API.Publishers;
 using Catalog.API.Services;
 using Catalog.Common.Extensions;
 using Common.Messaging;
+using Common.Web;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.IdentityModel.Tokens;
 
@@ -19,6 +20,7 @@ builder.Services.AddCors(options =>
 });
 
 builder.Services.AddControllers();
+builder.Services.AddCurrentUser();
 builder.Services.AddCatalogCommon(builder.Configuration);
 builder.Services.AddHostedService<PriceUpdateConsumer>();
 builder.Services.AddSingleton<ISseBroadcaster, SseBroadcaster>();
@@ -62,3 +64,5 @@ app.UseAuthentication();
 app.UseAuthorization();
 app.MapControllers();
 app.Run();
+
+public partial class Program { }
