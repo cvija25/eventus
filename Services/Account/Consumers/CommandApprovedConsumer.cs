@@ -150,16 +150,18 @@ public class CommandApprovedConsumer(
         AccountDbContext db
     )
     {
-        // empty reserveFund regardless of approval
-        await walletRepository.WithdrawReserveFund(evt.AccId, evt.Stake);
         if (!evt.IsApproved)
+        {
+            await walletRepository.WithdrawReserveFund(evt.AccId, evt.Stake);
             return;
+        }
 
         await using var transaction = await db.Database.BeginTransactionAsync(
             CancellationToken.None
         );
         try
         {
+            await walletRepository.WithdrawReserveFund(evt.AccId, evt.Stake);
             await walletRepository.Withdraw(evt.AccId, evt.Stake);
             await transactionRepository.CreateTransaction(
                 new TransactionDTO(
