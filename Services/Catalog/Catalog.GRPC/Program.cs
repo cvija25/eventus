@@ -14,6 +14,7 @@ builder.Services.AddGrpcReflection();
 builder.Services.AddSingleton<PriceUpdatePublisher>();
 builder.Services.AddCatalogCommon(builder.Configuration);
 builder.Services.Configure<RabbitMqOptions>(builder.Configuration.GetSection("RabbitMq"));
+builder.Services.Configure<KafkaOptions>(builder.Configuration.GetSection("Kafka"));
 builder.Services.AddAutoMapper(configuration =>
 {
     configuration.CreateMap<EventDto, GetEventPriceResponse>().ReverseMap();

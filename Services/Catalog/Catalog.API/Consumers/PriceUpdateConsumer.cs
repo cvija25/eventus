@@ -1,143 +1,88 @@
-using System.Text;
 using System.Text.Json;
 using Catalog.API.Services;
+using Confluent.Kafka;
 using Contracts;
 using Contracts.Messaging;
 using Microsoft.Extensions.Options;
-using RabbitMQ.Client;
-using RabbitMQ.Client.Events;
 
 namespace Catalog.API.Consumers;
 
 public class PriceUpdateConsumer(
     ILogger<PriceUpdateConsumer> logger,
     ISseBroadcaster broadcaster,
-    IOptions<RabbitMqOptions> rabbitOptions
+    IOptions<KafkaOptions> kafkaOptions
 ) : BackgroundService
 {
-    private IChannel? _channel;
-    private IConnection? _connection;
-
     protected override async Task ExecuteAsync(CancellationToken stoppingToken)
     {
         while (!stoppingToken.IsCancellationRequested)
             try
             {
-                await StartConsumingAsync(stoppingToken);
+                StartConsuming(stoppingToken);
             }
             catch (Exception ex) when (!stoppingToken.IsCancellationRequested)
             {
-                logger.LogError(ex, "RabbitMQ consumer failed. Retrying in 5s...");
+                logger.LogError(ex, "Kafka consumer failed. Retrying in 5s...");
                 await Task.Delay(TimeSpan.FromSeconds(5), stoppingToken);
             }
     }
 
-    private async Task StartConsumingAsync(CancellationToken stoppingToken)
+    private void StartConsuming(CancellationToken stoppingToken)
     {
-        var options = rabbitOptions.Value;
+        var options = kafkaOptions.Value;
 
-        var factory = new ConnectionFactory
+        var config = new ConsumerConfig
         {
-            HostName = options.HostName,
-            Port = options.Port,
-            UserName = options.UserName,
-            Password = options.Password,
-            VirtualHost = options.VirtualHost,
+            BootstrapServers = options.BootstrapServers,
+            GroupId = "catalog-price-update",
+            AutoOffsetReset = AutoOffsetReset.Earliest,
+            EnableAutoCommit = false,
         };
 
-        _connection = await factory.CreateConnectionAsync(stoppingToken);
-        _channel = await _connection.CreateChannelAsync(cancellationToken: stoppingToken);
+        using var consumer = new ConsumerBuilder<string, string>(config).Build();
+        consumer.Subscribe(options.PriceUpdateTopic);
 
-        await _channel.BasicQosAsync(0, 10, false, stoppingToken);
+        logger.LogInformation("Kafka price update consumer started.");
 
-        await _channel.QueueDeclareAsync(
-            RabbitMQConstants.PriceUpdateQueue,
-            true,
-            false,
-            false,
-            cancellationToken: stoppingToken
-        );
-
-        var consumer = new AsyncEventingBasicConsumer(_channel);
-        consumer.ReceivedAsync += OnMessageReceivedAsync;
-
-        await _channel.BasicConsumeAsync(
-            RabbitMQConstants.PriceUpdateQueue,
-            false,
-            consumer,
-            stoppingToken
-        );
-
-        logger.LogInformation("RabbitMQ price update consumer started.");
-
-        var tcs = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
-
-        _connection.ConnectionShutdownAsync += (_, args) =>
+        while (!stoppingToken.IsCancellationRequested)
         {
-            logger.LogWarning("RabbitMQ connection lost: {Reason}", args.ReplyText);
-            tcs.TrySetResult();
-            return Task.CompletedTask;
-        };
+            var result = consumer.Consume(stoppingToken);
 
-        stoppingToken.Register(() => tcs.TrySetResult());
-
-        await tcs.Task;
-    }
-
-    private async Task OnMessageReceivedAsync(object sender, BasicDeliverEventArgs ea)
-    {
-        try
-        {
-            var json = Encoding.UTF8.GetString(ea.Body.ToArray());
-            var result =
-                JsonSerializer.Deserialize<MessageEnvelope>(json)
-                ?? throw new JsonException("Failed to deserialize price update.");
-
-            switch (result.Type)
+            try
             {
-                case MessageTypes.PriceUpdate:
-                    ProcessPriceUpdate(result.Deserialize<PriceUpdateEvent>());
-                    break;
-                default:
-                    throw new JsonException($"Unknown command result type '{result.Type}'.");
-            }
+                var envelope =
+                    JsonSerializer.Deserialize<MessageEnvelope>(result.Message.Value)
+                    ?? throw new JsonException("Failed to deserialize price update.");
 
-            await _channel!.BasicAckAsync(ea.DeliveryTag, false, CancellationToken.None);
+                switch (envelope.Type)
+                {
+                    case MessageTypes.PriceUpdate:
+                        ProcessPriceUpdate(envelope.Deserialize<PriceUpdateEvent>());
+                        break;
+                    default:
+                        throw new JsonException($"Unknown command result type '{envelope.Type}'.");
+                }
+
+                consumer.Commit(result);
+            }
+            catch (JsonException ex)
+            {
+                // Bad message — log and skip, commit anyway so we don't get stuck
+                logger.LogError(ex, "Invalid message format. Skipping.");
+                consumer.Commit(result);
+            }
+            catch (Exception ex)
+            {
+                // Transient failure — don't commit, will be redelivered on restart
+                logger.LogError(ex, "Failed to process price update. Will retry on restart.");
+            }
         }
-        catch (JsonException ex)
-        {
-            // Bad message — don't requeue, send to dead letter
-            logger.LogError(ex, "Invalid message format. Discarding.");
-            await _channel!.BasicNackAsync(ea.DeliveryTag, false, false, CancellationToken.None);
-        }
-        catch (Exception ex)
-        {
-            // Transient failure — requeue with delay
-            logger.LogError(ex, "Failed to process price update. Requeuing.");
-            await Task.Delay(TimeSpan.FromSeconds(5));
-            await _channel!.BasicNackAsync(ea.DeliveryTag, false, true, CancellationToken.None);
-        }
+
+        consumer.Close();
     }
 
     private void ProcessPriceUpdate(PriceUpdateEvent evt)
     {
         broadcaster.PublishPriceUpdate(evt.EventId, evt.PriceYes, evt.PriceNo);
-    }
-
-    public override async Task StopAsync(CancellationToken cancellationToken)
-    {
-        if (_channel != null)
-        {
-            await _channel.CloseAsync(cancellationToken);
-            await _channel.DisposeAsync();
-        }
-
-        if (_connection != null)
-        {
-            await _connection.CloseAsync(cancellationToken);
-            await _connection.DisposeAsync();
-        }
-
-        await base.StopAsync(cancellationToken);
     }
 }

@@ -1,70 +1,77 @@
-using System.Text;
 using System.Text.Json;
+using Confluent.Kafka;
 using Contracts;
 using Contracts.Messaging;
 using Microsoft.Extensions.Options;
-using RabbitMQ.Client;
 
 namespace Catalog.GRPC.Publishers;
 
 public class PriceUpdatePublisher : IAsyncDisposable
 {
-    private readonly IChannel _channel;
-    private readonly IConnection _connection;
+    private readonly IProducer<string, string> _producer;
     private readonly ILogger<PriceUpdatePublisher> _logger;
+    private readonly string _topic;
 
     public PriceUpdatePublisher(
-        IOptions<RabbitMqOptions> options,
+        IOptions<KafkaOptions> options,
         ILogger<PriceUpdatePublisher> logger
     )
     {
         _logger = logger;
-        var rabbitOptions = options.Value;
+        var kafkaOptions = options.Value;
+        _topic = kafkaOptions.PriceUpdateTopic;
 
-        var factory = new ConnectionFactory
+        var config = new ProducerConfig
         {
-            HostName = rabbitOptions.HostName,
-            Port = rabbitOptions.Port,
-            UserName = rabbitOptions.UserName,
-            Password = rabbitOptions.Password,
+            BootstrapServers = kafkaOptions.BootstrapServers,
+            Acks = Acks.All,
+            EnableIdempotence = true,
         };
 
-        _connection = factory.CreateConnectionAsync().Result;
-        _channel = _connection.CreateChannelAsync().Result;
-        _channel
-            .QueueDeclareAsync(RabbitMQConstants.PriceUpdateQueue, true, false, false)
-            .GetAwaiter()
-            .GetResult();
+        _producer = new ProducerBuilder<string, string>(config).Build();
     }
 
-    public async ValueTask DisposeAsync()
+    public ValueTask DisposeAsync()
     {
-        await _channel.CloseAsync();
-        await _connection.CloseAsync();
-
-        await _channel.DisposeAsync();
-        await _connection.DisposeAsync();
+        _producer.Flush(TimeSpan.FromSeconds(5));
+        _producer.Dispose();
+        return ValueTask.CompletedTask;
     }
 
     public async Task PublishPriceUpdateAsync(PriceUpdateEvent evt)
     {
-        await PublishAsync(MessageTypes.PriceUpdate, evt);
+        await PublishAsync(MessageTypes.PriceUpdate, evt, evt.EventId.ToString());
     }
 
-    private async Task PublishAsync<T>(string type, T evt)
+    private async Task PublishAsync<T>(string type, T evt, string key)
     {
         var json = JsonSerializer.Serialize(MessageEnvelope.Create(type, evt));
-        var body = Encoding.UTF8.GetBytes(json);
 
         _logger.LogInformation("Publishing command result: Type={Type}, Json={Json}", type, json);
 
-        var props = new BasicProperties { Persistent = true, ContentType = "application/json" };
-        await _channel.BasicPublishAsync(
-            "",
-            RabbitMQConstants.PriceUpdateQueue,
-            false,
-            props,
-            body
-        );
+        try
+        {
+            var result = await _producer.ProduceAsync(
+                _topic,
+                new Message<string, string> { Key = key, Value = json }
+            );
+
+            _logger.LogInformation(
+                "Delivered to Kafka: Topic={Topic}, Partition={Partition}, Offset={Offset}",
+                result.Topic,
+                result.Partition.Value,
+                result.Offset.Value
+            );
+        }
+        catch (ProduceException<string, string> ex)
+        {
+            _logger.LogError(
+                ex,
+                "Failed to publish to Kafka: Type={Type}, Reason={Reason}",
+                type,
+                ex.Error.Reason
+            );
+            throw;
+        }
     }
 }
