@@ -1,6 +1,6 @@
 using System.Text.Json;
 
-namespace Contracts;
+namespace Common.Messaging;
 
 public sealed record MessageEnvelope(Guid MessageId, string Type, string Payload)
 {
@@ -23,4 +23,5 @@ public static class MessageTypes
     public const string BetApproved = "bet-approved";
     public const string SellSharesApproved = "sell-shares-approved";
     public const string PriceUpdate = "price-update";
+    public const string EventResolved = "event-resolved";
 }

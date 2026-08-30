@@ -24,6 +24,8 @@
 
   <ItemGroup>
     <ProjectReference Include="../Catalog.Common/Catalog.Common.csproj" />
+    <ProjectReference Include="..\..\Common\Common.csproj" />
+    <ProjectReference Include="..\..\Common.Messaging\Common.Messaging.csproj" />
   </ItemGroup>
 
   <ItemGroup>

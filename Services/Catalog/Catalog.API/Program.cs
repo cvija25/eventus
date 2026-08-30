@@ -3,7 +3,8 @@ using Catalog.API.Consumers;
 using Catalog.API.Publishers;
 using Catalog.API.Services;
 using Catalog.Common.Extensions;
-using Contracts.Messaging;
+using Common.Messaging;
+using Common.Web;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.IdentityModel.Tokens;
 
@@ -19,11 +20,13 @@ builder.Services.AddCors(options =>
 });
 
 builder.Services.AddControllers();
+builder.Services.AddCurrentUser();
 builder.Services.AddCatalogCommon(builder.Configuration);
 builder.Services.AddHostedService<PriceUpdateConsumer>();
 builder.Services.Configure<KafkaOptions>(builder.Configuration.GetSection("Kafka"));
 builder.Services.AddSingleton<ISseBroadcaster, SseBroadcaster>();
-builder.Services.AddScoped<IEventResolvedPublisher, EventResolvedPublisher>();
+builder.Services.AddSingleton<IEventResolvedPublisher, EventResolvedPublisher>();
+builder.Services.AddScoped<IPriceUpdateHandler, PriceUpdateHandler>();
 builder.Services.Configure<RabbitMqOptions>(builder.Configuration.GetSection("RabbitMq"));
 
 builder
@@ -62,3 +65,5 @@ app.UseAuthentication();
 app.UseAuthorization();
 app.MapControllers();
 app.Run();
+
+public partial class Program { }

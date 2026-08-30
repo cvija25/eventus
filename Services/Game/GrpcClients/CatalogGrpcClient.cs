@@ -3,7 +3,7 @@ using CatalogProto = Catalog.GRPC.Catalog;
 
 namespace Game.GrpcClients;
 
-public class CatalogGrpcClient(CatalogProto.CatalogClient client)
+public class CatalogGrpcClient(CatalogProto.CatalogClient client) : ICatalogGrpcClient
 {
     public async Task<GetEventPriceResponse> GetEventPriceAsync(Guid eventId) =>
         await client.GetEventPriceAsync(new GetEventPriceRequest { EventId = eventId.ToString() });

@@ -7,7 +7,8 @@ FROM mcr.microsoft.com/dotnet/sdk:10.0 AS build
 ARG BUILD_CONFIGURATION=Release
 WORKDIR /src
 COPY ["Game/Game.csproj", "Game/"]
-COPY ["Contracts/Contracts.csproj", "Contracts/"]
+COPY ["Common/Common.csproj", "Common/"]
+COPY ["Common.Messaging/Common.Messaging.csproj", "Common.Messaging/"]
 RUN dotnet restore "Game/Game.csproj"
 COPY . .
 WORKDIR "/src/Game"

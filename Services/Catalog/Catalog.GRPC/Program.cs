@@ -4,14 +4,14 @@ using Catalog.Common.Extensions;
 using Catalog.GRPC;
 using Catalog.GRPC.Publishers;
 using Catalog.GRPC.Services;
-using Contracts.Messaging;
+using Common.Messaging;
 
 var builder = WebApplication.CreateBuilder(args);
 
 // Add services to the container.
 builder.Services.AddGrpc();
 builder.Services.AddGrpcReflection();
-builder.Services.AddSingleton<PriceUpdatePublisher>();
+builder.Services.AddSingleton<IPriceUpdatePublisher, PriceUpdatePublisher>();
 builder.Services.AddCatalogCommon(builder.Configuration);
 builder.Services.Configure<RabbitMqOptions>(builder.Configuration.GetSection("RabbitMq"));
 builder.Services.Configure<KafkaOptions>(builder.Configuration.GetSection("Kafka"));
@@ -36,3 +36,5 @@ app.MapGrpcService<CatalogService>();
 app.MapGrpcReflectionService();
 
 app.Run();
+
+public partial class Program { }

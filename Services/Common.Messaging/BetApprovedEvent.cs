@@ -1,4 +1,6 @@
-namespace Contracts;
+using Common.Enums;
+
+namespace Common.Messaging;
 
 public class BetApprovedEvent
 {

@@ -1,4 +1,4 @@
-using Contracts;
+using Common.Enums;
 
 namespace Account.Entities;
 

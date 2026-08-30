@@ -1,9 +1,10 @@
-using System.IdentityModel.Tokens.Jwt;
 using Catalog.API.Publishers;
 using Catalog.API.Services;
 using Catalog.Common.DTOs;
 using Catalog.Common.Repositories;
-using Contracts;
+using Common.Enums;
+using Common.Messaging;
+using Common.Web;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 
@@ -17,6 +18,7 @@ public class CatalogController : ControllerBase
     private readonly IEventResolvedPublisher _eventResolvedPublisher;
     private readonly ISseBroadcaster _sseBroadcaster;
     private readonly IPriceHistoryRepository _historyRepository;
+    private readonly ICurrentUser _currentUser;
     private ILogger<CatalogController> _logger;
 
     public CatalogController(
@@ -24,12 +26,14 @@ public class CatalogController : ControllerBase
         IPriceHistoryRepository historyRepository,
         IEventResolvedPublisher publisher,
         ISseBroadcaster sseBroadcaster,
+        ICurrentUser currentUser,
         ILogger<CatalogController> logger
     )
     {
         _eventRepository = eventRepository;
         _eventResolvedPublisher = publisher;
         _sseBroadcaster = sseBroadcaster;
+        _currentUser = currentUser;
         _historyRepository = historyRepository;
         _logger = logger;
     }
@@ -67,7 +71,9 @@ public class CatalogController : ControllerBase
     [ProducesResponseType(typeof(EventDto), StatusCodes.Status201Created)]
     public async Task<ActionResult<EventDto>> CreateEvent([FromBody] CreateEventDto dto)
     {
-        var ownerId = Guid.Parse(User.FindFirst(JwtRegisteredClaimNames.Sub)!.Value);
+        if (_currentUser.UserId is not { } ownerId)
+            return Unauthorized();
+
         var ev = await _eventRepository.CreateEventAsync(dto, ownerId);
         return Created($"/api/v1/catalog/events/{ev.Id}", ev);
     }
@@ -83,7 +89,9 @@ public class CatalogController : ControllerBase
         if (dto.Outcome != MarketOutcome.Yes && dto.Outcome != MarketOutcome.No)
             return BadRequest("Invalid outcome. Must be 1 (YES) or 2 (NO).");
 
-        var userId = Guid.Parse(User.FindFirst(JwtRegisteredClaimNames.Sub)!.Value);
+        if (_currentUser.UserId is not { } userId)
+            return Unauthorized();
+
         var ev = await _eventRepository.GetEventByIdAsync(dto.Id);
 
         if (ev is null)

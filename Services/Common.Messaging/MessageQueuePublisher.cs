@@ -1,19 +1,22 @@
+using Microsoft.Extensions.Logging;
+
+namespace Common.Messaging;
+
 using System.Text;
 using System.Text.Json;
-using Contracts;
-using Contracts.Messaging;
 using Microsoft.Extensions.Options;
 using RabbitMQ.Client;
 
-namespace Account.Publishers;
-
-public class BetPlacedPublisher : IAsyncDisposable
+public abstract class MessageQueuePublisher : IAsyncDisposable
 {
     private readonly IChannel _channel;
     private readonly IConnection _connection;
+    private readonly ILogger _logger;
+    protected abstract string QueueName { get; }
 
-    public BetPlacedPublisher(IOptions<RabbitMqOptions> options)
+    protected MessageQueuePublisher(IOptions<RabbitMqOptions> options, ILogger logger)
     {
+        _logger = logger;
         var rabbitOptions = options.Value;
 
         var factory = new ConnectionFactory
@@ -27,10 +30,7 @@ public class BetPlacedPublisher : IAsyncDisposable
         _connection = factory.CreateConnectionAsync().Result;
         _channel = _connection.CreateChannelAsync().Result;
 
-        _channel
-            .QueueDeclareAsync(RabbitMQConstants.GameCommandQueue, true, false, false)
-            .GetAwaiter()
-            .GetResult();
+        _channel.QueueDeclareAsync(QueueName, true, false, false).GetAwaiter().GetResult();
     }
 
     public async ValueTask DisposeAsync()
@@ -42,19 +42,12 @@ public class BetPlacedPublisher : IAsyncDisposable
         await _connection.DisposeAsync();
     }
 
-    public async Task PublishBetPlacedAsync(BetPlacedEvent evt)
+    protected async Task PublishAsync<T>(string type, T evt)
     {
-        var json = JsonSerializer.Serialize(MessageEnvelope.Create(MessageTypes.BetPlaced, evt));
+        var json = JsonSerializer.Serialize(MessageEnvelope.Create(type, evt));
         var body = Encoding.UTF8.GetBytes(json);
 
         var props = new BasicProperties { Persistent = true, ContentType = "application/json" };
-
-        await _channel.BasicPublishAsync(
-            "",
-            RabbitMQConstants.GameCommandQueue,
-            false,
-            props,
-            body
-        );
+        await _channel.BasicPublishAsync("", QueueName, false, props, body);
     }
 }

@@ -1,4 +1,4 @@
-using Contracts;
+using Common.Messaging;
 
 namespace Catalog.API.Publishers;
 

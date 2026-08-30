@@ -57,6 +57,9 @@ namespace Account.Migrations
                     b.Property<decimal>("AvailableFunds")
                         .HasColumnType("numeric");
 
+                    b.Property<decimal>("ReserveFunds")
+                        .HasColumnType("numeric");
+
                     b.HasKey("AccountId");
 
                     b.ToTable("Wallets");

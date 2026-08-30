@@ -1,4 +1,4 @@
-namespace Contracts;
+namespace Common.Messaging;
 
 public class RabbitMQConstants
 {
