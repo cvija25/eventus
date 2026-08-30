@@ -8,4 +8,5 @@ public class Wallet
     public Guid AccountId { get; set; }
 
     public decimal AvailableFunds { get; set; }
+    public decimal ReserveFunds { get; set; }
 }

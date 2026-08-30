@@ -30,13 +30,36 @@ public class WalletRepository(AccountDbContext db) : IWalletRepository
         return new UpdateWalletDto(wallet.AccountId, wallet.AvailableFunds);
     }
 
+    public async Task<UpdateWalletDto?> DepositReserveFund(Guid accId, decimal amount)
+    {
+        var wallet = await db.Wallets.FindAsync(accId);
+        if (wallet is null)
+            return null;
+
+        wallet.ReserveFunds += amount;
+        await db.SaveChangesAsync();
+
+        return new UpdateWalletDto(wallet.AccountId, wallet.ReserveFunds);
+    }
+
+    public async Task<UpdateWalletDto?> WithdrawReserveFund(Guid accId, decimal amount)
+    {
+        var wallet = await db.Wallets.FindAsync(accId);
+        if (wallet is null)
+            return null;
+
+        wallet.ReserveFunds = Math.Max(wallet.ReserveFunds - amount, 0);
+        await db.SaveChangesAsync();
+        return new UpdateWalletDto(wallet.AccountId, wallet.ReserveFunds);
+    }
+
     public async Task<WalletBalanceDto?> GetBalance(Guid accId)
     {
         var wallet = await db.Wallets.FindAsync(accId);
         if (wallet is null)
             return null;
 
-        return new WalletBalanceDto(wallet.AvailableFunds);
+        return new WalletBalanceDto(Math.Max(0, wallet.AvailableFunds - wallet.ReserveFunds));
     }
 
     public async Task CreateWalletIfMissing(Guid userId)
