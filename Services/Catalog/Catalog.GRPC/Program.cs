@@ -11,7 +11,7 @@ var builder = WebApplication.CreateBuilder(args);
 // Add services to the container.
 builder.Services.AddGrpc();
 builder.Services.AddGrpcReflection();
-builder.Services.AddSingleton<PriceUpdatePublisher>();
+builder.Services.AddSingleton<IPriceUpdatePublisher, PriceUpdatePublisher>();
 builder.Services.AddCatalogCommon(builder.Configuration);
 builder.Services.Configure<RabbitMqOptions>(builder.Configuration.GetSection("RabbitMq"));
 builder.Services.AddAutoMapper(configuration =>

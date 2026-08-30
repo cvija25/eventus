@@ -9,7 +9,7 @@ using Grpc.Core;
 namespace Catalog.GRPC.Services;
 
 public class CatalogService(
-    PriceUpdatePublisher publisher,
+    IPriceUpdatePublisher publisher,
     ILogger<CatalogService> logger,
     IEventRepository eventRepository,
     IMapper mapper

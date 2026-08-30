@@ -11,8 +11,7 @@ namespace Account.Controllers;
 [ApiController]
 [Route("/api/v1/account")]
 public class AccountController(
-    BetPlacedPublisher betPublisher,
-    SellSharesPublisher sharesPublisher,
+    IGameCommandPublisher publisher,
     IWalletRepository walletRepository,
     ITransactionRepository transactionRepository,
     ILogger<AccountController> logger
@@ -66,7 +65,7 @@ public class AccountController(
             Outcome = request.Outcome,
         };
 
-        await sharesPublisher.PublishSellSharesAsync(evt);
+        await publisher.PublishSellSharesAsync(evt);
         return Ok("Sell shares event published");
     }
 
@@ -123,7 +122,7 @@ public class AccountController(
             Outcome = request.Outcome,
         };
 
-        await betPublisher.PublishBetPlacedAsync(evt);
+        await publisher.PublishBetPlacedAsync(evt);
         return Ok("Buy event published");
     }
 

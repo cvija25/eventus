@@ -22,8 +22,7 @@ builder.Services.AddCors(options =>
 builder.Services.AddControllers();
 builder.Services.AddHostedService<CommandApprovedConsumer>();
 builder.Services.AddHostedService<EventResolvedEventConsumer>();
-builder.Services.AddSingleton<BetPlacedPublisher>();
-builder.Services.AddSingleton<SellSharesPublisher>();
+builder.Services.AddSingleton<IGameCommandPublisher, GameCommandPublisher>();
 builder.Services.Configure<RabbitMqOptions>(builder.Configuration.GetSection("RabbitMq"));
 
 builder.Services.AddDbContext<AccountDbContext>(opt =>
@@ -35,6 +34,7 @@ builder.Services.AddDbContext<AccountDbContext>(opt =>
 builder.Services.AddScoped<IWalletRepository, WalletRepository>();
 builder.Services.AddScoped<ITransactionRepository, TransactionRepository>();
 builder.Services.AddScoped<ICommandApprovedHandler, CommandApprovedHandler>();
+builder.Services.AddScoped<IEventResolvedHandler, EventResolvedHandler>();
 builder.Services.AddAutoMapper(cfg => cfg.AddProfile<TransactionMappingProfile>());
 
 builder

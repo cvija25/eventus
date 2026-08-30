@@ -1,6 +1,7 @@
 using Common.Messaging;
 using Game.Consumers;
 using Game.GrpcClients;
+using Game.Publishers;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -12,6 +13,9 @@ builder.Services.AddGrpcClient<Catalog.GRPC.Catalog.CatalogClient>(o =>
     o.Address = new Uri(builder.Configuration["GrpcSettings:CatalogUrl"]!);
 });
 builder.Services.AddScoped<CatalogGrpcClient>();
+builder.Services.AddScoped<IGameCommandHandler, GameCommandHandler>();
+builder.Services.AddSingleton<ICommandApprovedPublisher, CommandApprovedPublisher>();
+
 var app = builder.Build();
 if (app.Environment.IsDevelopment())
     app.MapOpenApi();

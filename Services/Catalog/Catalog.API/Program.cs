@@ -23,6 +23,7 @@ builder.Services.AddCatalogCommon(builder.Configuration);
 builder.Services.AddHostedService<PriceUpdateConsumer>();
 builder.Services.AddSingleton<ISseBroadcaster, SseBroadcaster>();
 builder.Services.AddScoped<IEventResolvedPublisher, EventResolvedPublisher>();
+builder.Services.AddScoped<IPriceUpdateHandler, PriceUpdateHandler>();
 builder.Services.Configure<RabbitMqOptions>(builder.Configuration.GetSection("RabbitMq"));
 
 builder
