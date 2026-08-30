@@ -5,6 +5,7 @@ using Catalog.GRPC;
 using Catalog.GRPC.Publishers;
 using Catalog.GRPC.Services;
 using Common.Messaging;
+using Contracts.Messaging;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -14,6 +15,7 @@ builder.Services.AddGrpcReflection();
 builder.Services.AddSingleton<IPriceUpdatePublisher, PriceUpdatePublisher>();
 builder.Services.AddCatalogCommon(builder.Configuration);
 builder.Services.Configure<RabbitMqOptions>(builder.Configuration.GetSection("RabbitMq"));
+builder.Services.Configure<KafkaOptions>(builder.Configuration.GetSection("Kafka"));
 builder.Services.AddAutoMapper(configuration =>
 {
     configuration.CreateMap<EventDto, GetEventPriceResponse>().ReverseMap();

@@ -5,6 +5,7 @@ using Catalog.API.Services;
 using Catalog.Common.Extensions;
 using Common.Messaging;
 using Common.Web;
+using Contracts.Messaging;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.IdentityModel.Tokens;
 
@@ -23,6 +24,7 @@ builder.Services.AddControllers();
 builder.Services.AddCurrentUser();
 builder.Services.AddCatalogCommon(builder.Configuration);
 builder.Services.AddHostedService<PriceUpdateConsumer>();
+builder.Services.Configure<KafkaOptions>(builder.Configuration.GetSection("Kafka"));
 builder.Services.AddSingleton<ISseBroadcaster, SseBroadcaster>();
 builder.Services.AddSingleton<IEventResolvedPublisher, EventResolvedPublisher>();
 builder.Services.AddScoped<IPriceUpdateHandler, PriceUpdateHandler>();

@@ -29,5 +29,6 @@ public class EventMappingProfile : Profile
                             : src.PoolYes / (src.PoolYes + src.PoolNo)
                     )
             );
+        CreateMap<PriceHistory, PriceHistoryDto>();
     }
 }
