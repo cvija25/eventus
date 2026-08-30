@@ -6,6 +6,8 @@ public interface IWalletRepository
 {
     Task<UpdateWalletDto?> Deposit(Guid accId, decimal amount);
     Task<UpdateWalletDto?> Withdraw(Guid accId, decimal amount);
+    Task<UpdateWalletDto?> DepositReserveFund(Guid accId, decimal amount);
+    Task<UpdateWalletDto?> WithdrawReserveFund(Guid accId, decimal amount);
     Task<WalletBalanceDto?> GetBalance(Guid accId);
     Task CreateWalletIfMissing(Guid accId);
 }

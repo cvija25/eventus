@@ -15,11 +15,17 @@ public class CommandApprovedHandler(
     public async Task ProcessBetAsync(BetApprovedEvent evt, CancellationToken ct)
     {
         if (!evt.IsApproved)
+        {
+            await walletRepository.WithdrawReserveFund(evt.AccId, evt.Stake);
             return;
+        }
 
-        await using var transaction = await dbContext.Database.BeginTransactionAsync(ct);
+        await using var transaction = await dbContext.Database.BeginTransactionAsync(
+            CancellationToken.None
+        );
         try
         {
+            await walletRepository.WithdrawReserveFund(evt.AccId, evt.Stake);
             await walletRepository.Withdraw(evt.AccId, evt.Stake);
             await transactionRepository.CreateTransaction(
                 new TransactionDTO(
@@ -30,11 +36,11 @@ public class CommandApprovedHandler(
                     TransactionType.Buy
                 )
             );
-            await transaction.CommitAsync(ct);
+            await transaction.CommitAsync(CancellationToken.None);
         }
         catch
         {
-            await transaction.RollbackAsync(ct);
+            await transaction.RollbackAsync(CancellationToken.None);
             throw;
         }
     }
