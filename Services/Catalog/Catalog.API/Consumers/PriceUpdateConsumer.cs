@@ -1,5 +1,6 @@
 using System.Text.Json;
 using Catalog.API.Services;
+using Catalog.Common.Repositories;
 using Confluent.Kafka;
 using Contracts;
 using Contracts.Messaging;
@@ -10,6 +11,7 @@ namespace Catalog.API.Consumers;
 public class PriceUpdateConsumer(
     ILogger<PriceUpdateConsumer> logger,
     ISseBroadcaster broadcaster,
+    IServiceScopeFactory scopeFactory,
     IOptions<KafkaOptions> kafkaOptions
 ) : BackgroundService
 {
@@ -18,7 +20,7 @@ public class PriceUpdateConsumer(
         while (!stoppingToken.IsCancellationRequested)
             try
             {
-                StartConsuming(stoppingToken);
+                await StartConsuming(stoppingToken);
             }
             catch (Exception ex) when (!stoppingToken.IsCancellationRequested)
             {
@@ -27,7 +29,7 @@ public class PriceUpdateConsumer(
             }
     }
 
-    private void StartConsuming(CancellationToken stoppingToken)
+    private async Task StartConsuming(CancellationToken stoppingToken)
     {
         var options = kafkaOptions.Value;
 
@@ -57,7 +59,7 @@ public class PriceUpdateConsumer(
                 switch (envelope.Type)
                 {
                     case MessageTypes.PriceUpdate:
-                        ProcessPriceUpdate(envelope.Deserialize<PriceUpdateEvent>());
+                        await ProcessPriceUpdate(envelope.Deserialize<PriceUpdateEvent>());
                         break;
                     default:
                         throw new JsonException($"Unknown command result type '{envelope.Type}'.");
@@ -67,13 +69,11 @@ public class PriceUpdateConsumer(
             }
             catch (JsonException ex)
             {
-                // Bad message — log and skip, commit anyway so we don't get stuck
                 logger.LogError(ex, "Invalid message format. Skipping.");
                 consumer.Commit(result);
             }
             catch (Exception ex)
             {
-                // Transient failure — don't commit, will be redelivered on restart
                 logger.LogError(ex, "Failed to process price update. Will retry on restart.");
             }
         }
@@ -81,8 +81,12 @@ public class PriceUpdateConsumer(
         consumer.Close();
     }
 
-    private void ProcessPriceUpdate(PriceUpdateEvent evt)
+    private async Task ProcessPriceUpdate(PriceUpdateEvent evt)
     {
         broadcaster.PublishPriceUpdate(evt.EventId, evt.PriceYes, evt.PriceNo);
+
+        using var scope = scopeFactory.CreateScope();
+        var historyRepository = scope.ServiceProvider.GetRequiredService<IPriceHistoryRepository>();
+        await historyRepository.AddPrice(evt.EventId, evt.PriceYes, evt.PriceNo, DateTime.UtcNow);
     }
 }

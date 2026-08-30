@@ -17,5 +17,6 @@ public class EventMappingProfile : Profile
                 dest => dest.PriceNo,
                 opt => opt.MapFrom(src => src.PoolYes / (src.PoolYes + src.PoolNo))
             );
+        CreateMap<PriceHistory, PriceHistoryDto>();
     }
 }

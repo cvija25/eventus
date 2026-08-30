@@ -3,6 +3,7 @@ import 'dart:convert';
 import 'package:flutter/foundation.dart';
 import 'package:http/http.dart' as http;
 import '../models/item.dart';
+import '../models/price_history_point.dart';
 import 'auth_service.dart';
 
 class ApiService {
@@ -65,6 +66,40 @@ class ApiService {
       throw Exception('GET $uri failed: ${error.message}');
     }
   }
+
+  Future<List<PriceHistoryPoint>> fetchPriceHistory(String eventId) async {
+  final uri = Uri.parse('$_catalogUrl/history/$eventId');
+
+  try {
+    final response = await http.get(uri).timeout(const Duration(seconds: 10));
+
+    if (response.statusCode != 200) {
+      throw Exception('GET $uri failed with status ${response.statusCode}');
+    }
+
+    final decoded = jsonDecode(response.body);
+    if (decoded is! List) {
+      throw Exception('GET $uri returned an unexpected response');
+    }
+
+    return decoded
+        .map((json) => PriceHistoryPoint.fromJson(json as Map<String, dynamic>))
+        .toList();
+  } on TimeoutException {
+    throw Exception('GET $uri timed out');
+  } on FormatException catch (error) {
+    throw Exception('GET $uri returned invalid JSON: ${error.message}');
+  } on http.ClientException catch (error) {
+    if (kIsWeb) {
+      throw Exception(
+        'GET $uri failed in Chrome: ${error.message}. '
+        'If the endpoint works directly, enable CORS on the backend for the Flutter web origin.',
+      );
+    }
+
+    throw Exception('GET $uri failed: ${error.message}');
+  }
+}
 
   Future<Item> fetchItem(String id) async {
     final uri = Uri.parse('$_catalogUrl/$id');

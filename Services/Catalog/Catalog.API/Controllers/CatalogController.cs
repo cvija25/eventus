@@ -16,10 +16,12 @@ public class CatalogController : ControllerBase
     private readonly IEventRepository _eventRepository;
     private readonly IEventResolvedPublisher _eventResolvedPublisher;
     private readonly ISseBroadcaster _sseBroadcaster;
+    private readonly IPriceHistoryRepository _historyRepository;
     private ILogger<CatalogController> _logger;
 
     public CatalogController(
         IEventRepository eventRepository,
+        IPriceHistoryRepository historyRepository,
         IEventResolvedPublisher publisher,
         ISseBroadcaster sseBroadcaster,
         ILogger<CatalogController> logger
@@ -28,6 +30,7 @@ public class CatalogController : ControllerBase
         _eventRepository = eventRepository;
         _eventResolvedPublisher = publisher;
         _sseBroadcaster = sseBroadcaster;
+        _historyRepository = historyRepository;
         _logger = logger;
     }
 
@@ -39,6 +42,16 @@ public class CatalogController : ControllerBase
     {
         var ev = await _eventRepository.GetEventByIdAsync(id);
         return ev is null ? NotFound() : Ok(ev);
+    }
+
+    [HttpGet("history/{id}")]
+    [ProducesResponseType(typeof(EventDto), StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status404NotFound)]
+    [ProducesResponseType(StatusCodes.Status500InternalServerError)]
+    public async Task<ActionResult<EventDto>> GetHistory(Guid id)
+    {
+        var hist = await _historyRepository.GetHistory(id);
+        return Ok(hist);
     }
 
     [HttpGet]

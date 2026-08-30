@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:fl_chart/fl_chart.dart';
 import '../models/item.dart';
+import '../models/price_history_point.dart';
 import '../services/api_service.dart';
 import 'balance_screen.dart';
 import '../utils/color_utils.dart';
@@ -37,11 +39,16 @@ class _DetailScreenState extends State<DetailScreen> {
   bool _isResolving = false;
   StreamSubscription<Map<String, dynamic>>? _sseSub;
 
+  List<PriceHistoryPoint> _priceHistory = [];
+  bool _loadingHistory = false;
+
   @override
   void initState() {
     super.initState();
     _item = widget.item;
     _loadMyEventHoldings();
+    _loadPriceHistory();
+
     // Connect to SSE and listen for price updates for this event
     SseService.instance.connect().then((_) {
       _sseSub = SseService.instance.priceStream.listen((data) {
@@ -68,6 +75,15 @@ class _DetailScreenState extends State<DetailScreen> {
                 priceYes: pYes ?? _item.priceYes,
                 priceNo: pNo ?? _item.priceNo,
               );
+              _priceHistory = [
+                ..._priceHistory,
+                PriceHistoryPoint(
+                  eventId: _item.id,
+                  priceYes: pYes ?? _item.priceYes,
+                  priceNo: pNo ?? _item.priceNo,
+                  timestamp: DateTime.now(),
+                ),
+              ];
             });
           }
         } catch (_) {}
@@ -93,6 +109,27 @@ class _DetailScreenState extends State<DetailScreen> {
       return double.tryParse(value) ?? 0.0;
     }
     return 0.0;
+  }
+
+  Future<void> _loadPriceHistory() async {
+    setState(() {
+      _loadingHistory = true;
+    });
+
+    try {
+      final history = await _api.fetchPriceHistory(_item.id);
+      if (!mounted) return;
+      setState(() {
+        _priceHistory = history;
+        _loadingHistory = false;
+      });
+    } catch (_) {
+      if (!mounted) return;
+      setState(() {
+        _priceHistory = const [];
+        _loadingHistory = false;
+      });
+    }
   }
 
   Future<void> _loadMyEventHoldings() async {
@@ -369,6 +406,11 @@ class _DetailScreenState extends State<DetailScreen> {
               },
             ),
             const SizedBox(height: 12),
+            _PriceHistoryPanel(
+              loading: _loadingHistory,
+              history: _priceHistory,
+            ),
+            const SizedBox(height: 12),
 
             // Ako je korisnik vlasnik i event još nije završen, prikazujemo Owner Tools
             if (isOwner && !item.isResolved) ...[
@@ -623,6 +665,154 @@ class _OutcomeRow extends StatelessWidget {
           ],
         ),
       ),
+    );
+  }
+}
+
+class _PriceHistoryPanel extends StatelessWidget {
+  final bool loading;
+  final List<PriceHistoryPoint> history;
+
+  const _PriceHistoryPanel({required this.loading, required this.history});
+
+  @override
+  Widget build(BuildContext context) {
+    return _Panel(
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          const Text(
+            'Price history',
+            style: TextStyle(
+              color: Colors.white,
+              fontSize: 16,
+              fontWeight: FontWeight.w700,
+            ),
+          ),
+          const SizedBox(height: 12),
+          SizedBox(
+            height: 180,
+            child: loading
+                ? const Center(
+                    child: CircularProgressIndicator(
+                      color: Color(0xFF00A3FF),
+                      strokeWidth: 2,
+                    ),
+                  )
+                : history.length < 2
+                    ? const Center(
+                        child: Text(
+                          'Not enough data yet',
+                          style: TextStyle(color: Colors.white60),
+                        ),
+                      )
+                    : LineChart(_buildChartData(history)),
+          ),
+          const SizedBox(height: 8),
+          Row(
+            children: const [
+              _LegendDot(color: Color(0xFF00A3FF), label: 'Yes'),
+              SizedBox(width: 16),
+              _LegendDot(color: Color(0xFFEF4444), label: 'No'),
+            ],
+          ),
+        ],
+      ),
+    );
+  }
+
+  LineChartData _buildChartData(List<PriceHistoryPoint> history) {
+    final yesSpots = <FlSpot>[];
+    final noSpots = <FlSpot>[];
+
+    for (var i = 0; i < history.length; i++) {
+      yesSpots.add(FlSpot(i.toDouble(), history[i].priceYes));
+      noSpots.add(FlSpot(i.toDouble(), history[i].priceNo));
+    }
+
+    return LineChartData(
+      gridData: FlGridData(
+        show: true,
+        drawVerticalLine: false,
+        horizontalInterval: 0.25,
+        getDrawingHorizontalLine: (value) => FlLine(
+          color: const Color(0xFF1F2937),
+          strokeWidth: 1,
+        ),
+      ),
+      titlesData: FlTitlesData(
+        topTitles: const AxisTitles(sideTitles: SideTitles(showTitles: false)),
+        rightTitles: const AxisTitles(sideTitles: SideTitles(showTitles: false)),
+        bottomTitles: const AxisTitles(sideTitles: SideTitles(showTitles: false)),
+        leftTitles: AxisTitles(
+          sideTitles: SideTitles(
+            showTitles: true,
+            reservedSize: 36,
+            interval: 0.25,
+            getTitlesWidget: (value, meta) => Text(
+              '£${value.toStringAsFixed(2)}',
+              style: const TextStyle(color: Colors.white38, fontSize: 10),
+            ),
+          ),
+        ),
+      ),
+      borderData: FlBorderData(show: false),
+      minY: 0,
+      maxY: 1,
+      lineTouchData: LineTouchData(
+        touchTooltipData: LineTouchTooltipData(
+          getTooltipItems: (spots) => spots.map((s) {
+            final isYes = s.barIndex == 0;
+            return LineTooltipItem(
+              '${isYes ? "Yes" : "No"}: £${s.y.toStringAsFixed(2)}',
+              TextStyle(
+                color: isYes ? const Color(0xFF00A3FF) : const Color(0xFFEF4444),
+                fontWeight: FontWeight.w700,
+                fontSize: 12,
+              ),
+            );
+          }).toList(),
+        ),
+      ),
+      lineBarsData: [
+        LineChartBarData(
+          spots: yesSpots,
+          isCurved: true,
+          color: const Color(0xFF00A3FF),
+          barWidth: 2,
+          dotData: const FlDotData(show: false),
+        ),
+        LineChartBarData(
+          spots: noSpots,
+          isCurved: true,
+          color: const Color(0xFFEF4444),
+          barWidth: 2,
+          dotData: const FlDotData(show: false),
+        ),
+      ],
+    );
+  }
+}
+
+class _LegendDot extends StatelessWidget {
+  final Color color;
+  final String label;
+
+  const _LegendDot({required this.color, required this.label});
+
+  @override
+  Widget build(BuildContext context) {
+    return Row(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        Container(
+          width: 8,
+          height: 8,
+          decoration: BoxDecoration(color: color, shape: BoxShape.circle),
+        ),
+        const SizedBox(width: 6),
+        Text(label, style: const TextStyle(color: Colors.white60, fontSize: 12)),
+      ],
     );
   }
 }
