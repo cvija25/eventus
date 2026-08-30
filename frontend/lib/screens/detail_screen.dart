@@ -709,8 +709,8 @@ class _PriceHistoryPanel extends StatelessWidget {
                     : LineChart(_buildChartData(history)),
           ),
           const SizedBox(height: 8),
-          Row(
-            children: const [
+          const Row(
+            children: [
               _LegendDot(color: Color(0xFF00A3FF), label: 'Yes'),
               SizedBox(width: 16),
               _LegendDot(color: Color(0xFFEF4444), label: 'No'),
@@ -735,8 +735,8 @@ class _PriceHistoryPanel extends StatelessWidget {
         show: true,
         drawVerticalLine: false,
         horizontalInterval: 0.25,
-        getDrawingHorizontalLine: (value) => FlLine(
-          color: const Color(0xFF1F2937),
+        getDrawingHorizontalLine: (value) => const FlLine(
+          color: Color(0xFF1F2937),
           strokeWidth: 1,
         ),
       ),
