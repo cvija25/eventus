@@ -1,0 +1,13 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <ItemGroup>
+    <PackageReference Include="Microsoft.AspNetCore.Mvc.Testing" Version="10.0.11" />
+  </ItemGroup>
+  <ItemGroup>
+    <ProjectReference Include="..\..\Account\Account.csproj" />
+    <ProjectReference Include="..\..\Catalog\Catalog.API\Catalog.API.csproj" />
+    <ProjectReference Include="..\..\Catalog\Catalog.GRPC\Catalog.GRPC.csproj" />
+    <ProjectReference Include="..\..\Game\Game.csproj" />
+    <ProjectReference Include="..\..\Identity\Identity.API\Identity.API.csproj" />
+    <ProjectReference Include="..\Testing.Common\Testing.Common.csproj" />
+  </ItemGroup>
+</Project>
