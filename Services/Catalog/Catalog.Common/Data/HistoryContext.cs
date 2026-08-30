@@ -7,5 +7,5 @@ public class HistoryContext(DbContextOptions<HistoryContext> options)
     : DbContext(options),
         IHistoryContext
 {
-    public DbSet<PriceHistory> Histories { get; }
+    public DbSet<PriceHistory> Histories { get; set; }
 }

@@ -1,7 +1,6 @@
-using System.Globalization;
-using Catalog.Common.DTOs;
 using Catalog.Common.Extensions;
 using Catalog.GRPC;
+using Catalog.GRPC.Mappings;
 using Catalog.GRPC.Publishers;
 using Catalog.GRPC.Services;
 using Common.Messaging;
@@ -15,20 +14,8 @@ builder.Services.AddGrpcReflection();
 builder.Services.AddSingleton<IPriceUpdatePublisher, PriceUpdatePublisher>();
 builder.Services.AddCatalogCommon(builder.Configuration);
 builder.Services.Configure<RabbitMqOptions>(builder.Configuration.GetSection("RabbitMq"));
+builder.Services.AddAutoMapper(cfg => cfg.AddProfile<CatalogGrpcMappingProfile>());
 builder.Services.Configure<KafkaOptions>(builder.Configuration.GetSection("Kafka"));
-builder.Services.AddAutoMapper(configuration =>
-{
-    configuration.CreateMap<EventDto, GetEventPriceResponse>().ReverseMap();
-    configuration
-        .CreateMap<UpdateEventPriceRequest, UpdateEventDto>()
-        .ConstructUsing(src => new UpdateEventDto(
-            Guid.Parse(src.EventId),
-            decimal.Parse(src.Pot, CultureInfo.InvariantCulture),
-            decimal.Parse(src.PoolYes, CultureInfo.InvariantCulture),
-            decimal.Parse(src.PoolNo, CultureInfo.InvariantCulture)
-        ))
-        .ForAllMembers(opt => opt.Ignore());
-});
 
 var app = builder.Build();
 await app.MigrateCatalogDatabase();

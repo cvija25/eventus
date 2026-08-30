@@ -12,6 +12,7 @@ public static class HostExtensions
     {
         using var scope = host.Services.CreateScope();
         var db = scope.ServiceProvider.GetRequiredService<EventContext>();
+        var history = scope.ServiceProvider.GetRequiredService<HistoryContext>();
         var logger = scope.ServiceProvider.GetRequiredService<ILogger<EventContext>>();
 
         for (var attempt = 1; attempt <= 5; attempt++)
@@ -19,6 +20,7 @@ public static class HostExtensions
             try
             {
                 await db.Database.MigrateAsync();
+                await history.Database.MigrateAsync();
                 return;
             }
             catch (Exception ex) when (attempt < 5)
