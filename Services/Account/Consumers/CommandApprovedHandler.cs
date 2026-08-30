@@ -20,9 +20,7 @@ public class CommandApprovedHandler(
             return;
         }
 
-        await using var transaction = await dbContext.Database.BeginTransactionAsync(
-            ct
-        );
+        await using var transaction = await dbContext.Database.BeginTransactionAsync(ct);
         try
         {
             await walletRepository.WithdrawReserveFund(evt.AccId, evt.Stake);
