@@ -4,5 +4,5 @@ namespace Catalog.API.Consumers;
 
 public interface IPriceUpdateHandler
 {
-    public void ProcessPriceUpdate(PriceUpdateEvent evt);
+    public void ProcessPriceUpdateAsync(PriceUpdateEvent evt);
 }

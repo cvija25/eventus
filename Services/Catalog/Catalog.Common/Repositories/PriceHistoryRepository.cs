@@ -11,6 +11,12 @@ public class PriceHistoryRepository : IPriceHistoryRepository
     private readonly IHistoryContext _context;
     private readonly IMapper _mapper;
 
+    public PriceHistoryRepository(IHistoryContext context, IMapper mapper)
+    {
+        _context = context ?? throw new ArgumentNullException(nameof(context));
+        _mapper = mapper ?? throw new ArgumentNullException(nameof(mapper));
+    }
+
     public async Task<List<PriceHistoryDto>> GetHistory(Guid eventId)
     {
         var history = await _context

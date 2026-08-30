@@ -5,6 +5,7 @@ using Catalog.GRPC;
 using Catalog.GRPC.Publishers;
 using Catalog.GRPC.Services;
 using Common.Messaging;
+using Contracts.Messaging;
 
 var builder = WebApplication.CreateBuilder(args);
 

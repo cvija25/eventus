@@ -5,6 +5,7 @@ using Catalog.API.Services;
 using Catalog.Common.Extensions;
 using Common.Messaging;
 using Common.Web;
+using Contracts.Messaging;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.IdentityModel.Tokens;
 
