@@ -482,7 +482,13 @@ class _DetailScreenState extends State<DetailScreen> {
                 onSubmit: _submit,
                 showAdvancedSettings: _showAdvancedSettings,
                 onAdvancedSettingsToggled: (value) {
-                  setState(() => _showAdvancedSettings = value);
+                  setState(() {
+                    _showAdvancedSettings = value;
+                    if (!value) {
+                      _enableCustomSlippage = false;
+                      _enableSpotPriceWindow = false;
+                    }
+                  });
                 },
                 enableCustomSlippage: _enableCustomSlippage,
                 onCustomSlippageToggled: (value) {

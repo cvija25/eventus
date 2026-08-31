@@ -27,15 +27,19 @@ public class GameCommandHandler(
         {
             var spotPriceWindow = betPlaced.SpotPriceWindow.Value;
             var expectedPrice = betPlaced.ExpectedPrice;
-            var actualPrice = betPlaced.Outcome == MarketOutcome.Yes ? 
-                decimal.Parse(market.PriceYes, CultureInfo.InvariantCulture) :
-                decimal.Parse(market.PriceNo, CultureInfo.InvariantCulture);
+            var actualPrice =
+                betPlaced.Outcome == MarketOutcome.Yes
+                    ? decimal.Parse(market.PriceYes, CultureInfo.InvariantCulture)
+                    : decimal.Parse(market.PriceNo, CultureInfo.InvariantCulture);
 
             if (Math.Abs(actualPrice - expectedPrice) > spotPriceWindow)
             {
                 logger.LogWarning(
                     "Bet rejected due to Spot Price move: EventId={EventId}, Expected={Expected}, Actual={Actual}, Window={Window}",
-                    eventId, betPlaced.ExpectedPrice, actualPrice, betPlaced.SpotPriceWindow.Value
+                    eventId,
+                    betPlaced.ExpectedPrice,
+                    actualPrice,
+                    betPlaced.SpotPriceWindow.Value
                 );
 
                 var rejectedEvent = new BetApprovedEvent
@@ -156,15 +160,19 @@ public class GameCommandHandler(
         {
             var spotPriceWindow = sellShares.SpotPriceWindow.Value;
             var expectedPrice = sellShares.ExpectedPrice;
-            var actualPrice = sellShares.Outcome == MarketOutcome.Yes ? 
-                decimal.Parse(market.PriceYes, CultureInfo.InvariantCulture) :
-                decimal.Parse(market.PriceNo, CultureInfo.InvariantCulture);
+            var actualPrice =
+                sellShares.Outcome == MarketOutcome.Yes
+                    ? decimal.Parse(market.PriceYes, CultureInfo.InvariantCulture)
+                    : decimal.Parse(market.PriceNo, CultureInfo.InvariantCulture);
 
             if (Math.Abs(actualPrice - expectedPrice) > spotPriceWindow)
             {
                 logger.LogWarning(
                     "Sell rejected due to Spot Price move: EventId={EventId}, Expected={Expected}, Actual={Actual}, Window={Window}",
-                    eventId, sellShares.ExpectedPrice, actualPrice, sellShares.SpotPriceWindow.Value
+                    eventId,
+                    sellShares.ExpectedPrice,
+                    actualPrice,
+                    sellShares.SpotPriceWindow.Value
                 );
 
                 var rejectedEvent = new SellSharesApprovedEvent

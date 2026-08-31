@@ -269,7 +269,7 @@ public class GameCommandHandlerTests
         // 1. Arrange
         _market.PoolYes = 1m;
         _market.PoolNo = 1m;
-        _market.Pot = 2m; 
+        _market.Pot = 2m;
 
         var bet = new BetPlacedEvent
         {
@@ -278,7 +278,7 @@ public class GameCommandHandlerTests
             Stake = 10m,
             Outcome = MarketOutcome.Yes,
             ExpectedPrice = 0.40m,
-            SpotPriceWindow = 0.05m 
+            SpotPriceWindow = 0.05m,
         };
 
         // 2. Act
@@ -307,7 +307,7 @@ public class GameCommandHandlerTests
             Outcome = MarketOutcome.Yes,
             ExpectedPrice = 0.50m,
             SpotPriceWindow = null,
-            SlippageDelta = 0.01m
+            SlippageDelta = 0.01m,
         };
 
         // 2. Act
@@ -318,13 +318,15 @@ public class GameCommandHandlerTests
         Assert.False(approved.IsApproved);
         Assert.Equal(0m, approved.ShareAmount);
         Assert.Equal(bet.Stake, approved.Stake);
-    }[Fact]
+    }
+
+    [Fact]
     public async Task Spot_price_window_rejects_bet_when_market_moved()
     {
         // 1. Arrange
         _market.PoolYes = 1m;
         _market.PoolNo = 1m;
-        _market.Pot = 2m; 
+        _market.Pot = 2m;
 
         var bet = new BetPlacedEvent
         {
@@ -333,7 +335,7 @@ public class GameCommandHandlerTests
             Stake = 10m,
             Outcome = MarketOutcome.Yes,
             ExpectedPrice = 0.40m,
-            SpotPriceWindow = 0.05m
+            SpotPriceWindow = 0.05m,
         };
 
         // 2. Act
@@ -362,7 +364,7 @@ public class GameCommandHandlerTests
             Outcome = MarketOutcome.Yes,
             ExpectedPrice = 0.50m,
             SpotPriceWindow = null,
-            SlippageDelta = 0.01m
+            SlippageDelta = 0.01m,
         };
 
         // 2. Act
