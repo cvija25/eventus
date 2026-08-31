@@ -333,30 +333,18 @@ public class AccountControllerTests
         await _wallets.Received(1).CreateWalletIfMissing(newUser);
     }
 
-    // ---- known defects ---------------------------------------------------------------
-
-    [Fact(
-        Skip = "Bug: the funds guard reads `funds != null && funds.Amount < request.Stake`, so "
-            + "a caller with no wallet skips the check and the bet is published anyway. "
-            + "See Account/Controllers/AccountController.cs PublishBet"
-    )]
-    public async Task Buying_without_a_wallet_does_not_publish_a_bet()
+    [Fact]
+    public async Task Buying_without_a_wallet_is_400()
     {
         _wallets.GetBalance(_userId).Returns((WalletBalanceDto?)null);
 
         var result = await Buy(10m);
 
-        // The funds check reads `funds != null && funds.Amount < request.Stake`, so a missing
-        // wallet skips it entirely and the bet goes to Game against a balance of nothing.
-        Assert.IsType<NotFoundObjectResult>(result.Result);
+        Assert.IsType<BadRequestObjectResult>(result.Result);
         await AssertNothingHappened();
     }
 
-    [Fact(
-        Skip = "Bug: available shares are summed across every transaction regardless of "
-            + "TransactionType, so a Sell adds to the holding instead of reducing it and shares can "
-            + "be sold repeatedly. See Account/Controllers/AccountController.cs PublishSellShares"
-    )]
+    [Fact]
     public async Task Selling_shares_reduces_what_can_be_sold_again()
     {
         _transactions

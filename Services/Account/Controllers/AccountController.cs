@@ -1,9 +1,11 @@
 using Account.DTOs;
 using Account.Publishers;
 using Account.Repositories;
+using Common.Enums;
 using Common.Messaging;
 using Common.Web;
 using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Http.HttpResults;
 using Microsoft.AspNetCore.Mvc;
 
 namespace Account.Controllers;
@@ -49,7 +51,11 @@ public class AccountController(
             .Where(transaction =>
                 transaction.EventId == request.EventId && transaction.Outcome == request.Outcome
             )
-            .Sum(transaction => transaction.ShareAmount);
+            .Sum(transaction =>
+                transaction.Type == TransactionType.Buy
+                    ? transaction.ShareAmount
+                    : -transaction.ShareAmount
+            ); // shares already sold for event are removed
 
         if (availableShares < request.Shares)
             return Conflict("You do not own enough shares for this sale");
@@ -100,15 +106,17 @@ public class AccountController(
             return Unauthorized();
 
         var funds = await walletRepository.GetBalance(ownerId);
+        if (funds == null)
+            return BadRequest("User does not have a wallet. Try creating a new account.");
 
         logger.LogInformation(
             "Buy request received: AccountId={AccountId}, Stake={Stake}, CurrentBalance={CurrentBalance}",
             ownerId,
             request.Stake,
-            funds?.Amount ?? 0m
+            funds.Amount
         );
 
-        if (funds != null && funds.Amount < request.Stake)
+        if (funds.Amount < request.Stake)
         {
             logger.LogWarning(
                 "Insufficient funds for bet: AccountId={AccountId}, Stake={Stake}, CurrentBalance={CurrentBalance}",

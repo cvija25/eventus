@@ -1,5 +1,6 @@
 using Account.Data;
 using Account.Repositories;
+using Common.Enums;
 using Common.Messaging;
 
 namespace Account.Consumers;
@@ -21,6 +22,14 @@ public class EventResolvedHandler(
 
             var winners = resolvedTransactions
                 .Where(t => (int)t.Outcome == (int)evt.Outcome)
+                .GroupBy(t => t.UserId)
+                .Select(g => new
+                {
+                    UserId = g.Key,
+                    ShareAmount = g.Sum(t =>
+                        t.Type == TransactionType.Buy ? t.ShareAmount : -t.ShareAmount
+                    ),
+                })
                 .ToList();
 
             foreach (var tx in winners)
