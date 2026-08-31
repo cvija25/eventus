@@ -240,10 +240,7 @@ public class GameCommandHandlerTests
         }
     }
 
-    [Fact(
-        Skip = "Bug: ProcessSellSharesAsync ignores Outcome and always sells against the Yes "
-            + "side, so selling No shares mutates the wrong pool. See Game/Consumers/GameCommandHandler.cs"
-    )]
+    [Fact]
     public async Task Selling_no_shares_draws_down_the_no_pool()
     {
         await _handler.ProcessBetPlacedAsync(Bet(10m, MarketOutcome.No));
