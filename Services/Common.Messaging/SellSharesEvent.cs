@@ -8,4 +8,6 @@ public class SellSharesEvent
     public Guid OwnerId { get; set; }
     public decimal Shares { get; set; }
     public MarketOutcome Outcome { get; set; }
+    public decimal ExpectedPrice { get; set; }
+    public decimal? SlippageDelta { get; set; }
 }
