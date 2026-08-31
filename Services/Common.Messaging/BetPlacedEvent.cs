@@ -10,4 +10,5 @@ public class BetPlacedEvent
     public MarketOutcome Outcome { get; set; }
     public decimal ExpectedPrice { get; set; }
     public decimal? SlippageDelta { get; set; }
+    public decimal? SpotPriceWindow { get; set; }
 }
