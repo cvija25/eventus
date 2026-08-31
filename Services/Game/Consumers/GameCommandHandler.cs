@@ -49,7 +49,9 @@ public class GameCommandHandler(
         {
             logger.LogWarning(
                 "Bet rejected due to slippage: EventId={EventId}, ExpectedPrice={ExpectedPrice}, ActualPrice={ActualPrice}",
-                eventId, expectedPrice, effectivePrice
+                eventId,
+                expectedPrice,
+                effectivePrice
             );
 
             // Transaction rejected
@@ -66,7 +68,7 @@ public class GameCommandHandler(
             await commandApprovedPublisher.PublishBetApprovedAsync(rejectedEvent);
             return;
         }
-        
+
         // Applying simulated state
         pot += stake;
         poolYes = simulatedPoolYes;
@@ -127,7 +129,9 @@ public class GameCommandHandler(
         {
             logger.LogWarning(
                 "Sell rejected due to slippage: EventId={EventId}, ExpectedPrice={ExpectedPrice}, ActualPrice={ActualPrice}",
-                eventId, expectedPrice, effectivePrice
+                eventId,
+                expectedPrice,
+                effectivePrice
             );
 
             var rejectedEvent = new SellSharesApprovedEvent
