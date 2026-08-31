@@ -83,7 +83,7 @@ class _BalanceScreenState extends State<BalanceScreen> {
     } catch (e) {
       if (!context.mounted) return;
       setState(() {
-        _errorMessage = e.toString();
+        _errorMessage = e.toString().replaceFirst('Exception: ', '');
         _isLoading = false;
       });
     }
@@ -149,7 +149,7 @@ class _BalanceScreenState extends State<BalanceScreen> {
       setState(() {
         _shareHoldings = const [];
         _transactionsLoading = false;
-        _transactionsError = e.toString();
+        _transactionsError = e.toString().replaceFirst('Exception: ', '');
       });
     }
   }
@@ -182,7 +182,9 @@ class _BalanceScreenState extends State<BalanceScreen> {
       if (!context.mounted) return;
       WidgetsBinding.instance.addPostFrameCallback((_) {
         final m = ScaffoldMessenger.maybeOf(context);
-        m?.showSnackBar(SnackBar(content: Text('Deposit failed: $e')));
+        m?.showSnackBar(SnackBar(
+          content: Text('Deposit failed: ${e.toString().replaceFirst('Exception: ', '')}'),
+        ));
       });
     }
   }

@@ -75,16 +75,8 @@ class _DetailScreenState extends State<DetailScreen> {
                 priceYes: pYes ?? _item.priceYes,
                 priceNo: pNo ?? _item.priceNo,
               );
-              _priceHistory = [
-                ..._priceHistory,
-                PriceHistoryPoint(
-                  eventId: _item.id,
-                  priceYes: pYes ?? _item.priceYes,
-                  priceNo: pNo ?? _item.priceNo,
-                  timestamp: DateTime.now(),
-                ),
-              ];
             });
+            _loadPriceHistory(showLoading: false);
           }
         } catch (_) {}
       });
@@ -111,10 +103,12 @@ class _DetailScreenState extends State<DetailScreen> {
     return 0.0;
   }
 
-  Future<void> _loadPriceHistory() async {
-    setState(() {
-      _loadingHistory = true;
-    });
+  Future<void> _loadPriceHistory({bool showLoading = true}) async {
+    if (showLoading) {
+      setState(() {
+        _loadingHistory = true;
+      });
+    }
 
     try {
       final history = await _api.fetchPriceHistory(_item.id);
@@ -126,7 +120,7 @@ class _DetailScreenState extends State<DetailScreen> {
     } catch (_) {
       if (!mounted) return;
       setState(() {
-        _priceHistory = const [];
+        if (showLoading) _priceHistory = const [];
         _loadingHistory = false;
       });
     }
@@ -226,7 +220,9 @@ class _DetailScreenState extends State<DetailScreen> {
     } catch (e) {
       WidgetsBinding.instance.addPostFrameCallback((_) {
         final m = ScaffoldMessenger.maybeOf(context);
-        m?.showSnackBar(SnackBar(content: Text('Sell failed: $e')));
+        m?.showSnackBar(SnackBar(
+          content: Text('Sell failed: ${e.toString().replaceFirst('Exception: ', '')}'),
+        ));
       });
     }
   }
@@ -282,7 +278,7 @@ class _DetailScreenState extends State<DetailScreen> {
 
         setState(() {
           _submitting = false;
-          _submitError = error.toString();
+          _submitError = error.toString().replaceFirst('Exception: ', '');
         });
       }
     }

@@ -225,6 +225,18 @@ class ApiService {
           )
           .timeout(const Duration(seconds: 10));
 
+      if (response.statusCode == 401) {
+        throw Exception('Please log in to place a bet.');
+      }
+
+      if (response.statusCode == 409) {
+        throw Exception(
+          response.body.isNotEmpty
+              ? response.body
+              : 'This bet could not be placed right now.',
+        );
+      }
+
       if (response.statusCode < 200 || response.statusCode >= 300) {
         throw Exception('POST $uri failed with status ${response.statusCode}');
       }
@@ -323,6 +335,10 @@ class ApiService {
           .get(uri, headers: _authHeaders)
           .timeout(const Duration(seconds: 10));
 
+      if (response.statusCode == 401) {
+        throw Exception('Please log in to view your balance.');
+      }
+
       if (response.statusCode < 200 || response.statusCode >= 300) {
         throw Exception('GET $uri failed with status ${response.statusCode}');
       }
@@ -377,6 +393,10 @@ class ApiService {
       final response = await http
           .get(uri, headers: _authHeaders)
           .timeout(const Duration(seconds: 10));
+
+      if (response.statusCode == 401) {
+        throw Exception('Please log in to view your transactions.');
+      }
 
       if (response.statusCode < 200 || response.statusCode >= 300) {
         throw Exception('GET $uri failed with status ${response.statusCode}');
