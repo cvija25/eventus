@@ -40,33 +40,36 @@ public class GameCommandHandler(
             simulatedPoolNo = newPoolNo;
         }
 
-        // Slippage check
-        var effectivePrice = sharesReceived > 0 ? stake / sharesReceived : 0;
-        var expectedPrice = betPlaced.ExpectedPrice;
-        var slippageDelta = betPlaced.SlippageDelta ?? 0.05m;
-
-        if (Math.Abs(effectivePrice - expectedPrice) > slippageDelta)
+        // Optional slippage check
+        if (betPlaced.SlippageDelta.HasValue)
         {
-            logger.LogWarning(
-                "Bet rejected due to slippage: EventId={EventId}, ExpectedPrice={ExpectedPrice}, ActualPrice={ActualPrice}",
-                eventId,
-                expectedPrice,
-                effectivePrice
-            );
+            var effectivePrice = sharesReceived > 0 ? stake / sharesReceived : 0;
+            var expectedPrice = betPlaced.ExpectedPrice;
+            var slippageDelta = betPlaced.SlippageDelta;
 
-            // Transaction rejected
-            var rejectedEvent = new BetApprovedEvent
+            if (Math.Abs(effectivePrice - expectedPrice) > slippageDelta)
             {
-                IsApproved = false,
-                ApprovedAt = DateTime.UtcNow,
-                AccId = betPlaced.OwnerId,
-                Stake = betPlaced.Stake,
-                EventId = betPlaced.EventId,
-                Outcome = betPlaced.Outcome,
-                ShareAmount = 0,
-            };
-            await commandApprovedPublisher.PublishBetApprovedAsync(rejectedEvent);
-            return;
+                logger.LogWarning(
+                    "Bet rejected due to slippage: EventId={EventId}, ExpectedPrice={ExpectedPrice}, ActualPrice={ActualPrice}",
+                    eventId,
+                    expectedPrice,
+                    effectivePrice
+                );
+
+                // Transaction rejected
+                var rejectedEvent = new BetApprovedEvent
+                {
+                    IsApproved = false,
+                    ApprovedAt = DateTime.UtcNow,
+                    AccId = betPlaced.OwnerId,
+                    Stake = betPlaced.Stake,
+                    EventId = betPlaced.EventId,
+                    Outcome = betPlaced.Outcome,
+                    ShareAmount = 0,
+                };
+                await commandApprovedPublisher.PublishBetApprovedAsync(rejectedEvent);
+                return;
+            }
         }
 
         // Applying simulated state
@@ -117,35 +120,37 @@ public class GameCommandHandler(
         var poolNo = decimal.Parse(market.PoolNo, CultureInfo.InvariantCulture);
         var pot = decimal.Parse(market.Pot, CultureInfo.InvariantCulture);
 
-
         var sellPrice = CalculatePayout(poolYes, poolNo, sellShares.Shares, sellShares.Outcome);
-        
-        // Slippage check
-        var effectivePrice = sellShares.Shares > 0 ? sellPrice / sellShares.Shares : 0;
-        var expectedPrice = sellShares.ExpectedPrice;
-        var slippageDelta = sellShares.SlippageDelta ?? 0.05m;
 
-        if (Math.Abs(effectivePrice - expectedPrice) > slippageDelta)
+        // Optional slippage check
+        if (sellShares.SlippageDelta.HasValue)
         {
-            logger.LogWarning(
-                "Sell rejected due to slippage: EventId={EventId}, ExpectedPrice={ExpectedPrice}, ActualPrice={ActualPrice}",
-                eventId,
-                expectedPrice,
-                effectivePrice
-            );
+            var effectivePrice = sellShares.Shares > 0 ? sellPrice / sellShares.Shares : 0;
+            var expectedPrice = sellShares.ExpectedPrice;
+            var slippageDelta = sellShares.SlippageDelta;
 
-            var rejectedEvent = new SellSharesApprovedEvent
+            if (Math.Abs(effectivePrice - expectedPrice) > slippageDelta)
             {
-                IsApproved = false,
-                ApprovedAt = DateTime.UtcNow,
-                AccId = sellShares.OwnerId,
-                SellPrice = 0,
-                EventId = sellShares.EventId,
-                Outcome = sellShares.Outcome,
-                ShareAmount = sellShares.Shares,
-            };
-            await commandApprovedPublisher.PublishSellSharesApprovedAsync(rejectedEvent);
-            return;
+                logger.LogWarning(
+                    "Sell rejected due to slippage: EventId={EventId}, ExpectedPrice={ExpectedPrice}, ActualPrice={ActualPrice}",
+                    eventId,
+                    expectedPrice,
+                    effectivePrice
+                );
+
+                var rejectedEvent = new SellSharesApprovedEvent
+                {
+                    IsApproved = false,
+                    ApprovedAt = DateTime.UtcNow,
+                    AccId = sellShares.OwnerId,
+                    SellPrice = 0,
+                    EventId = sellShares.EventId,
+                    Outcome = sellShares.Outcome,
+                    ShareAmount = sellShares.Shares,
+                };
+                await commandApprovedPublisher.PublishSellSharesApprovedAsync(rejectedEvent);
+                return;
+            }
         }
 
         if (sellShares.Outcome == MarketOutcome.Yes)
@@ -158,7 +163,7 @@ public class GameCommandHandler(
             poolNo += sellShares.Shares - sellPrice;
             poolYes -= sellPrice;
         }
-        
+
         pot -= sellPrice;
 
         var updateResult = await catalogGrpcClient.UpdateEventPriceAsync(

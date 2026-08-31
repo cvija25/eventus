@@ -38,6 +38,8 @@ class _DetailScreenState extends State<DetailScreen> {
   List<_EventHoldingSummary> _myHoldings = const [];
   bool _isResolving = false;
   double _slippageTolerance = 0.05;
+  bool _showAdvancedSettings = false;
+  bool _enableCustomSlippage = false;
   StreamSubscription<Map<String, dynamic>>? _sseSub;
 
   List<PriceHistoryPoint> _priceHistory = [];
@@ -265,7 +267,7 @@ class _DetailScreenState extends State<DetailScreen> {
           stake: value,
           outcome: _selectedOutcome!,
           expectedPrice: expectedPrice,
-          slippageDelta: _slippageTolerance,
+          slippageDelta: _enableCustomSlippage ? _slippageTolerance : null,
         );
         await _refreshMarket();
         if (!context.mounted) return;
@@ -480,6 +482,14 @@ class _DetailScreenState extends State<DetailScreen> {
                   setState(() {
                     _slippageTolerance = value;
                   });
+                },
+                showAdvancedSettings: _showAdvancedSettings,
+                onAdvancedSettingsToggled: (value) {
+                  setState(() => _showAdvancedSettings = value);
+                },
+                enableCustomSlippage: _enableCustomSlippage,
+                onCustomSlippageToggled: (value) {
+                  setState(() => _enableCustomSlippage = value ?? false );
                 },
               ),
             const SizedBox(height: 12),
@@ -842,6 +852,12 @@ class _TradePanel extends StatelessWidget {
   final VoidCallback onSubmit;
   final double slippageTolerance;
   final ValueChanged<double> onSlippageChanged;
+  
+  // Nova polja
+  final bool showAdvancedSettings;
+  final ValueChanged<bool> onAdvancedSettingsToggled;
+  final bool enableCustomSlippage;
+  final ValueChanged<bool?> onCustomSlippageToggled;
 
   const _TradePanel({
     required this.formKey,
@@ -853,6 +869,10 @@ class _TradePanel extends StatelessWidget {
     required this.onSubmit,
     required this.slippageTolerance,
     required this.onSlippageChanged,
+    required this.showAdvancedSettings,
+    required this.onAdvancedSettingsToggled,
+    required this.enableCustomSlippage,
+    required this.onCustomSlippageToggled,
   });
 
   @override
@@ -890,8 +910,7 @@ class _TradePanel extends StatelessWidget {
                 ),
                 focusedBorder: OutlineInputBorder(
                   borderRadius: BorderRadius.circular(8),
-                  borderSide:
-                      const BorderSide(color: Color(0xFF00A3FF), width: 1.5),
+                  borderSide: const BorderSide(color: Color(0xFF00A3FF), width: 1.5),
                 ),
                 errorBorder: OutlineInputBorder(
                   borderRadius: BorderRadius.circular(8),
@@ -918,41 +937,111 @@ class _TradePanel extends StatelessWidget {
               },
             ),
           ),
+          
+          const SizedBox(height: 8),
+
+          // Advanced Settings Toggle
+          InkWell(
+            onTap: () => onAdvancedSettingsToggled(!showAdvancedSettings),
+            borderRadius: BorderRadius.circular(6),
+            child: Padding(
+              padding: const EdgeInsets.symmetric(vertical: 8.0, horizontal: 4.0),
+              child: Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Icon(
+                    showAdvancedSettings ? Icons.keyboard_arrow_up : Icons.keyboard_arrow_down,
+                    color: Colors.white60,
+                    size: 20,
+                  ),
+                  const SizedBox(width: 6),
+                  const Text(
+                    'Advanced Settings',
+                    style: TextStyle(color: Colors.white60, fontSize: 13, fontWeight: FontWeight.w600),
+                  ),
+                ],
+              ),
+            ),
+          ),
+
+          // Expanded Content
+          if (showAdvancedSettings) ...[
+            const SizedBox(height: 8),
+            Container(
+              padding: const EdgeInsets.all(12),
+              decoration: BoxDecoration(
+                color: const Color(0xFF111827),
+                borderRadius: BorderRadius.circular(8),
+                border: Border.all(color: const Color(0xFF1F2937)),
+              ),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Row(
+                    children: [
+                      SizedBox(
+                        width: 24,
+                        height: 24,
+                        child: Checkbox(
+                          value: enableCustomSlippage,
+                          onChanged: onCustomSlippageToggled,
+                          activeColor: const Color(0xFF00A3FF),
+                          side: const BorderSide(color: Colors.white54),
+                        ),
+                      ),
+                      const SizedBox(width: 10),
+                      GestureDetector(
+                        onTap: () => onCustomSlippageToggled(!enableCustomSlippage),
+                        child: const Text(
+                          'Custom Slippage Tolerance',
+                          style: TextStyle(color: Colors.white, fontSize: 14),
+                        ),
+                      ),
+                    ],
+                  ),
+                  if (enableCustomSlippage) ...[
+                    const SizedBox(height: 16),
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        const Text(
+                          'Tolerance limit',
+                          style: TextStyle(color: Colors.white70, fontSize: 13),
+                        ),
+                        Text(
+                          '${(slippageTolerance * 100).toStringAsFixed(0)}%',
+                          style: const TextStyle(
+                            color: Color(0xFF00A3FF),
+                            fontSize: 13,
+                            fontWeight: FontWeight.w700,
+                          ),
+                        ),
+                      ],
+                    ),
+                    SliderTheme(
+                      data: SliderTheme.of(context).copyWith(
+                        trackHeight: 4,
+                        thumbShape: const RoundSliderThumbShape(enabledThumbRadius: 6),
+                        overlayShape: const RoundSliderOverlayShape(overlayRadius: 14),
+                      ),
+                      child: Slider(
+                        value: slippageTolerance,
+                        min: 0.01,
+                        max: 0.25,
+                        divisions: 24,
+                        activeColor: const Color(0xFF00A3FF),
+                        inactiveColor: const Color(0xFF1F2937),
+                        onChanged: onSlippageChanged,
+                      ),
+                    ),
+                  ],
+                ],
+              ),
+            ),
+          ],
+
           const SizedBox(height: 16),
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: [
-              const Text(
-                'Slippage Tolerance',
-                style: TextStyle(color: Colors.white70, fontSize: 14),
-              ),
-              Text(
-                '${(slippageTolerance * 100).toStringAsFixed(0)}%',
-                style: const TextStyle(
-                  color: Color(0xFF00A3FF),
-                  fontSize: 14,
-                  fontWeight: FontWeight.w700,
-                ),
-              ),
-            ],
-          ),
-          SliderTheme(
-            data: SliderTheme.of(context).copyWith(
-              trackHeight: 4,
-              thumbShape: const RoundSliderThumbShape(enabledThumbRadius: 6),
-              overlayShape: const RoundSliderOverlayShape(overlayRadius: 14),
-            ),
-            child: Slider(
-              value: slippageTolerance,
-              min: 0.01,
-              max: 0.25,
-              divisions: 24,
-              activeColor: const Color(0xFF00A3FF),
-              inactiveColor: const Color(0xFF1F2937),
-              onChanged: onSlippageChanged,
-            ),
-          ),
-          const SizedBox(height: 12),
+          
           SizedBox(
             width: double.infinity,
             child: FilledButton(
