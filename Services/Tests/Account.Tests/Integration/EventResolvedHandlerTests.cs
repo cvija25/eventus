@@ -82,11 +82,7 @@ public class EventResolvedHandlerTests(PostgresFixture postgres) : AccountDataba
         await Resolve(MarketOutcome.Yes);
     }
 
-    [Fact(
-        Skip = "Bug: winners are selected on Outcome alone, ignoring TransactionType, so a "
-            + "Sell row pays out at settlement exactly like a Buy. "
-            + "See Account/Consumers/EventResolvedHandler.cs"
-    )]
+    [Fact]
     public async Task Shares_already_sold_are_not_paid_out_again()
     {
         var account = await GivenWallet();
