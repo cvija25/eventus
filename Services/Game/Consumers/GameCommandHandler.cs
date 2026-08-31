@@ -135,21 +135,25 @@ public class GameCommandHandler(
         await commandApprovedPublisher.PublishSellSharesApprovedAsync(approvedEvent);
     }
 
-    
-    private decimal CalculatePayout(decimal poolYes, decimal poolNo, decimal sharesAmount, MarketOutcome outcome)
+    private decimal CalculatePayout(
+        decimal poolYes,
+        decimal poolNo,
+        decimal sharesAmount,
+        MarketOutcome outcome
+    )
     {
         // reserveIn = pool the sold shares are returned to
         // reserveOut = pool the payout is drawn from
-        var (reserveIn, reserveOut) = outcome == MarketOutcome.Yes
-            ? (poolYes, poolNo)
-            : (poolNo, poolYes);
+        var (reserveIn, reserveOut) =
+            outcome == MarketOutcome.Yes ? (poolYes, poolNo) : (poolNo, poolYes);
 
         var sum = reserveIn + reserveOut + sharesAmount;
         var discriminant = sum * sum - 4 * sharesAmount * reserveOut;
 
         if (discriminant < 0)
             throw new InvalidOperationException(
-                $"CPMM sell payout discriminant negative (sum={sum}, shares={sharesAmount}, reserveOut={reserveOut}); pools may be too small for this sell size.");
+                $"CPMM sell payout discriminant negative (sum={sum}, shares={sharesAmount}, reserveOut={reserveOut}); pools may be too small for this sell size."
+            );
 
         var x = (sum - (decimal)Math.Sqrt((double)discriminant)) / 2;
 
