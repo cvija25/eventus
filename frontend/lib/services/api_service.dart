@@ -126,6 +126,47 @@ class ApiService {
     }
   }
 
+  Future<Map<String, String>> fetchEventNames(List<String> ids) async {
+    if (ids.isEmpty) return {};
+
+    final uri = Uri.parse('$_catalogUrl/by-ids');
+
+    try {
+      final response = await http
+          .post(
+            uri,
+            headers: _authHeaders,
+            body: jsonEncode({'ids': ids}),
+          )
+          .timeout(const Duration(seconds: 10));
+
+      if (response.statusCode != 200) {
+        throw Exception('POST $uri failed with status ${response.statusCode}');
+      }
+
+      final decoded = jsonDecode(response.body);
+      if (decoded is! List) {
+        throw Exception('POST $uri returned an unexpected response');
+      }
+
+      final names = <String, String>{};
+      for (final entry in decoded) {
+        if (entry is! Map<String, dynamic>) continue;
+        final id = (entry['id'] ?? entry['Id'] ?? '').toString();
+        final title = (entry['title'] ?? entry['Title'] ?? '').toString();
+        if (id.isEmpty) continue;
+        names[id] = title.isEmpty ? id : title;
+      }
+      return names;
+    } on TimeoutException {
+      throw Exception('POST $uri timed out');
+    } on FormatException catch (error) {
+      throw Exception('POST $uri returned invalid JSON: ${error.message}');
+    } on http.ClientException catch (error) {
+      throw Exception('POST $uri failed: ${error.message}');
+    }
+  }
+
   Future<Item> createEvent({required String title}) async {
     final uri = Uri.parse(_catalogUrl);
 
@@ -231,6 +272,18 @@ class ApiService {
           )
           .timeout(const Duration(seconds: 10));
 
+      if (response.statusCode == 401) {
+        throw Exception('Please log in to place a bet.');
+      }
+
+      if (response.statusCode == 409) {
+        throw Exception(
+          response.body.isNotEmpty
+              ? response.body
+              : 'This bet could not be placed right now.',
+        );
+      }
+
       if (response.statusCode < 200 || response.statusCode >= 300) {
         throw Exception('POST $uri failed with status ${response.statusCode}');
       }
@@ -333,6 +386,10 @@ class ApiService {
           .get(uri, headers: _authHeaders)
           .timeout(const Duration(seconds: 10));
 
+      if (response.statusCode == 401) {
+        throw Exception('Please log in to view your balance.');
+      }
+
       if (response.statusCode < 200 || response.statusCode >= 300) {
         throw Exception('GET $uri failed with status ${response.statusCode}');
       }
@@ -387,6 +444,10 @@ class ApiService {
       final response = await http
           .get(uri, headers: _authHeaders)
           .timeout(const Duration(seconds: 10));
+
+      if (response.statusCode == 401) {
+        throw Exception('Please log in to view your transactions.');
+      }
 
       if (response.statusCode < 200 || response.statusCode >= 300) {
         throw Exception('GET $uri failed with status ${response.statusCode}');

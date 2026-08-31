@@ -21,7 +21,6 @@ void main() {
     expect(find.text('Account'), findsOneWidget);
     expect(find.text('Deposit now'), findsOneWidget);
     expect(find.byType(TextFormField), findsOneWidget);
-    expect(find.text('Transactions'), findsOneWidget);
-    expect(find.text('Current shares'), findsOneWidget);
+    expect(find.text('Your shares'), findsOneWidget);
   });
 }

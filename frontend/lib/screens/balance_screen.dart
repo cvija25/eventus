@@ -36,6 +36,7 @@ class _BalanceScreenState extends State<BalanceScreen> {
   final _amountController = TextEditingController();
   final _api = ApiService();
   List<ShareHolding> _shareHoldings = const [];
+  Map<String, String> _eventNames = const {};
   final Set<String> _expandedEventIds = <String>{};
   double _balance = 0.0;
   bool _isLoading = true;
@@ -83,7 +84,7 @@ class _BalanceScreenState extends State<BalanceScreen> {
     } catch (e) {
       if (!context.mounted) return;
       setState(() {
-        _errorMessage = e.toString();
+        _errorMessage = e.toString().replaceFirst('Exception: ', '');
         _isLoading = false;
       });
     }
@@ -144,12 +145,23 @@ class _BalanceScreenState extends State<BalanceScreen> {
 
         _transactionsLoading = false;
       });
+
+      final eventIds = _shareHoldings.map((h) => h.eventId).toSet().toList();
+      try {
+        final names = await _api.fetchEventNames(eventIds);
+        if (!context.mounted) return;
+        setState(() {
+          _eventNames = names;
+        });
+      } catch (_) {
+        // Event names are a display nicety; fall back to showing raw ids.
+      }
     } catch (e) {
       if (!context.mounted) return;
       setState(() {
         _shareHoldings = const [];
         _transactionsLoading = false;
-        _transactionsError = e.toString();
+        _transactionsError = e.toString().replaceFirst('Exception: ', '');
       });
     }
   }
@@ -182,7 +194,9 @@ class _BalanceScreenState extends State<BalanceScreen> {
       if (!context.mounted) return;
       WidgetsBinding.instance.addPostFrameCallback((_) {
         final m = ScaffoldMessenger.maybeOf(context);
-        m?.showSnackBar(SnackBar(content: Text('Deposit failed: $e')));
+        m?.showSnackBar(SnackBar(
+          content: Text('Deposit failed: ${e.toString().replaceFirst('Exception: ', '')}'),
+        ));
       });
     }
   }
@@ -330,19 +344,11 @@ class _BalanceScreenState extends State<BalanceScreen> {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     const Text(
-                      'Transactions',
+                      'Your shares',
                       style: TextStyle(
                         color: Colors.white,
                         fontSize: 20,
                         fontWeight: FontWeight.bold,
-                      ),
-                    ),
-                    const SizedBox(height: 12),
-                    const Text(
-                      'Current shares',
-                      style: TextStyle(
-                        color: Colors.white70,
-                        fontSize: 14,
                       ),
                     ),
                     const SizedBox(height: 12),
@@ -366,18 +372,23 @@ class _BalanceScreenState extends State<BalanceScreen> {
                         children: groupedHoldings.entries.map((entry) {
                           final eventId = entry.key;
                           final holdings = entry.value;
-                          final totalShares = holdings.fold<double>(
-                            0,
-                            (sum, holding) => sum + (holding.type == 2 ? -holding.shareAmount : holding.shareAmount),
-                          );
+                          final netYes = holdings
+                              .where((h) => h.outcome == MarketOutcome.yes)
+                              .fold<double>(
+                                0,
+                                (sum, h) => sum + (h.type == 2 ? -h.shareAmount : h.shareAmount),
+                              );
+                          final netNo = holdings
+                              .where((h) => h.outcome == MarketOutcome.no)
+                              .fold<double>(
+                                0,
+                                (sum, h) => sum + (h.type == 2 ? -h.shareAmount : h.shareAmount),
+                              );
                           final expanded = _expandedEventIds.contains(eventId);
 
                           return Container(
                             margin: const EdgeInsets.only(bottom: 10),
-                            padding: const EdgeInsets.symmetric(
-                              horizontal: 12,
-                              vertical: 4,
-                            ),
+                            padding: const EdgeInsets.symmetric(horizontal: 12),
                             decoration: BoxDecoration(
                               color: const Color(0xFF111B2B),
                               borderRadius: BorderRadius.circular(12),
@@ -388,9 +399,7 @@ class _BalanceScreenState extends State<BalanceScreen> {
                               ),
                               child: ExpansionTile(
                                 tilePadding: EdgeInsets.zero,
-                                childrenPadding: const EdgeInsets.only(
-                                  bottom: 12,
-                                ),
+                                childrenPadding: const EdgeInsets.only(bottom: 12),
                                 initiallyExpanded: expanded,
                                 onExpansionChanged: (value) {
                                   setState(() {
@@ -426,7 +435,8 @@ class _BalanceScreenState extends State<BalanceScreen> {
                                     children: [
                                       Expanded(
                                         child: Text(
-                                          'Event ${eventId.substring(0, 8)}',
+                                          _eventNames[eventId] ??
+                                              'Event ${eventId.substring(0, 8)}',
                                           style: const TextStyle(
                                             color: Colors.white,
                                             fontWeight: FontWeight.w600,
@@ -442,38 +452,44 @@ class _BalanceScreenState extends State<BalanceScreen> {
                                   ),
                                 ),
                                 trailing: Icon(
-                                  expanded
-                                      ? Icons.keyboard_arrow_up
-                                      : Icons.keyboard_arrow_down,
+                                  expanded ? Icons.keyboard_arrow_up : Icons.keyboard_arrow_down,
                                   color: Colors.white70,
                                 ),
                                 children: [
                                   Padding(
-                                    padding: const EdgeInsets.symmetric(
-                                      horizontal: 8,
-                                      vertical: 4,
-                                    ),
+                                    padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
                                     child: Row(
-                                      mainAxisAlignment:
-                                          MainAxisAlignment.spaceBetween,
+                                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
                                       children: [
                                         const Text(
-                                          'Total shares',
-                                          style: TextStyle(
-                                            color: Colors.white60,
-                                            fontSize: 12,
-                                          ),
+                                          'Net position',
+                                          style: TextStyle(color: Colors.white60, fontSize: 12),
                                         ),
-                                        Text(
-                                          totalShares.toStringAsFixed(2),
-                                          style: const TextStyle(
-                                            color: Color(0xFF00A3FF),
-                                            fontWeight: FontWeight.bold,
-                                          ),
+                                        Row(
+                                          children: [
+                                            if (netYes > 0)
+                                              Text(
+                                                'YES ${netYes.toStringAsFixed(2)}',
+                                                style: const TextStyle(
+                                                  color: Color(0xFF00A3FF),
+                                                  fontWeight: FontWeight.bold,
+                                                ),
+                                              ),
+                                            if (netYes > 0 && netNo > 0) const SizedBox(width: 12),
+                                            if (netNo > 0)
+                                              Text(
+                                                'NO ${netNo.toStringAsFixed(2)}',
+                                                style: const TextStyle(
+                                                  color: Color(0xFFEF4444),
+                                                  fontWeight: FontWeight.bold,
+                                                ),
+                                              ),
+                                          ],
                                         ),
                                       ],
                                     ),
                                   ),
+                                  const SizedBox(height: 8),
                                   ...holdings.map((holding) {
                                     return Container(
                                       margin: const EdgeInsets.only(bottom: 6),
@@ -485,32 +501,20 @@ class _BalanceScreenState extends State<BalanceScreen> {
                                       child: Row(
                                         children: [
                                           Expanded(
-                                            child: Column(
-                                              crossAxisAlignment:
-                                                  CrossAxisAlignment.start,
-                                              children: [
-                                                Text(
-                                                  'Outcome: ${holding.outcomeLabel}',
-                                                  style: const TextStyle(
-                                                    color: Colors.white,
-                                                    fontWeight: FontWeight.w600,
-                                                  ),
-                                                ),
-                                                const SizedBox(height: 4),
-                                                Text(
-                                                  'User ${holding.userId.substring(0, 8)}',
-                                                  style: const TextStyle(
-                                                    color: Colors.white38,
-                                                    fontSize: 11,
-                                                  ),
-                                                ),
-                                              ],
+                                            child: Text(
+                                              '${holding.type == 2 ? "Sell" : "Buy"} · ${holding.outcomeLabel}',
+                                              style: const TextStyle(
+                                                color: Colors.white,
+                                                fontWeight: FontWeight.w600,
+                                              ),
                                             ),
                                           ),
                                           Text(
                                             holding.shareAmount.toStringAsFixed(2),
                                             style: TextStyle(
-                                              color: holding.type == 2 ? Colors.redAccent : const Color(0xFF00A3FF),
+                                              color: holding.type == 2
+                                                  ? Colors.redAccent
+                                                  : const Color(0xFF00A3FF),
                                               fontWeight: FontWeight.bold,
                                             ),
                                           ),

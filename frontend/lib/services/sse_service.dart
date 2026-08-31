@@ -31,10 +31,8 @@ class SseService {
     try {
       final req = http.Request('GET', _sseUri);
       final streamed = await _client!.send(req);
-      debugPrint('SSE connected, status: ${streamed.statusCode}');
 
       if (streamed.statusCode != 200) {
-        debugPrint('SSE non-OK status: ${streamed.statusCode}');
         _cleanup();
         return;
       }
@@ -42,9 +40,6 @@ class SseService {
       _subscription = streamed.stream.listen((chunk) {
         try {
           final text = utf8.decode(chunk);
-          // small summary for logs
-          final summary = text.length > 200 ? '${text.substring(0, 200)}...' : text;
-          debugPrint('SSE chunk received (${text.length} bytes): ${summary.replaceAll('\n', '\\n')}');
 
           _buffer.write(text);
           var content = _buffer.toString();
@@ -59,18 +54,13 @@ class SseService {
           final remaining = parts.isNotEmpty ? parts.last : '';
           _buffer.clear();
           _buffer.write(remaining);
-        } catch (err, st) {
-          debugPrint('SSE chunk parse error: $err\n$st');
-        }
-      }, onError: (err) {
-        debugPrint('SSE stream error: $err');
+        } catch (_) {}
+      }, onError: (_) {
         _cleanup();
       }, onDone: () {
-        debugPrint('SSE stream done');
         _cleanup();
       }, cancelOnError: true);
-    } catch (e, st) {
-      debugPrint('SSE connect error: $e\n$st');
+    } catch (_) {
       _cleanup();
     }
   }
@@ -99,9 +89,6 @@ class SseService {
     }
     if (dataLines.isEmpty) return;
     final payload = dataLines.join('\n');
-    try {
-      debugPrint('SSE raw payload: $payload');
-    } catch (_) {}
     try {
       final decoded = jsonDecode(payload);
       if (decoded is Map<String, dynamic>) {

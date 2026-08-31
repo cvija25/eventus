@@ -71,8 +71,6 @@ class _DetailScreenState extends State<DetailScreen> {
           final pNo = priceNo is num
               ? priceNo.toDouble()
               : double.tryParse(priceNo?.toString() ?? '');
-          debugPrint(
-              'SSE price event matched: $eventId priceYes=$pYes priceNo=$pNo');
           if (pYes != null || pNo != null) {
             if (!mounted) return;
             setState(() {
@@ -80,16 +78,8 @@ class _DetailScreenState extends State<DetailScreen> {
                 priceYes: pYes ?? _item.priceYes,
                 priceNo: pNo ?? _item.priceNo,
               );
-              _priceHistory = [
-                ..._priceHistory,
-                PriceHistoryPoint(
-                  eventId: _item.id,
-                  priceYes: pYes ?? _item.priceYes,
-                  priceNo: pNo ?? _item.priceNo,
-                  timestamp: DateTime.now(),
-                ),
-              ];
             });
+            _loadPriceHistory(showLoading: false);
           }
         } catch (_) {}
       });
@@ -116,10 +106,12 @@ class _DetailScreenState extends State<DetailScreen> {
     return 0.0;
   }
 
-  Future<void> _loadPriceHistory() async {
-    setState(() {
-      _loadingHistory = true;
-    });
+  Future<void> _loadPriceHistory({bool showLoading = true}) async {
+    if (showLoading) {
+      setState(() {
+        _loadingHistory = true;
+      });
+    }
 
     try {
       final history = await _api.fetchPriceHistory(_item.id);
@@ -131,7 +123,7 @@ class _DetailScreenState extends State<DetailScreen> {
     } catch (_) {
       if (!mounted) return;
       setState(() {
-        _priceHistory = const [];
+        if (showLoading) _priceHistory = const [];
         _loadingHistory = false;
       });
     }
@@ -235,7 +227,9 @@ class _DetailScreenState extends State<DetailScreen> {
     } catch (e) {
       WidgetsBinding.instance.addPostFrameCallback((_) {
         final m = ScaffoldMessenger.maybeOf(context);
-        m?.showSnackBar(SnackBar(content: Text('Sell failed: $e')));
+        m?.showSnackBar(SnackBar(
+          content: Text('Sell failed: ${e.toString().replaceFirst('Exception: ', '')}'),
+        ));
       });
     }
   }
@@ -296,7 +290,7 @@ class _DetailScreenState extends State<DetailScreen> {
 
         setState(() {
           _submitting = false;
-          _submitError = error.toString();
+          _submitError = error.toString().replaceFirst('Exception: ', '');
         });
       }
     }
@@ -374,16 +368,6 @@ class _DetailScreenState extends State<DetailScreen> {
           icon: const Icon(Icons.arrow_back, color: Colors.white),
           onPressed: () => Navigator.pop(context),
         ),
-        actions: [
-          IconButton(
-            icon: const Icon(Icons.share_outlined, color: Colors.white),
-            onPressed: () {},
-          ),
-          IconButton(
-            icon: const Icon(Icons.more_vert, color: Colors.white),
-            onPressed: () {},
-          ),
-        ],
       ),
       body: SingleChildScrollView(
         padding: const EdgeInsets.fromLTRB(12, 8, 12, 24),
@@ -420,21 +404,6 @@ class _DetailScreenState extends State<DetailScreen> {
               },
             ),
             const SizedBox(height: 12),
-            _PriceHistoryPanel(
-              loading: _loadingHistory,
-              history: _priceHistory,
-            ),
-            const SizedBox(height: 12),
-
-            // Ako je korisnik vlasnik i event još nije završen, prikazujemo Owner Tools
-            if (isOwner && !item.isResolved) ...[
-              _OwnerResolvePanel(
-                isResolving: _isResolving,
-                onResolve: _resolveMarket,
-              ),
-              const SizedBox(height: 12),
-            ],
-
             if (item.isResolved)
               _Panel(
                 child: Container(
@@ -508,12 +477,25 @@ class _DetailScreenState extends State<DetailScreen> {
                 },
               ),
             const SizedBox(height: 12),
+            _PriceHistoryPanel(
+              loading: _loadingHistory,
+              history: _priceHistory,
+            ),
+            const SizedBox(height: 12),
             _HoldingPanel(
               loading: _loadingHoldings,
               holdings: _myHoldings,
               sellControllers: _sellControllers,
               onSell: _sellHolding,
             ),
+
+            if (isOwner && !item.isResolved) ...[
+              const SizedBox(height: 12),
+              _OwnerResolvePanel(
+                isResolving: _isResolving,
+                onResolve: _resolveMarket,
+              ),
+            ],
           ],
         ),
       ),
@@ -903,7 +885,7 @@ class _TradePanel extends StatelessWidget {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           const Text(
-            'Place order',
+            'Buy shares',
             style: TextStyle(
               color: Colors.white,
               fontSize: 16,
@@ -921,7 +903,7 @@ class _TradePanel extends StatelessWidget {
               ],
               style: const TextStyle(color: Colors.white, fontSize: 16),
               decoration: InputDecoration(
-                hintText: 'Shares',
+                hintText: 'Stake',
                 hintStyle: const TextStyle(color: Colors.white38),
                 filled: true,
                 fillColor: const Color(0xFF111827),
@@ -1139,7 +1121,7 @@ class _TradePanel extends StatelessWidget {
                   borderRadius: BorderRadius.circular(8),
                 ),
               ),
-              child: Text(submitting ? 'Submitting...' : 'Preview trade'),
+              child: Text(submitting ? 'Submitting...' : 'Buy shares'),
             ),
           ),
           if (submitError != null) ...[
@@ -1220,7 +1202,7 @@ class _HoldingPanel extends StatelessWidget {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           const Text(
-            'Your shares on this event',
+            'Transactions',
             style: TextStyle(
               color: Colors.white,
               fontSize: 16,
@@ -1287,7 +1269,7 @@ class _HoldingPanel extends StatelessWidget {
                         ),
                         style: const TextStyle(color: Colors.white),
                         decoration: InputDecoration(
-                          hintText: 'Shares',
+                          hintText: 'Stake',
                           hintStyle: const TextStyle(color: Colors.white38),
                           filled: true,
                           fillColor: const Color(0xFF0D1320),

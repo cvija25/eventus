@@ -44,8 +44,6 @@ class _HomeScreenState extends State<HomeScreen> {
           final pNo = priceNo is num
               ? priceNo.toDouble()
               : double.tryParse(priceNo?.toString() ?? '');
-          debugPrint(
-              'SSE price event received: $eventId priceYes=$pYes priceNo=$pNo');
           if (pYes == null && pNo == null) return;
           _prices[eventId] = {
             if (pYes != null) 'priceYes': pYes,
@@ -108,10 +106,6 @@ class _HomeScreenState extends State<HomeScreen> {
           ],
         ),
         actions: [
-          IconButton(
-            icon: const Icon(Icons.search, color: Colors.white),
-            onPressed: () {},
-          ),
           IconButton(
             icon: const Icon(
               Icons.person_outline,

@@ -50,6 +50,14 @@ public class EventRepository : IEventRepository
             .ToListAsync();
     }
 
+    public async Task<List<EventDto>> GetEventsByIdsAsync(List<Guid> ids)
+    {
+        return await _context
+            .Events.Where(ev => ids.Contains(ev.Id))
+            .ProjectTo<EventDto>(_mapper.ConfigurationProvider)
+            .ToListAsync();
+    }
+
     public async Task<EventDto?> UpdateEventAsync(UpdateEventDto updateEventDto)
     {
         var ev = await _context.Events.FindAsync(updateEventDto.Id);
