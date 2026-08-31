@@ -66,9 +66,9 @@ public class CatalogController : ControllerBase
         return Ok(events);
     }
 
-    [HttpPost("by-ids")]
+    [HttpPost("query")]
     [ProducesResponseType(typeof(IEnumerable<EventDto>), StatusCodes.Status200OK)]
-    public async Task<ActionResult<List<EventDto>>> GetEventsByIds([FromBody] GetEventsByIdsDto dto)
+    public async Task<ActionResult<List<EventDto>>> QueryEvents([FromBody] EventQueryDto dto)
     {
         var events = await _eventRepository.GetEventsByIdsAsync(dto.Ids);
         return Ok(events);

@@ -113,7 +113,7 @@ class ApiService {
   Future<Map<String, String>> fetchEventNames(List<String> ids) async {
     if (ids.isEmpty) return {};
 
-    final uri = Uri.parse('$_catalogUrl/by-ids');
+    final uri = ApiRoutes.eventsQuery;
 
     try {
       final response = await http

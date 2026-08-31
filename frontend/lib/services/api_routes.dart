@@ -29,6 +29,7 @@ class ApiRoutes {
 
   // Catalog
   static Uri get events => Uri.parse('$_base/events');
+  static Uri get eventsQuery => Uri.parse('$_base/events/query');
   static Uri get resolveEvent => Uri.parse('$_base/events/resolve');
   static Uri get priceStream => Uri.parse('$_base/events/stream');
   static Uri event(String id) => Uri.parse('$_base/events/$id');

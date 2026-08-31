@@ -66,6 +66,13 @@
       "DownstreamHostAndPorts": [ { "Host": "catalog.api", "Port": 8080 } ]
     },
     {
+      "UpstreamPathTemplate": "/api/v1/events/query",
+      "UpstreamHttpMethod": [ "POST" ],
+      "DownstreamPathTemplate": "/api/v1/events/query",
+      "DownstreamScheme": "http",
+      "DownstreamHostAndPorts": [ { "Host": "catalog.api", "Port": 8080 } ]
+    },
+    {
       "UpstreamPathTemplate": "/api/v1/events/resolve",
       "UpstreamHttpMethod": [ "POST" ],
       "DownstreamPathTemplate": "/api/v1/events/resolve",
