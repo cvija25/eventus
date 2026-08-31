@@ -28,7 +28,7 @@ public static class JwtConfigurationExtensions
             ExpiryMinutes = int.TryParse(expiry, out var minutes) ? minutes : 60,
         };
     }
-    
+
     public static IServiceCollection AddEventusJwtAuth(
         this IServiceCollection services,
         IConfiguration configuration
@@ -57,5 +57,4 @@ public static class JwtConfigurationExtensions
 
         return services;
     }
-
 }
