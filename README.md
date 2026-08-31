@@ -8,8 +8,7 @@ winning share pays out.
 
 The system is a set of small services. Each service has one job. The
 services talk to each other over HTTP, gRPC, and two message brokers
-(RabbitMQ and Kafka). See [docs/system-overview.md](docs/system-overview.md)
-for a diagram of how the services connect.
+(RabbitMQ and Kafka). See [docs](docs) for a detailed view of the services and use cases.
 
 ## Prerequisites
 
@@ -38,23 +37,6 @@ Install these tools before you start:
 6. The app now talks to the system through the API Gateway, at
    `http://localhost:1234`.
 
-### Ports
-
-| Service | Port | Notes |
-|---|---|---|
-| API Gateway | 1234 | Single entry point for all requests |
-| Account service | 8080 | |
-| Catalog API | 8081 | |
-| Game service | 8082 | |
-| Catalog gRPC | 8083 | Used by the Game service only |
-| Identity service | 8084 | |
-| Catalog Postgres DB | 5432 | |
-| Account Postgres DB | 5433 | |
-| Identity MongoDB | 27017 | |
-| RabbitMQ | 5672 (AMQP), 15672 (management UI) | |
-| Kafka | 9092 | |
-| pgadmin | 5050 | Optional. Browse the Postgres databases |
-
 ### Run the frontend app
 
 1. Go to the `frontend` folder.
@@ -75,40 +57,58 @@ Postgres, RabbitMQ, MongoDB, and Kafka containers through Testcontainers.
 ## How to use it: a happy path
 
 This is the main path through the system, from a new user to a paid-out
-trade. It matches the end-to-end test at
-[`Services/Tests/Eventus.E2E.Tests/HappyPathTests.cs`](Services/Tests/Eventus.E2E.Tests/HappyPathTests.cs).
-All requests below go through the API Gateway at `http://localhost:1234`.
+trade. Walk it in the app, with the backend running. See
+[Setup and run](#setup-and-run) and
+[Run the frontend app](#run-the-frontend-app) to start both.
+
+The app opens on the **home screen**, a list of all open events. Prices on
+the cards update by themselves as other people trade.
 
 1. **Register.**
-   `POST /identity/api/v1/identity/register` with a name, email, and
-   password. This also opens a wallet for the new user in the Account
-   service.
+   Tap the login icon in the top right, then **Register** at the bottom of
+   the form. Fill in name, email, password, and confirm password, then tap
+   **Register**. This also opens a wallet for the new user in the Account
+   service. The form switches back to login mode.
 2. **Log in.**
-   `POST /identity/api/v1/identity/login` with the email and password. The
-   response holds a JWT token. Send this token in the `Authorization` header
-   on every request below.
+   Enter the same email and password and tap **Login**. The app returns to
+   the home screen and keeps the token, so you stay logged in across
+   restarts. Two more icons appear in the top bar: **+** to create an event,
+   and the logout icon.
 3. **Create an event.**
-   `POST /catalog/api/v1/catalog/events` with a title. A new event opens
-   with an equal 50/50 chance for Yes and No.
+   Tap **+**, type a title, and tap **Create**. The app opens the new
+   event's detail screen. Both outcomes start at £0.50, an equal 50/50
+   chance.
 4. **Add funds.**
-   `POST /account/api/v1/account/deposit` with an amount. This adds credit
-   to the user's wallet.
+   Tap the person icon in the top bar to open **Profile**. Type an amount in
+   the field at the bottom and tap **Deposit now**. The balance at the top
+   updates.
 5. **Buy shares.**
-   `POST /account/api/v1/account/buy` with a stake, the event ID, and an
-   outcome (Yes or No). The trade settles a short time after this call
-   returns. See [docs/buy-flow.md](docs/buy-flow.md) for the full flow.
+   Open an event from the home screen. Under **Outcome prices**, tap the
+   **Yes** or **No** row to pick a side, then enter a whole number of shares
+   under **Place order** and tap **Buy shares**. This places the order.
 6. **Check the result.**
-   `GET /account/api/v1/account/balance` shows the funds left.
-   `GET /account/api/v1/account/transactions` shows the new trade, once it
-   settles.
-7. **Sell shares (optional).**
-   `POST /account/api/v1/account/sell-shares` with the number of shares, the
-   event ID, and the outcome. See
-   [docs/sell-flow.md](docs/sell-flow.md) for the full flow.
+   The **Your shares on this event** panel at the bottom of the event screen
+   shows what you hold here. **Profile** shows the funds left and every
+   holding, grouped by event; tap a group to expand it, or tap its title to
+   jump to that event.
+7. **Sell shares.**
+   On the event screen, in **Your shares on this event**, enter how many
+   shares to sell and tap **Sell**.
 8. **Resolve the event.**
-   The event owner calls `POST /catalog/api/v1/catalog/events/resolve` with
-   the final outcome. Every user who holds a winning share gets paid. See
+   Only the event's owner sees the **Owner Tools: Resolve Market** panel,
+   and only while the event is open. Tap **Resolve YES** or **Resolve NO**.
+   The panel is replaced by **Event Market Resolved** with the winning
+   outcome, trading closes, and every user who holds a winning share gets
+   paid. Check the payout under **Profile**. See
    [docs/resolve-flow.md](docs/resolve-flow.md) for the full flow.
+
+To see the price move from a second account, log out, register a second
+user, and buy the opposite outcome. The first user's event screen updates
+live.
+
+The same path in raw HTTP calls, all through the API Gateway at
+`http://localhost:1234`, is the end-to-end test at
+[`Services/Tests/Eventus.E2E.Tests/HappyPathTests.cs`](Services/Tests/Eventus.E2E.Tests/HappyPathTests.cs).
 
 ## Diagrams
 
