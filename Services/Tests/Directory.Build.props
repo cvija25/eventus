@@ -1,0 +1,19 @@
+<Project>
+  <PropertyGroup>
+    <TargetFramework>net10.0</TargetFramework>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <Nullable>enable</Nullable>
+    <IsPackable>false</IsPackable>
+    <!-- Opt-out hatch for Tests/Testing.Common, which is a helper library rather
+         than a test project and should not be probed for tests by `dotnet test`. -->
+    <EventusTestProject Condition="'$(EventusTestProject)' == ''">true</EventusTestProject>
+  </PropertyGroup>
+
+  <ItemGroup Condition="'$(EventusTestProject)' == 'true'">
+    <PackageReference Include="Microsoft.NET.Test.Sdk" Version="17.14.1" />
+    <PackageReference Include="xunit" Version="2.9.3" />
+    <PackageReference Include="xunit.runner.visualstudio" Version="3.1.4" />
+    <PackageReference Include="NSubstitute" Version="6.2.0" />
+    <Using Include="Xunit" />
+  </ItemGroup>
+</Project>

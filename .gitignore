@@ -15,3 +15,4 @@ obj/
 .idea/**/shelf
 
 Services/Contracts/Generated/
+TestResults/

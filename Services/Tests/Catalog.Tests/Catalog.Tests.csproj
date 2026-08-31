@@ -1,0 +1,8 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <ItemGroup>
+    <ProjectReference Include="..\..\Catalog\Catalog.API\Catalog.API.csproj" />
+    <ProjectReference Include="..\..\Catalog\Catalog.GRPC\Catalog.GRPC.csproj" />
+    <ProjectReference Include="..\..\Catalog\Catalog.Common\Catalog.Common.csproj" />
+    <ProjectReference Include="..\Testing.Common\Testing.Common.csproj" />
+  </ItemGroup>
+</Project>
