@@ -50,7 +50,6 @@ public class CatalogService(
             return new UpdateEventPriceResponse { Success = false };
         }
 
-
         if (updated.PoolYes + updated.PoolNo == 0m)
         {
             logger.LogWarning(
