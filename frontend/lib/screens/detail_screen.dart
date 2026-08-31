@@ -38,8 +38,10 @@ class _DetailScreenState extends State<DetailScreen> {
   List<_EventHoldingSummary> _myHoldings = const [];
   bool _isResolving = false;
   double _slippageTolerance = 0.05;
+  double _spotPriceWindow = 0.02;
   bool _showAdvancedSettings = false;
   bool _enableCustomSlippage = false;
+  bool _enableSpotPriceWindow = false;
   StreamSubscription<Map<String, dynamic>>? _sseSub;
 
   List<PriceHistoryPoint> _priceHistory = [];
@@ -268,6 +270,7 @@ class _DetailScreenState extends State<DetailScreen> {
           outcome: _selectedOutcome!,
           expectedPrice: expectedPrice,
           slippageDelta: _enableCustomSlippage ? _slippageTolerance : null,
+          spotPriceWindow: _enableSpotPriceWindow ? _spotPriceWindow : null,
         );
         await _refreshMarket();
         if (!context.mounted) return;
@@ -477,19 +480,31 @@ class _DetailScreenState extends State<DetailScreen> {
                 submittedValue: _submittedValue,
                 submitError: _submitError,
                 onSubmit: _submit,
-                slippageTolerance: _slippageTolerance,
-                onSlippageChanged: (value) {
-                  setState(() {
-                    _slippageTolerance = value;
-                  });
-                },
                 showAdvancedSettings: _showAdvancedSettings,
                 onAdvancedSettingsToggled: (value) {
-                  setState(() => _showAdvancedSettings = value);
+                  setState(() {
+                    _showAdvancedSettings = value;
+                    if (!value) {
+                      _enableCustomSlippage = false;
+                      _enableSpotPriceWindow = false;
+                    }
+                  });
                 },
                 enableCustomSlippage: _enableCustomSlippage,
                 onCustomSlippageToggled: (value) {
                   setState(() => _enableCustomSlippage = value ?? false );
+                },
+                slippageTolerance: _slippageTolerance,
+                onSlippageChanged: (value) {
+                  setState(() => _slippageTolerance = value);
+                },
+                enableSpotPriceWindow: _enableSpotPriceWindow,
+                onSpotPriceWindowToggled: (value) {
+                  setState(() => _enableSpotPriceWindow = value ?? false);
+                },
+                spotPriceWindow: _spotPriceWindow,
+                onSpotPriceWindowChanged: (value) {
+                  setState(() => _spotPriceWindow = value);
                 },
               ),
             const SizedBox(height: 12),
@@ -850,14 +865,16 @@ class _TradePanel extends StatelessWidget {
   final int? submittedValue;
   final String? submitError;
   final VoidCallback onSubmit;
-  final double slippageTolerance;
-  final ValueChanged<double> onSlippageChanged;
-  
-  // Nova polja
   final bool showAdvancedSettings;
   final ValueChanged<bool> onAdvancedSettingsToggled;
   final bool enableCustomSlippage;
   final ValueChanged<bool?> onCustomSlippageToggled;
+  final double slippageTolerance;
+  final ValueChanged<double> onSlippageChanged;
+  final bool enableSpotPriceWindow;
+  final ValueChanged<bool?> onSpotPriceWindowToggled;
+  final double spotPriceWindow;
+  final ValueChanged<double> onSpotPriceWindowChanged;
 
   const _TradePanel({
     required this.formKey,
@@ -867,12 +884,16 @@ class _TradePanel extends StatelessWidget {
     required this.submittedValue,
     required this.submitError,
     required this.onSubmit,
-    required this.slippageTolerance,
-    required this.onSlippageChanged,
     required this.showAdvancedSettings,
     required this.onAdvancedSettingsToggled,
     required this.enableCustomSlippage,
     required this.onCustomSlippageToggled,
+    required this.slippageTolerance,
+    required this.onSlippageChanged,
+    required this.enableSpotPriceWindow,
+    required this.onSpotPriceWindowToggled,
+    required this.spotPriceWindow,
+    required this.onSpotPriceWindowChanged,
   });
 
   @override
@@ -910,7 +931,8 @@ class _TradePanel extends StatelessWidget {
                 ),
                 focusedBorder: OutlineInputBorder(
                   borderRadius: BorderRadius.circular(8),
-                  borderSide: const BorderSide(color: Color(0xFF00A3FF), width: 1.5),
+                  borderSide:
+                      const BorderSide(color: Color(0xFF00A3FF), width: 1.5),
                 ),
                 errorBorder: OutlineInputBorder(
                   borderRadius: BorderRadius.circular(8),
@@ -1032,6 +1054,67 @@ class _TradePanel extends StatelessWidget {
                         activeColor: const Color(0xFF00A3FF),
                         inactiveColor: const Color(0xFF1F2937),
                         onChanged: onSlippageChanged,
+                      ),
+                    ),
+                  ],
+                  const SizedBox(height: 12),
+                  const Divider(color: Colors.white12),
+                  const SizedBox(height: 12),
+                  Row(
+                    children: [
+                      SizedBox(
+                        width: 24,
+                        height: 24,
+                        child: Checkbox(
+                          value: enableSpotPriceWindow,
+                          onChanged: onSpotPriceWindowToggled,
+                          activeColor: const Color(0xFF00A3FF),
+                          side: const BorderSide(color: Colors.white54),
+                        ),
+                      ),
+                      const SizedBox(width: 10),
+                      GestureDetector(
+                        onTap: () => onSpotPriceWindowToggled(!enableSpotPriceWindow),
+                        child: const Text(
+                          'Spot Price Window (Max Delta)',
+                          style: TextStyle(color: Colors.white, fontSize: 14),
+                        ),
+                      ),
+                    ],
+                  ),
+                  if (enableSpotPriceWindow) ...[
+                    const SizedBox(height: 16),
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        const Text(
+                          'Allowed move',
+                          style: TextStyle(color: Colors.white70, fontSize: 13),
+                        ),
+                        Text(
+                          '${(spotPriceWindow * 100).toStringAsFixed(0)}%',
+                          style: const TextStyle(
+                            color: Color(0xFF00A3FF),
+                            fontSize: 13,
+                            fontWeight: FontWeight.w700,
+                          ),
+                        ),
+                      ],
+                    ),
+                    SliderTheme(
+                      data: SliderTheme.of(context).copyWith(
+                        trackHeight: 4,
+                        thumbShape: const RoundSliderThumbShape(enabledThumbRadius: 6),
+                        overlayShape: const RoundSliderOverlayShape(overlayRadius: 14),
+                      ),
+                      child: Slider(
+                        value: spotPriceWindow,
+                        min: 0.01,
+                        max: 0.25,
+                        divisions: 24,
+                        activeColor: const Color(0xFF00A3FF),
+                        inactiveColor: const Color(0xFF1F2937),
+                        onChanged: onSpotPriceWindowChanged,
                       ),
                     ),
                   ],

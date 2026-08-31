@@ -262,4 +262,69 @@ public class GameCommandHandlerTests
         Assert.True(_market.PoolNo > poolNoBefore);
         Assert.Equal(10m, _publisher.Sales.Single().SellPrice, precision: 8);
     }
+
+    [Fact]
+    public async Task Spot_price_window_rejects_bet_when_market_moved_beyond_window()
+    {
+        // 1. Arrange
+        var bet = Bet(10m, MarketOutcome.Yes);
+        bet.ExpectedPrice = 0.40m;
+        bet.SpotPriceWindow = 0.05m;
+        bet.SlippageDelta = 0.05m;
+
+        // 2. Act
+        await _handler.ProcessBetPlacedAsync(bet);
+
+        // 3. Assert
+        var approved = Assert.Single(_publisher.Bets);
+        Assert.False(approved.IsApproved);
+        Assert.Equal(0m, approved.ShareAmount);
+    }
+
+    [Fact]
+    public async Task Spot_price_window_accepts_bet_when_within_window()
+    {
+        // 1. Arrange
+        var bet = Bet(1m, MarketOutcome.Yes);
+        bet.ExpectedPrice = 0.48m;
+        bet.SpotPriceWindow = 0.05m;
+        bet.SlippageDelta = 0.25m;
+
+        // 2. Act
+        await _handler.ProcessBetPlacedAsync(bet);
+
+        // 3. Assert
+        var approved = Assert.Single(_publisher.Bets);
+        Assert.True(approved.IsApproved);
+        Assert.True(approved.ShareAmount > 0m);
+    }
+
+    [Fact]
+    public async Task Slippage_tolerance_rejects_bet_when_price_impact_is_too_high()
+    {
+        // 1. Arrange
+        _market.PoolYes = 1m;
+        _market.PoolNo = 1m;
+        _market.Pot = 2m;
+
+        var bet = new BetPlacedEvent
+        {
+            EventId = Guid.NewGuid(),
+            OwnerId = Guid.NewGuid(),
+            Stake = 1000m,
+            Outcome = MarketOutcome.Yes,
+            ExpectedPrice = 0.50m,
+            SpotPriceWindow = null,
+            SlippageDelta = 0.01m,
+        };
+
+        // 2. Act
+        await _handler.ProcessBetPlacedAsync(bet);
+
+        // 3. Assert
+        var approved = Assert.Single(_publisher.Bets);
+        Assert.False(approved.IsApproved);
+        Assert.Equal(0m, approved.ShareAmount);
+        Assert.Equal(bet.Stake, approved.Stake);
+    }
 }

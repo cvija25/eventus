@@ -211,6 +211,7 @@ class ApiService {
     required String outcome,
     required double expectedPrice,
     double? slippageDelta,
+    double? spotPriceWindow,
   }) async {
     final uri = Uri.parse(_accountUrl);
 
@@ -224,6 +225,7 @@ class ApiService {
               'stake': stake,
               'outcome': outcome == 'Yes' ? 1 : 2,
               'expectedPrice': expectedPrice,
+              'spotPriceWindow': spotPriceWindow,
               if (slippageDelta != null) 'slippageDelta': slippageDelta,
             }),
           )

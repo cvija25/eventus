@@ -22,6 +22,41 @@ public class GameCommandHandler(
         var pot = decimal.Parse(market.Pot, CultureInfo.InvariantCulture);
         var stake = betPlaced.Stake;
 
+        // Optional Spot Price Window Check
+        if (betPlaced.SpotPriceWindow.HasValue)
+        {
+            var spotPriceWindow = betPlaced.SpotPriceWindow.Value;
+            var expectedPrice = betPlaced.ExpectedPrice;
+            var actualPrice =
+                betPlaced.Outcome == MarketOutcome.Yes
+                    ? poolNo / (poolYes + poolNo)
+                    : poolYes / (poolYes + poolNo);
+
+            if (Math.Abs(actualPrice - expectedPrice) > spotPriceWindow)
+            {
+                logger.LogWarning(
+                    "Bet rejected due to Spot Price move: EventId={EventId}, Expected={Expected}, Actual={Actual}, Window={Window}",
+                    eventId,
+                    betPlaced.ExpectedPrice,
+                    actualPrice,
+                    betPlaced.SpotPriceWindow.Value
+                );
+
+                var rejectedEvent = new BetApprovedEvent
+                {
+                    IsApproved = false,
+                    ApprovedAt = DateTime.UtcNow,
+                    AccId = betPlaced.OwnerId,
+                    Stake = betPlaced.Stake,
+                    EventId = betPlaced.EventId,
+                    Outcome = betPlaced.Outcome,
+                    ShareAmount = 0,
+                };
+                await commandApprovedPublisher.PublishBetApprovedAsync(rejectedEvent);
+                return;
+            }
+        }
+
         // Simulating changes - calculating how many shares user will recieve
         var simulatedPoolYes = poolYes + stake;
         var simulatedPoolNo = poolNo + stake;
@@ -119,6 +154,41 @@ public class GameCommandHandler(
         var poolYes = decimal.Parse(market.PoolYes, CultureInfo.InvariantCulture);
         var poolNo = decimal.Parse(market.PoolNo, CultureInfo.InvariantCulture);
         var pot = decimal.Parse(market.Pot, CultureInfo.InvariantCulture);
+
+        // Optional Spot Price Window Check
+        if (sellShares.SpotPriceWindow.HasValue)
+        {
+            var spotPriceWindow = sellShares.SpotPriceWindow.Value;
+            var expectedPrice = sellShares.ExpectedPrice;
+            var actualPrice =
+                sellShares.Outcome == MarketOutcome.Yes
+                    ? poolNo / (poolYes + poolNo)
+                    : poolYes / (poolYes + poolNo);
+
+            if (Math.Abs(actualPrice - expectedPrice) > spotPriceWindow)
+            {
+                logger.LogWarning(
+                    "Sell rejected due to Spot Price move: EventId={EventId}, Expected={Expected}, Actual={Actual}, Window={Window}",
+                    eventId,
+                    sellShares.ExpectedPrice,
+                    actualPrice,
+                    sellShares.SpotPriceWindow.Value
+                );
+
+                var rejectedEvent = new SellSharesApprovedEvent
+                {
+                    IsApproved = false,
+                    ApprovedAt = DateTime.UtcNow,
+                    AccId = sellShares.OwnerId,
+                    SellPrice = 0,
+                    EventId = sellShares.EventId,
+                    Outcome = sellShares.Outcome,
+                    ShareAmount = sellShares.Shares,
+                };
+                await commandApprovedPublisher.PublishSellSharesApprovedAsync(rejectedEvent);
+                return;
+            }
+        }
 
         var sellPrice = CalculatePayout(poolYes, poolNo, sellShares.Shares, sellShares.Outcome);
 
