@@ -29,8 +29,8 @@ public class GameCommandHandler(
             var expectedPrice = betPlaced.ExpectedPrice;
             var actualPrice =
                 betPlaced.Outcome == MarketOutcome.Yes
-                    ? decimal.Parse(market.PriceYes, CultureInfo.InvariantCulture)
-                    : decimal.Parse(market.PriceNo, CultureInfo.InvariantCulture);
+                    ? poolNo / (poolYes + poolNo)
+                    : poolYes / (poolYes + poolNo);
 
             if (Math.Abs(actualPrice - expectedPrice) > spotPriceWindow)
             {
@@ -162,8 +162,8 @@ public class GameCommandHandler(
             var expectedPrice = sellShares.ExpectedPrice;
             var actualPrice =
                 sellShares.Outcome == MarketOutcome.Yes
-                    ? decimal.Parse(market.PriceYes, CultureInfo.InvariantCulture)
-                    : decimal.Parse(market.PriceNo, CultureInfo.InvariantCulture);
+                    ? poolNo / (poolYes + poolNo)
+                    : poolYes / (poolYes + poolNo);
 
             if (Math.Abs(actualPrice - expectedPrice) > spotPriceWindow)
             {
