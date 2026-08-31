@@ -72,6 +72,8 @@ public class AccountController(
             EventId = request.EventId,
             Shares = request.Shares,
             Outcome = request.Outcome,
+            ExpectedPrice = request.ExpectedPrice,
+            SlippageDelta = request.SlippageDelta,
         };
 
         await publisher.PublishSellSharesAsync(evt);
@@ -135,6 +137,8 @@ public class AccountController(
             EventId = request.EventId,
             Stake = request.Stake,
             Outcome = request.Outcome,
+            ExpectedPrice = request.ExpectedPrice,
+            SlippageDelta = request.SlippageDelta,
         };
 
         await publisher.PublishBetPlacedAsync(evt);

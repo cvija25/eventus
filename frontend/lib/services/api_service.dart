@@ -209,6 +209,8 @@ class ApiService {
     required String id,
     required int stake,
     required String outcome,
+    required double expectedPrice,
+    double? slippageDelta,
   }) async {
     final uri = Uri.parse(_accountUrl);
 
@@ -221,6 +223,8 @@ class ApiService {
               'eventId': id,
               'stake': stake,
               'outcome': outcome == 'Yes' ? 1 : 2,
+              'expectedPrice': expectedPrice,
+              if (slippageDelta != null) 'slippageDelta': slippageDelta,
             }),
           )
           .timeout(const Duration(seconds: 10));
@@ -279,6 +283,8 @@ class ApiService {
     required String eventId,
     required double shares,
     required String outcome,
+    required double expectedPrice,
+    double? slippageDelta,
   }) async {
     final uri = Uri.parse('http://$_host:$_gatewayPort/account/api/v1/account/sell-shares');
 
@@ -291,6 +297,8 @@ class ApiService {
               'eventId': eventId,
               'shares': shares,
               'outcome': outcome == 'Yes' ? 1 : 2,
+              'expectedPrice': expectedPrice,
+              if (slippageDelta != null) 'slippageDelta': slippageDelta,
             }),
           )
           .timeout(const Duration(seconds: 10));

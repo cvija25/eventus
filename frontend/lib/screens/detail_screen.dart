@@ -37,6 +37,7 @@ class _DetailScreenState extends State<DetailScreen> {
   String? _selectedOutcome;
   List<_EventHoldingSummary> _myHoldings = const [];
   bool _isResolving = false;
+  double _slippageTolerance = 0.05;
   StreamSubscription<Map<String, dynamic>>? _sseSub;
 
   List<PriceHistoryPoint> _priceHistory = [];
@@ -211,10 +212,14 @@ class _DetailScreenState extends State<DetailScreen> {
     }
 
     try {
+      final expectedPrice = outcome == MarketOutcome.yes ? _item.priceYes : _item.priceNo;
+
       await _api.sellShares(
         eventId: _item.id,
         shares: shares,
         outcome: outcome == MarketOutcome.yes ? 'Yes' : 'No',
+        expectedPrice: expectedPrice,
+        slippageDelta: _slippageTolerance,
       );
       controller.clear();
       await _loadMyEventHoldings();
@@ -253,10 +258,14 @@ class _DetailScreenState extends State<DetailScreen> {
       FocusScope.of(context).unfocus();
 
       try {
+        final expectedPrice = _selectedOutcome == 'Yes' ? _item.priceYes : _item.priceNo;
+
         await _api.createAccountStake(
           id: _item.id,
           stake: value,
           outcome: _selectedOutcome!,
+          expectedPrice: expectedPrice,
+          slippageDelta: _slippageTolerance,
         );
         await _refreshMarket();
         if (!context.mounted) return;
@@ -466,6 +475,12 @@ class _DetailScreenState extends State<DetailScreen> {
                 submittedValue: _submittedValue,
                 submitError: _submitError,
                 onSubmit: _submit,
+                slippageTolerance: _slippageTolerance,
+                onSlippageChanged: (value) {
+                  setState(() {
+                    _slippageTolerance = value;
+                  });
+                },
               ),
             const SizedBox(height: 12),
             _HoldingPanel(
@@ -825,6 +840,8 @@ class _TradePanel extends StatelessWidget {
   final int? submittedValue;
   final String? submitError;
   final VoidCallback onSubmit;
+  final double slippageTolerance;
+  final ValueChanged<double> onSlippageChanged;
 
   const _TradePanel({
     required this.formKey,
@@ -834,6 +851,8 @@ class _TradePanel extends StatelessWidget {
     required this.submittedValue,
     required this.submitError,
     required this.onSubmit,
+    required this.slippageTolerance,
+    required this.onSlippageChanged,
   });
 
   @override
@@ -897,6 +916,40 @@ class _TradePanel extends StatelessWidget {
                 }
                 return null;
               },
+            ),
+          ),
+          const SizedBox(height: 16),
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              const Text(
+                'Slippage Tolerance',
+                style: TextStyle(color: Colors.white70, fontSize: 14),
+              ),
+              Text(
+                '${(slippageTolerance * 100).toStringAsFixed(0)}%',
+                style: const TextStyle(
+                  color: Color(0xFF00A3FF),
+                  fontSize: 14,
+                  fontWeight: FontWeight.w700,
+                ),
+              ),
+            ],
+          ),
+          SliderTheme(
+            data: SliderTheme.of(context).copyWith(
+              trackHeight: 4,
+              thumbShape: const RoundSliderThumbShape(enabledThumbRadius: 6),
+              overlayShape: const RoundSliderOverlayShape(overlayRadius: 14),
+            ),
+            child: Slider(
+              value: slippageTolerance,
+              min: 0.01,
+              max: 0.25,
+              divisions: 24,
+              activeColor: const Color(0xFF00A3FF),
+              inactiveColor: const Color(0xFF1F2937),
+              onChanged: onSlippageChanged,
             ),
           ),
           const SizedBox(height: 12),
