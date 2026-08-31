@@ -20,7 +20,7 @@ public class AccountController(
     ILogger<AccountController> logger
 ) : ControllerBase
 {
-    [HttpPost("sell-shares")]
+    [HttpPost("sell")]
     [Authorize]
     public async Task<ActionResult<string>> PublishSellShares([FromBody] SellSharesRequest request)
     {

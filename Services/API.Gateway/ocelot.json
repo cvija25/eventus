@@ -44,9 +44,9 @@
       "DownstreamHostAndPorts": [ { "Host": "account", "Port": 8080 } ]
     },
     {
-      "UpstreamPathTemplate": "/api/v1/account/sell-shares",
+      "UpstreamPathTemplate": "/api/v1/account/sell",
       "UpstreamHttpMethod": [ "POST" ],
-      "DownstreamPathTemplate": "/api/v1/account/sell-shares",
+      "DownstreamPathTemplate": "/api/v1/account/sell",
       "DownstreamScheme": "http",
       "DownstreamHostAndPorts": [ { "Host": "account", "Port": 8080 } ]
     },

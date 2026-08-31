@@ -25,7 +25,7 @@ class ApiRoutes {
   static Uri get transactions => Uri.parse('$_base/account/transactions');
   static Uri get deposit => Uri.parse('$_base/account/deposit');
   static Uri get buy => Uri.parse('$_base/account/buy');
-  static Uri get sellShares => Uri.parse('$_base/account/sell-shares');
+  static Uri get sell => Uri.parse('$_base/account/sell');
 
   // Catalog
   static Uri get events => Uri.parse('$_base/events');

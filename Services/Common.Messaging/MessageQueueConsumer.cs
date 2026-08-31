@@ -63,10 +63,12 @@ public abstract class MessageQueueConsumer(
         };
 
         var connection = await factory.CreateConnectionAsync(stoppingToken);
-        var channel = await connection.CreateChannelAsync(cancellationToken: stoppingToken);
+        IChannel? channel = null;
 
         try
         {
+            channel = await connection.CreateChannelAsync(cancellationToken: stoppingToken);
+
             await channel.BasicQosAsync(0, 10, false, stoppingToken);
 
             await channel.QueueDeclareAsync(
@@ -106,20 +108,23 @@ public abstract class MessageQueueConsumer(
         }
     }
 
-    private async Task CloseQuietlyAsync(IChannel channel, IConnection connection)
+    private async Task CloseQuietlyAsync(IChannel? channel, IConnection connection)
     {
-        try
+        if (channel is not null)
         {
-            if (channel.IsOpen)
-                await channel.CloseAsync();
-        }
-        catch (Exception ex)
-        {
-            logger.LogDebug(ex, "Ignoring error while closing the RabbitMQ channel.");
-        }
-        finally
-        {
-            await channel.DisposeAsync();
+            try
+            {
+                if (channel.IsOpen)
+                    await channel.CloseAsync();
+            }
+            catch (Exception ex)
+            {
+                logger.LogDebug(ex, "Ignoring error while closing the RabbitMQ channel.");
+            }
+            finally
+            {
+                await channel.DisposeAsync();
+            }
         }
 
         try

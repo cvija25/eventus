@@ -325,7 +325,7 @@ class ApiService {
     required double expectedPrice,
     double? slippageDelta,
   }) async {
-    final uri = ApiRoutes.sellShares;
+    final uri = ApiRoutes.sell;
 
     try {
       final response = await http
