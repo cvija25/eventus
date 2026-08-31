@@ -87,9 +87,19 @@ public class GameCommandHandler(
         var poolNo = decimal.Parse(market.PoolNo, CultureInfo.InvariantCulture);
         var pot = decimal.Parse(market.Pot, CultureInfo.InvariantCulture);
 
-        var sellPrice = CalculatePayout(poolYes, poolNo, sellShares.Shares);
-        poolYes += sellShares.Shares - sellPrice;
-        poolNo -= sellPrice;
+        var sellPrice = CalculatePayout(poolYes, poolNo, sellShares.Shares, sellShares.Outcome);
+
+        if (sellShares.Outcome == MarketOutcome.Yes)
+        {
+            poolYes += sellShares.Shares - sellPrice;
+            poolNo -= sellPrice;
+        }
+        else
+        {
+            poolNo += sellShares.Shares - sellPrice;
+            poolYes -= sellPrice;
+        }
+
         pot -= sellPrice;
 
         var updateResult = await catalogGrpcClient.UpdateEventPriceAsync(
@@ -125,10 +135,22 @@ public class GameCommandHandler(
         await commandApprovedPublisher.PublishSellSharesApprovedAsync(approvedEvent);
     }
 
-    private decimal CalculatePayout(decimal reserveYes, decimal reserveNo, decimal sharesAmount)
+    
+    private decimal CalculatePayout(decimal poolYes, decimal poolNo, decimal sharesAmount, MarketOutcome outcome)
     {
-        var sum = reserveYes + reserveNo + sharesAmount;
-        var discriminant = sum * sum - 4 * sharesAmount * reserveNo;
+        // reserveIn = pool the sold shares are returned to
+        // reserveOut = pool the payout is drawn from
+        var (reserveIn, reserveOut) = outcome == MarketOutcome.Yes
+            ? (poolYes, poolNo)
+            : (poolNo, poolYes);
+
+        var sum = reserveIn + reserveOut + sharesAmount;
+        var discriminant = sum * sum - 4 * sharesAmount * reserveOut;
+
+        if (discriminant < 0)
+            throw new InvalidOperationException(
+                $"CPMM sell payout discriminant negative (sum={sum}, shares={sharesAmount}, reserveOut={reserveOut}); pools may be too small for this sell size.");
+
         var x = (sum - (decimal)Math.Sqrt((double)discriminant)) / 2;
 
         return x;
