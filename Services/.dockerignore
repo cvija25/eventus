@@ -1,5 +1,6 @@
 ﻿**/.dockerignore
 **/.env
+**/.env.example
 **/.git
 **/.gitignore
 **/.project
@@ -15,6 +16,8 @@
 **/bin
 **/charts
 **/docker-compose*
+**/compose*.yaml
+**/compose*.yml
 **/Dockerfile*
 **/Generated
 **/node_modules

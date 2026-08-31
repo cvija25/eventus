@@ -16,3 +16,6 @@ obj/
 
 Services/Contracts/Generated/
 TestResults/
+
+.env
+!.env.example

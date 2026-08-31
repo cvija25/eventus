@@ -1,4 +1,3 @@
-using System.Text;
 using Account.Consumers;
 using Account.Data;
 using Account.Mappings;
@@ -6,9 +5,7 @@ using Account.Publishers;
 using Account.Repositories;
 using Common.Messaging;
 using Common.Web;
-using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.EntityFrameworkCore;
-using Microsoft.IdentityModel.Tokens;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -25,7 +22,7 @@ builder.Services.AddCurrentUser();
 builder.Services.AddHostedService<CommandApprovedConsumer>();
 builder.Services.AddHostedService<EventResolvedEventConsumer>();
 builder.Services.AddSingleton<IGameCommandPublisher, GameCommandPublisher>();
-builder.Services.Configure<RabbitMqOptions>(builder.Configuration.GetSection("RabbitMq"));
+builder.Services.AddRabbitMqOptions(builder.Configuration);
 
 builder.Services.AddDbContext<AccountDbContext>(opt =>
     opt.UseNpgsql(
@@ -39,26 +36,7 @@ builder.Services.AddScoped<ICommandApprovedHandler, CommandApprovedHandler>();
 builder.Services.AddScoped<IEventResolvedHandler, EventResolvedHandler>();
 builder.Services.AddAutoMapper(cfg => cfg.AddProfile<TransactionMappingProfile>());
 
-builder
-    .Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
-    .AddJwtBearer(options =>
-    {
-        options.MapInboundClaims = false;
-        options.TokenValidationParameters = new TokenValidationParameters
-        {
-            ValidateIssuerSigningKey = true,
-            IssuerSigningKey = new SymmetricSecurityKey(
-                Encoding.UTF8.GetBytes(builder.Configuration["Jwt:Secret"]!)
-            ),
-            ValidateIssuer = true,
-            ValidIssuer = builder.Configuration["Jwt:Issuer"],
-            ValidateAudience = true,
-            ValidAudience = builder.Configuration["Jwt:Audience"],
-            ValidateLifetime = true,
-            ClockSkew = TimeSpan.Zero,
-        };
-    });
-builder.Services.AddAuthorization();
+builder.Services.AddEventusJwtAuth(builder.Configuration);
 
 var app = builder.Build();
 

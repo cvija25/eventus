@@ -1,3 +1,4 @@
+using Common.Web;
 using Identity.API.Entities;
 using Identity.API.Mappings;
 using Identity.API.Repositories;
@@ -14,7 +15,7 @@ public static class ServiceCollectionExtensions
         IConfiguration configuration
     )
     {
-        var client = new MongoClient(configuration.GetConnectionString("IdentityDb"));
+        var client = new MongoClient(configuration.Require("ConnectionStrings:IdentityDb"));
         var database = client.GetDatabase("eventus_identity");
         var users = database.GetCollection<User>("users");
 
