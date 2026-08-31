@@ -7,7 +7,7 @@ var builder = WebApplication.CreateBuilder(args);
 
 builder.Services.AddControllers();
 builder.Services.AddHostedService<GameCommandConsumer>();
-builder.Services.Configure<RabbitMqOptions>(builder.Configuration.GetSection("RabbitMq"));
+builder.Services.AddRabbitMqOptions(builder.Configuration);
 builder.Services.AddGrpcClient<Catalog.GRPC.Catalog.CatalogClient>(o =>
 {
     o.Address = new Uri(builder.Configuration["GrpcSettings:CatalogUrl"]!);

@@ -1,13 +1,9 @@
-using System.Text;
 using Catalog.API.Consumers;
 using Catalog.API.Publishers;
 using Catalog.API.Services;
 using Catalog.Common.Extensions;
 using Common.Messaging;
 using Common.Web;
-using Contracts.Messaging;
-using Microsoft.AspNetCore.Authentication.JwtBearer;
-using Microsoft.IdentityModel.Tokens;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -24,32 +20,13 @@ builder.Services.AddControllers();
 builder.Services.AddCurrentUser();
 builder.Services.AddCatalogCommon(builder.Configuration);
 builder.Services.AddHostedService<PriceUpdateConsumer>();
-builder.Services.Configure<KafkaOptions>(builder.Configuration.GetSection("Kafka"));
+builder.Services.AddKafkaOptions(builder.Configuration);
 builder.Services.AddSingleton<ISseBroadcaster, SseBroadcaster>();
 builder.Services.AddSingleton<IEventResolvedPublisher, EventResolvedPublisher>();
 builder.Services.AddScoped<IPriceUpdateHandler, PriceUpdateHandler>();
-builder.Services.Configure<RabbitMqOptions>(builder.Configuration.GetSection("RabbitMq"));
+builder.Services.AddRabbitMqOptions(builder.Configuration);
 
-builder
-    .Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
-    .AddJwtBearer(options =>
-    {
-        options.MapInboundClaims = false;
-        options.TokenValidationParameters = new TokenValidationParameters
-        {
-            ValidateIssuerSigningKey = true,
-            IssuerSigningKey = new SymmetricSecurityKey(
-                Encoding.UTF8.GetBytes(builder.Configuration["Jwt:Secret"]!)
-            ),
-            ValidateIssuer = true,
-            ValidIssuer = builder.Configuration["Jwt:Issuer"],
-            ValidateAudience = true,
-            ValidAudience = builder.Configuration["Jwt:Audience"],
-            ValidateLifetime = true,
-            ClockSkew = TimeSpan.Zero,
-        };
-    });
-builder.Services.AddAuthorization();
+builder.Services.AddEventusJwtAuth(builder.Configuration);
 
 var app = builder.Build();
 await app.MigrateCatalogDatabase();

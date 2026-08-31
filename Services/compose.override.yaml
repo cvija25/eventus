@@ -1,0 +1,210 @@
+x-jwt: &jwt
+  Jwt__Secret: ${JWT_SECRET:-eventus-local-development-secret-key-not-for-real-use}
+  Jwt__Issuer: ${JWT_ISSUER:-eventus-identity}
+  Jwt__Audience: ${JWT_AUDIENCE:-eventus-services}
+
+x-rabbitmq: &rabbitmq
+  RabbitMq__HostName: rabbitmq
+  RabbitMq__Port: "5672"
+  RabbitMq__UserName: ${RABBITMQ_USER:-guest}
+  RabbitMq__Password: ${RABBITMQ_PASSWORD:-guest}
+  RabbitMq__VirtualHost: "/"
+
+x-kafka: &kafka
+  Kafka__BootstrapServers: kafka:29092
+  Kafka__PriceUpdateTopic: price-update
+
+services:
+  account-db:
+    container_name: account-db
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER:-postgres}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-postgres}
+      POSTGRES_DB: eventus_account
+    ports:
+      - "5433:5432"
+    volumes:
+      - account-db_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-postgres}"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+  catalog-db:
+    container_name: catalog-db
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER:-postgres}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-postgres}
+      POSTGRES_DB: eventus_catalog
+    ports:
+      - "5432:5432"
+    volumes:
+      - catalog-db_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-postgres}"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+  identity-db:
+    container_name: identity-db
+    restart: unless-stopped
+    ports:
+      - "27017:27017"
+    volumes:
+      - identity-db_data:/data/db
+    healthcheck:
+      test: ["CMD", "mongosh", "--quiet", "--eval", "db.adminCommand('ping')"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  rabbitmq:
+    container_name: rabbitmq
+    restart: unless-stopped
+    environment:
+      RABBITMQ_DEFAULT_USER: ${RABBITMQ_USER:-guest}
+      RABBITMQ_DEFAULT_PASS: ${RABBITMQ_PASSWORD:-guest}
+    ports:
+      - "5672:5672"
+      - "15672:15672"
+    volumes:
+      - rabbitmq_data:/var/lib/rabbitmq
+    healthcheck:
+      test: ["CMD", "rabbitmq-diagnostics", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  kafka:
+    container_name: kafka
+    restart: unless-stopped
+    environment:
+      KAFKA_NODE_ID: 1
+      KAFKA_PROCESS_ROLES: broker,controller
+      KAFKA_LISTENERS: PLAINTEXT://:29092,CONTROLLER://:29093,PLAINTEXT_HOST://:9092
+      KAFKA_ADVERTISED_LISTENERS: PLAINTEXT://kafka:29092,PLAINTEXT_HOST://localhost:9092
+      KAFKA_CONTROLLER_LISTENER_NAMES: CONTROLLER
+      KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: CONTROLLER:PLAINTEXT,PLAINTEXT:PLAINTEXT,PLAINTEXT_HOST:PLAINTEXT
+      KAFKA_CONTROLLER_QUORUM_VOTERS: 1@kafka:29093
+      KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 1
+      KAFKA_TRANSACTION_STATE_LOG_REPLICATION_FACTOR: 1
+      KAFKA_TRANSACTION_STATE_LOG_MIN_ISR: 1
+      CLUSTER_ID: "MkU3OEVBNTcwNTJENDM2Qk"
+    ports:
+      - "9092:9092"
+    volumes:
+      - kafka_data:/var/lib/kafka/data
+    healthcheck:
+      test: ["CMD", "/opt/kafka/bin/kafka-broker-api-versions.sh", "--bootstrap-server", "localhost:9092"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  pgadmin:
+    container_name: pgadmin
+    restart: unless-stopped
+    environment:
+      PGADMIN_DEFAULT_EMAIL: ${PGADMIN_EMAIL:-admin@admin.com}
+      PGADMIN_DEFAULT_PASSWORD: ${PGADMIN_PASSWORD:-admin}
+    ports:
+      - "5050:80"
+    volumes:
+      - pgadmin_data:/var/lib/pgadmin
+    depends_on:
+      - catalog-db
+      - account-db
+
+  account:
+    container_name: account
+    restart: unless-stopped
+    environment:
+      <<: [*jwt, *rabbitmq]
+      ConnectionStrings__AccountDb: Host=account-db;Port=5432;Database=eventus_account;Username=${POSTGRES_USER:-postgres};Password=${POSTGRES_PASSWORD:-postgres}
+    ports:
+      - "8080:8080"
+    depends_on:
+      account-db:
+        condition: service_healthy
+      rabbitmq:
+        condition: service_healthy
+      game:
+        condition: service_started
+
+  catalog.api:
+    container_name: catalog.api
+    restart: unless-stopped
+    environment:
+      <<: [*jwt, *rabbitmq, *kafka]
+      ConnectionStrings__CatalogDb: Host=catalog-db;Port=5432;Database=eventus_catalog;Username=${POSTGRES_USER:-postgres};Password=${POSTGRES_PASSWORD:-postgres}
+    ports:
+      - "8081:8080"
+    depends_on:
+      catalog-db:
+        condition: service_healthy
+      rabbitmq:
+        condition: service_healthy
+      kafka:
+        condition: service_healthy
+
+  catalog.grpc:
+    container_name: catalog.grpc
+    restart: unless-stopped
+    environment:
+      <<: [*rabbitmq, *kafka]
+      ConnectionStrings__CatalogDb: Host=catalog-db;Port=5432;Database=eventus_catalog;Username=${POSTGRES_USER:-postgres};Password=${POSTGRES_PASSWORD:-postgres}
+    ports:
+      - "8083:8080"
+    depends_on:
+      catalog-db:
+        condition: service_healthy
+      kafka:
+        condition: service_healthy
+
+  game:
+    container_name: game
+    restart: unless-stopped
+    environment:
+      <<: *rabbitmq
+      GrpcSettings__CatalogUrl: http://catalog.grpc:8080
+    ports:
+      - "8082:8080"
+    depends_on:
+      rabbitmq:
+        condition: service_healthy
+      catalog.grpc:
+        condition: service_started
+
+  identity.api:
+    container_name: identity.api
+    restart: unless-stopped
+    environment:
+      <<: *jwt
+      Jwt__ExpiryMinutes: "60"
+      ConnectionStrings__IdentityDb: mongodb://identity-db:27017
+      ApiEndpoints__Account: http://account:8080/api/v1/account/
+    ports:
+      - "8084:8080"
+    depends_on:
+      identity-db:
+        condition: service_healthy
+      account:
+        condition: service_started
+
+  api.gateway:
+    container_name: api.gateway
+    restart: unless-stopped
+    ports:
+      - "1234:8080"
+    depends_on:
+      account:
+        condition: service_started
+      game:
+        condition: service_started
+      catalog.api:
+        condition: service_started
+      identity.api:
+        condition: service_started
