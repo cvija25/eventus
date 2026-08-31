@@ -1,55 +1,92 @@
 {
   "Routes": [
     {
-      "UpstreamPathTemplate": "/account/{everything}",
-      "UpstreamHttpMethod": [
-        "GET",
-        "POST",
-        "PUT",
-        "DELETE"
-      ],
-      "DownstreamPathTemplate": "/{everything}",
+      "UpstreamPathTemplate": "/api/v1/identity/register",
+      "UpstreamHttpMethod": [ "POST" ],
+      "DownstreamPathTemplate": "/api/v1/identity/register",
       "DownstreamScheme": "http",
-      "DownstreamHostAndPorts": [
-        {
-          "Host": "account",
-          "Port": 8080
-        }
-      ]
+      "DownstreamHostAndPorts": [ { "Host": "identity.api", "Port": 8080 } ]
     },
     {
-      "UpstreamPathTemplate": "/catalog/{everything}",
-      "UpstreamHttpMethod": [
-        "GET",
-        "POST",
-        "PUT",
-        "DELETE"
-      ],
-      "DownstreamPathTemplate": "/{everything}",
+      "UpstreamPathTemplate": "/api/v1/identity/login",
+      "UpstreamHttpMethod": [ "POST" ],
+      "DownstreamPathTemplate": "/api/v1/identity/login",
       "DownstreamScheme": "http",
-      "DownstreamHostAndPorts": [
-        {
-          "Host": "catalog.api",
-          "Port": 8080
-        }
-      ]
+      "DownstreamHostAndPorts": [ { "Host": "identity.api", "Port": 8080 } ]
+    },
+
+    {
+      "UpstreamPathTemplate": "/api/v1/account/balance",
+      "UpstreamHttpMethod": [ "GET" ],
+      "DownstreamPathTemplate": "/api/v1/account/balance",
+      "DownstreamScheme": "http",
+      "DownstreamHostAndPorts": [ { "Host": "account", "Port": 8080 } ]
     },
     {
-      "UpstreamPathTemplate": "/identity/{everything}",
-      "UpstreamHttpMethod": [
-        "GET",
-        "POST",
-        "PUT",
-        "DELETE"
-      ],
-      "DownstreamPathTemplate": "/{everything}",
+      "UpstreamPathTemplate": "/api/v1/account/transactions",
+      "UpstreamHttpMethod": [ "GET" ],
+      "DownstreamPathTemplate": "/api/v1/account/transactions",
       "DownstreamScheme": "http",
-      "DownstreamHostAndPorts": [
-        {
-          "Host": "identity.api",
-          "Port": 8080
-        }
-      ]
+      "DownstreamHostAndPorts": [ { "Host": "account", "Port": 8080 } ]
+    },
+    {
+      "UpstreamPathTemplate": "/api/v1/account/deposit",
+      "UpstreamHttpMethod": [ "POST" ],
+      "DownstreamPathTemplate": "/api/v1/account/deposit",
+      "DownstreamScheme": "http",
+      "DownstreamHostAndPorts": [ { "Host": "account", "Port": 8080 } ]
+    },
+    {
+      "UpstreamPathTemplate": "/api/v1/account/buy",
+      "UpstreamHttpMethod": [ "POST" ],
+      "DownstreamPathTemplate": "/api/v1/account/buy",
+      "DownstreamScheme": "http",
+      "DownstreamHostAndPorts": [ { "Host": "account", "Port": 8080 } ]
+    },
+    {
+      "UpstreamPathTemplate": "/api/v1/account/sell-shares",
+      "UpstreamHttpMethod": [ "POST" ],
+      "DownstreamPathTemplate": "/api/v1/account/sell-shares",
+      "DownstreamScheme": "http",
+      "DownstreamHostAndPorts": [ { "Host": "account", "Port": 8080 } ]
+    },
+
+    {
+      "UpstreamPathTemplate": "/api/v1/events",
+      "UpstreamHttpMethod": [ "GET", "POST" ],
+      "DownstreamPathTemplate": "/api/v1/events",
+      "DownstreamScheme": "http",
+      "DownstreamHostAndPorts": [ { "Host": "catalog.api", "Port": 8080 } ]
+    },
+    {
+      "UpstreamPathTemplate": "/api/v1/events/stream",
+      "UpstreamHttpMethod": [ "GET" ],
+      "DownstreamPathTemplate": "/api/v1/events/stream",
+      "DownstreamScheme": "http",
+      "DownstreamHostAndPorts": [ { "Host": "catalog.api", "Port": 8080 } ]
+    },
+    {
+      "UpstreamPathTemplate": "/api/v1/events/resolve",
+      "UpstreamHttpMethod": [ "POST" ],
+      "DownstreamPathTemplate": "/api/v1/events/resolve",
+      "DownstreamScheme": "http",
+      "DownstreamHostAndPorts": [ { "Host": "catalog.api", "Port": 8080 } ]
+    },
+    {
+      "UpstreamPathTemplate": "/api/v1/events/{id}/history",
+      "UpstreamHttpMethod": [ "GET" ],
+      "DownstreamPathTemplate": "/api/v1/events/{id}/history",
+      "DownstreamScheme": "http",
+      "DownstreamHostAndPorts": [ { "Host": "catalog.api", "Port": 8080 } ],
+      "Priority": 0
+    },
+    {
+      "UpstreamPathTemplate": "/api/v1/events/{id}",
+      "UpstreamHttpMethod": [ "GET" ],
+      "DownstreamPathTemplate": "/api/v1/events/{id}",
+      "DownstreamScheme": "http",
+      "DownstreamHostAndPorts": [ { "Host": "catalog.api", "Port": 8080 } ],
+      "Priority": 0
     }
   ],
   "GlobalConfiguration": {

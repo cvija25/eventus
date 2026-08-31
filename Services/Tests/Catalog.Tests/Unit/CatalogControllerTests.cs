@@ -91,7 +91,7 @@ public class CatalogControllerTests
         var result = await _controller.CreateEvent(new CreateEventDto("Will it rain?"));
 
         var response = Assert.IsType<CreatedResult>(result.Result);
-        Assert.Equal($"/api/v1/catalog/events/{created.Id}", response.Location);
+        Assert.Equal($"/api/v1/events/{created.Id}", response.Location);
         Assert.Same(created, response.Value);
     }
 

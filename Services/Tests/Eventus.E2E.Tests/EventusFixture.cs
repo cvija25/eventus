@@ -161,7 +161,9 @@ public sealed class EventusFixture : IAsyncLifetime
         var accountApi = Start<global::Account.Controllers.AccountController>();
         AccountApi = accountApi.CreateClient();
 
-        Start<global::Game.Controllers.GameController>(services =>
+        // Game serves no HTTP; the entry-point type only tells WebApplicationFactory which
+        // assembly to boot, so its RabbitMQ consumer runs against the real broker.
+        Start<global::Game.Consumers.GameCommandConsumer>(services =>
             services.AddSingleton(new global::Catalog.GRPC.Catalog.CatalogClient(_catalogChannel))
         );
 

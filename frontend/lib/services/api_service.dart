@@ -4,22 +4,10 @@ import 'package:flutter/foundation.dart';
 import 'package:http/http.dart' as http;
 import '../models/item.dart';
 import '../models/price_history_point.dart';
+import 'api_routes.dart';
 import 'auth_service.dart';
 
 class ApiService {
-  static String get _host =>
-      !kIsWeb && defaultTargetPlatform == TargetPlatform.android
-          ? '10.0.2.2'
-          : 'localhost';
-
-  static const int _gatewayPort = 1234;
-
-  static String get _catalogUrl =>
-      'http://$_host:$_gatewayPort/catalog/api/v1/catalog/events';
-
-  static String get _identityUrl =>
-      'http://$_host:$_gatewayPort/identity/api/v1/identity';
-
   Map<String, String> get _authHeaders {
     final token = AuthService.instance.token;
     return {
@@ -28,12 +16,8 @@ class ApiService {
     };
   }
 
-    static String get _accountUrl =>
-      'http://$_host:$_gatewayPort/account/api/v1/account/buy';
-  static String get _depositUrl =>
-      'http://$_host:$_gatewayPort/account/api/v1/account/deposit';
   Future<List<Item>> fetchItems() async {
-    final uri = Uri.parse(_catalogUrl);
+    final uri = ApiRoutes.events;
 
     try {
       final response = await http.get(uri).timeout(const Duration(seconds: 10));
@@ -68,7 +52,7 @@ class ApiService {
   }
 
   Future<List<PriceHistoryPoint>> fetchPriceHistory(String eventId) async {
-  final uri = Uri.parse('$_catalogUrl/history/$eventId');
+  final uri = ApiRoutes.eventHistory(eventId);
 
   try {
     final response = await http.get(uri).timeout(const Duration(seconds: 10));
@@ -102,7 +86,7 @@ class ApiService {
 }
 
   Future<Item> fetchItem(String id) async {
-    final uri = Uri.parse('$_catalogUrl/$id');
+    final uri = ApiRoutes.event(id);
 
     try {
       final response = await http.get(uri).timeout(const Duration(seconds: 10));
@@ -168,7 +152,7 @@ class ApiService {
   }
 
   Future<Item> createEvent({required String title}) async {
-    final uri = Uri.parse(_catalogUrl);
+    final uri = ApiRoutes.events;
 
     try {
       final response = await http
@@ -213,7 +197,7 @@ class ApiService {
     required String id,
     required int outcome,
   }) async {
-    final uri = Uri.parse('$_catalogUrl/resolve');
+    final uri = ApiRoutes.resolveEvent;
 
     try {
       final response = await http
@@ -254,7 +238,7 @@ class ApiService {
     double? slippageDelta,
     double? spotPriceWindow,
   }) async {
-    final uri = Uri.parse(_accountUrl);
+    final uri = ApiRoutes.buy;
 
     try {
       final response = await http
@@ -304,7 +288,7 @@ class ApiService {
   Future<void> depositToAccount({
     required double amount,
   }) async {
-    final uri = Uri.parse(_depositUrl);
+    final uri = ApiRoutes.deposit;
 
     try {
       final response = await http
@@ -341,7 +325,7 @@ class ApiService {
     required double expectedPrice,
     double? slippageDelta,
   }) async {
-    final uri = Uri.parse('http://$_host:$_gatewayPort/account/api/v1/account/sell-shares');
+    final uri = ApiRoutes.sellShares;
 
     try {
       final response = await http
@@ -378,8 +362,7 @@ class ApiService {
   }
 
   Future<double> fetchBalance() async {
-    final uri =
-        Uri.parse('http://$_host:$_gatewayPort/account/api/v1/account/balance');
+    final uri = ApiRoutes.balance;
 
     try {
       final response = await http
@@ -437,8 +420,7 @@ class ApiService {
   }
 
   Future<List<Map<String, dynamic>>> fetchTransactions() async {
-    final uri = Uri.parse(
-        'http://$_host:$_gatewayPort/account/api/v1/account/transactions');
+    final uri = ApiRoutes.transactions;
 
     try {
       final response = await http
@@ -483,7 +465,7 @@ class ApiService {
     required String password,
     required bool isAdmin,
   }) async {
-    final uri = Uri.parse('$_identityUrl/register');
+    final uri = ApiRoutes.register;
 
     try {
       final response = await http
@@ -524,7 +506,7 @@ class ApiService {
     required String email,
     required String password,
   }) async {
-    final uri = Uri.parse('$_identityUrl/login');
+    final uri = ApiRoutes.login;
 
     try {
       final response = await http

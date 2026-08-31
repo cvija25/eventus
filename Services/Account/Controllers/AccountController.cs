@@ -20,11 +20,6 @@ public class AccountController(
     ILogger<AccountController> logger
 ) : ControllerBase
 {
-    [HttpGet]
-    public ActionResult<string> GetGreeting()
-    {
-        return Ok("Hello World, from Account!");
-    }
 
     [HttpPost("sell-shares")]
     [Authorize]

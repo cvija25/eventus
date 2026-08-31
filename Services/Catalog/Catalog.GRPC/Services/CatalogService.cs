@@ -50,8 +50,7 @@ public class CatalogService(
             return new UpdateEventPriceResponse { Success = false };
         }
 
-        // Broadcast the persisted pools, not the request: a partial update leaves the
-        // untouched pools at their stored values.
+
         if (updated.PoolYes + updated.PoolNo == 0m)
         {
             logger.LogWarning(
