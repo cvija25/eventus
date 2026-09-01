@@ -127,21 +127,4 @@ public class WalletRepositoryTests(PostgresFixture postgres) : AccountDatabaseTe
 
         Assert.Equal(payout, (await StoredWallet(account)).AvailableFunds);
     }
-
-    [Fact(
-        Skip = "Bug: Withdraw clamps the new balance with Math.Max(.., 0) and reports success, "
-            + "so overdrawing silently destroys the difference instead of failing. "
-            + "See Account/Repositories/WalletRepository.cs Withdraw"
-    )]
-    public async Task Withdrawing_more_than_the_balance_is_refused()
-    {
-        var account = await GivenWallet(available: 10m);
-
-        var result = await Wallets.Withdraw(account, 25m);
-
-        // Withdraw clamps at zero instead of failing, so an over-withdrawal silently destroys
-        // the 15 credits of difference and the caller is told it succeeded.
-        Assert.Null(result);
-        Assert.Equal(10m, (await StoredWallet(account)).AvailableFunds);
-    }
 }

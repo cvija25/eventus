@@ -51,7 +51,7 @@ public class CommandApprovedHandler(
         await using var transaction = await dbContext.Database.BeginTransactionAsync(ct);
         try
         {
-            await walletRepository.Deposit(evt.AccId, evt.SellPrice * evt.ShareAmount);
+            await walletRepository.Deposit(evt.AccId, evt.SellPrice);
             await transactionRepository.CreateTransaction(
                 new TransactionDTO(
                     evt.EventId,

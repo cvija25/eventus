@@ -133,11 +133,7 @@ public class CommandApprovedHandlerTests(PostgresFixture postgres) : AccountData
         Assert.Empty(await StoredTransactions(account));
     }
 
-    [Fact(
-        Skip = "Bug: the deposit is SellPrice * ShareAmount, but Game's CalculatePayout "
-            + "already returns the payout for the entire lot, so the credit is multiplied by the "
-            + "share count. See Account/Consumers/CommandApprovedHandler.cs ProcessSaleAsync"
-    )]
+    [Fact]
     public async Task An_approved_sale_credits_the_payout_game_calculated()
     {
         var account = await GivenWallet(available: 100m);
