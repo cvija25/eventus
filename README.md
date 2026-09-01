@@ -129,3 +129,9 @@ The same path in raw HTTP calls, all through the API Gateway at
 - [docs/sell-flow.md](docs/sell-flow.md) — the sell flow, step by step.
 - [docs/resolve-flow.md](docs/resolve-flow.md) — the resolve flow, step by
   step.
+
+## Contributors
+
+Lazar Cvijić
+Đorđe Marić
+Boško Andrić
