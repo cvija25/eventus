@@ -215,7 +215,6 @@ class _DetailScreenState extends State<DetailScreen> {
         shares: shares,
         outcome: outcome == MarketOutcome.yes ? 'Yes' : 'No',
         expectedPrice: expectedPrice,
-        slippageDelta: _slippageTolerance,
       );
       controller.clear();
       await _loadMyEventHoldings();
