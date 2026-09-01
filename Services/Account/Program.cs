@@ -9,14 +9,6 @@ using Microsoft.EntityFrameworkCore;
 
 var builder = WebApplication.CreateBuilder(args);
 
-builder.Services.AddCors(options =>
-{
-    options.AddPolicy(
-        "Frontend",
-        policy => policy.AllowAnyOrigin().AllowAnyHeader().AllowAnyMethod()
-    );
-});
-
 builder.Services.AddControllers();
 builder.Services.AddCurrentUser();
 builder.Services.AddHostedService<CommandApprovedConsumer>();
@@ -50,14 +42,6 @@ using (var scope = app.Services.CreateScope())
 if (app.Environment.IsDevelopment())
     app.MapOpenApi();
 
-app.MapGet(
-    "/",
-    () =>
-    {
-        return "Hello world!";
-    }
-);
-app.UseCors("Frontend");
 app.UseAuthentication();
 app.UseAuthorization();
 app.MapControllers();

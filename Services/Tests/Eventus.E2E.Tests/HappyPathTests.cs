@@ -64,7 +64,7 @@ public class HappyPathTests(EventusFixture system) : IClassFixture<EventusFixtur
         // 3. The token minted by Identity is accepted by Catalog, and the market opens balanced.
         var market = await ReadJson(
             await system.Catalog.PostAsJsonAsync(
-                "/api/v1/catalog/events",
+                "/api/v1/events",
                 new { title = "Will it rain tomorrow?" }
             )
         );
@@ -125,9 +125,7 @@ public class HappyPathTests(EventusFixture system) : IClassFixture<EventusFixtur
         Assert.Equal(90m, afterTrade.GetProperty("amount").GetDecimal());
 
         // 8. And the market moved: the pot grew by the stake and Yes got more expensive.
-        var traded = await ReadJson(
-            await system.Catalog.GetAsync($"/api/v1/catalog/events/{eventId}")
-        );
+        var traded = await ReadJson(await system.Catalog.GetAsync($"/api/v1/events/{eventId}"));
         Assert.Equal(11m, traded.GetProperty("pot").GetDecimal());
         Assert.Equal(11m, traded.GetProperty("poolNo").GetDecimal());
         Assert.Equal(1m / 11m, traded.GetProperty("poolYes").GetDecimal(), precision: 10);

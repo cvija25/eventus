@@ -1,7 +1,7 @@
 import 'dart:async';
 import 'dart:convert';
-import 'package:flutter/foundation.dart';
 import 'package:http/http.dart' as http;
+import 'api_routes.dart';
 
 class SseService {
   SseService._internal();
@@ -14,22 +14,13 @@ class SseService {
 
   Stream<Map<String, dynamic>> get priceStream => _controller.stream;
 
-  String get _host =>
-      !kIsWeb && defaultTargetPlatform == TargetPlatform.android
-          ? '10.0.2.2'
-          : 'localhost';
-
-  int get _gatewayPort => 1234;
-
-  Uri get _sseUri => Uri.parse('http://$_host:$_gatewayPort/catalog/api/v1/catalog/events/stream');
-
   Future<void> connect() async {
     if (_client != null) return;
 
     _client = http.Client();
 
     try {
-      final req = http.Request('GET', _sseUri);
+      final req = http.Request('GET', ApiRoutes.priceStream);
       final streamed = await _client!.send(req);
 
       if (streamed.statusCode != 200) {

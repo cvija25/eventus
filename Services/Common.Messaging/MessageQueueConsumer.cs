@@ -17,8 +17,6 @@ public abstract class MessageQueueConsumer(
     IOptions<RabbitMqOptions> rabbitOptions
 ) : BackgroundService
 {
-    private IChannel? _channel;
-    private IConnection? _connection;
     protected abstract string QueueName { get; }
     protected abstract Task HandleAsync(
         MessageEnvelope envelope,
@@ -33,10 +31,21 @@ public abstract class MessageQueueConsumer(
             {
                 await StartConsumingAsync(stoppingToken);
             }
+            catch (OperationCanceledException) when (stoppingToken.IsCancellationRequested)
+            {
+                break;
+            }
             catch (Exception ex) when (!stoppingToken.IsCancellationRequested)
             {
                 logger.LogError(ex, "RabbitMQ consumer failed. Retrying in 5s...");
-                await Task.Delay(TimeSpan.FromSeconds(5), stoppingToken);
+                try
+                {
+                    await Task.Delay(TimeSpan.FromSeconds(5), stoppingToken);
+                }
+                catch (OperationCanceledException)
+                {
+                    break;
+                }
             }
     }
 
@@ -53,42 +62,90 @@ public abstract class MessageQueueConsumer(
             VirtualHost = options.VirtualHost,
         };
 
-        _connection = await factory.CreateConnectionAsync(stoppingToken);
-        _channel = await _connection.CreateChannelAsync(cancellationToken: stoppingToken);
+        var connection = await factory.CreateConnectionAsync(stoppingToken);
+        IChannel? channel = null;
 
-        await _channel.BasicQosAsync(0, 10, false, stoppingToken);
-
-        await _channel.QueueDeclareAsync(
-            QueueName,
-            true,
-            false,
-            false,
-            cancellationToken: stoppingToken
-        );
-
-        var consumer = new AsyncEventingBasicConsumer(_channel);
-        consumer.ReceivedAsync += OnMessageReceivedAsync;
-
-        await _channel.BasicConsumeAsync(QueueName, false, consumer, stoppingToken);
-
-        logger.LogInformation("RabbitMQ consumer started.");
-
-        var tcs = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
-
-        _connection.ConnectionShutdownAsync += (_, args) =>
+        try
         {
-            logger.LogWarning("RabbitMQ connection lost: {Reason}", args.ReplyText);
-            tcs.TrySetResult();
-            return Task.CompletedTask;
-        };
+            channel = await connection.CreateChannelAsync(cancellationToken: stoppingToken);
 
-        stoppingToken.Register(() => tcs.TrySetResult());
+            await channel.BasicQosAsync(0, 10, false, stoppingToken);
 
-        await tcs.Task;
+            await channel.QueueDeclareAsync(
+                QueueName,
+                true,
+                false,
+                false,
+                cancellationToken: stoppingToken
+            );
+
+            var consumer = new AsyncEventingBasicConsumer(channel);
+            consumer.ReceivedAsync += OnMessageReceivedAsync;
+
+            await channel.BasicConsumeAsync(QueueName, false, consumer, stoppingToken);
+
+            logger.LogInformation("RabbitMQ consumer started.");
+
+            var tcs = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
+
+            connection.ConnectionShutdownAsync += (_, args) =>
+            {
+                logger.LogWarning("RabbitMQ connection lost: {Reason}", args.ReplyText);
+                tcs.TrySetResult();
+                return Task.CompletedTask;
+            };
+
+            await using var stopping = stoppingToken.Register(() => tcs.TrySetResult());
+
+            await tcs.Task;
+        }
+        finally
+        {
+            // Each attempt closes the connection it opened. A reconnect that left the previous
+            // one open would leave two consumers on the queue, and RabbitMQ would round-robin
+            // deliveries to the stale one.
+            await CloseQuietlyAsync(channel, connection);
+        }
+    }
+
+    private async Task CloseQuietlyAsync(IChannel? channel, IConnection connection)
+    {
+        if (channel is not null)
+        {
+            try
+            {
+                if (channel.IsOpen)
+                    await channel.CloseAsync();
+            }
+            catch (Exception ex)
+            {
+                logger.LogDebug(ex, "Ignoring error while closing the RabbitMQ channel.");
+            }
+            finally
+            {
+                await channel.DisposeAsync();
+            }
+        }
+
+        try
+        {
+            if (connection.IsOpen)
+                await connection.CloseAsync();
+        }
+        catch (Exception ex)
+        {
+            logger.LogDebug(ex, "Ignoring error while closing the RabbitMQ connection.");
+        }
+        finally
+        {
+            await connection.DisposeAsync();
+        }
     }
 
     private async Task OnMessageReceivedAsync(object sender, BasicDeliverEventArgs ea)
     {
+        var channel = ((AsyncEventingBasicConsumer)sender).Channel;
+
         try
         {
             await using var scope = scopeFactory.CreateAsyncScope();
@@ -99,35 +156,18 @@ public abstract class MessageQueueConsumer(
 
             await HandleAsync(envelope, scope.ServiceProvider, CancellationToken.None);
 
-            await _channel!.BasicAckAsync(ea.DeliveryTag, false, CancellationToken.None);
+            await channel.BasicAckAsync(ea.DeliveryTag, false, CancellationToken.None);
         }
         catch (JsonException ex)
         {
             logger.LogError(ex, "Invalid message format. Discarding.");
-            await _channel!.BasicNackAsync(ea.DeliveryTag, false, false, CancellationToken.None);
+            await channel.BasicNackAsync(ea.DeliveryTag, false, false, CancellationToken.None);
         }
         catch (Exception ex)
         {
             logger.LogError(ex, "Failed to process message. Requeuing.");
             await Task.Delay(TimeSpan.FromSeconds(5));
-            await _channel!.BasicNackAsync(ea.DeliveryTag, false, true, CancellationToken.None);
+            await channel.BasicNackAsync(ea.DeliveryTag, false, true, CancellationToken.None);
         }
-    }
-
-    public override async Task StopAsync(CancellationToken cancellationToken)
-    {
-        if (_channel != null)
-        {
-            await _channel.CloseAsync(cancellationToken);
-            await _channel.DisposeAsync();
-        }
-
-        if (_connection != null)
-        {
-            await _connection.CloseAsync(cancellationToken);
-            await _connection.DisposeAsync();
-        }
-
-        await base.StopAsync(cancellationToken);
     }
 }

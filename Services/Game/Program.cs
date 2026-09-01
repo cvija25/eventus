@@ -5,7 +5,6 @@ using Game.Publishers;
 
 var builder = WebApplication.CreateBuilder(args);
 
-builder.Services.AddControllers();
 builder.Services.AddHostedService<GameCommandConsumer>();
 builder.Services.AddRabbitMqOptions(builder.Configuration);
 builder.Services.AddGrpcClient<Catalog.GRPC.Catalog.CatalogClient>(o =>
@@ -17,17 +16,7 @@ builder.Services.AddScoped<IGameCommandHandler, GameCommandHandler>();
 builder.Services.AddSingleton<ICommandApprovedPublisher, CommandApprovedPublisher>();
 
 var app = builder.Build();
-if (app.Environment.IsDevelopment())
-    app.MapOpenApi();
 
-app.MapGet(
-    "/",
-    () =>
-    {
-        return "Hello world!";
-    }
-);
-app.MapControllers();
 app.Run();
 
 public partial class Program { }

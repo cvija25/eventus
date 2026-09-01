@@ -11,7 +11,7 @@ using Microsoft.AspNetCore.Mvc;
 namespace Catalog.API.Controllers;
 
 [ApiController]
-[Route("/api/v1/catalog/events")]
+[Route("/api/v1/events")]
 public class CatalogController : ControllerBase
 {
     private readonly IEventRepository _eventRepository;
@@ -48,7 +48,7 @@ public class CatalogController : ControllerBase
         return ev is null ? NotFound() : Ok(ev);
     }
 
-    [HttpGet("history/{id}")]
+    [HttpGet("{id}/history")]
     [ProducesResponseType(typeof(EventDto), StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status404NotFound)]
     [ProducesResponseType(StatusCodes.Status500InternalServerError)]
@@ -66,9 +66,9 @@ public class CatalogController : ControllerBase
         return Ok(events);
     }
 
-    [HttpPost("by-ids")]
+    [HttpPost("query")]
     [ProducesResponseType(typeof(IEnumerable<EventDto>), StatusCodes.Status200OK)]
-    public async Task<ActionResult<List<EventDto>>> GetEventsByIds([FromBody] GetEventsByIdsDto dto)
+    public async Task<ActionResult<List<EventDto>>> QueryEvents([FromBody] EventQueryDto dto)
     {
         var events = await _eventRepository.GetEventsByIdsAsync(dto.Ids);
         return Ok(events);
@@ -83,7 +83,7 @@ public class CatalogController : ControllerBase
             return Unauthorized();
 
         var ev = await _eventRepository.CreateEventAsync(dto, ownerId);
-        return Created($"/api/v1/catalog/events/{ev.Id}", ev);
+        return Created($"/api/v1/events/{ev.Id}", ev);
     }
 
     [HttpPost("resolve")]

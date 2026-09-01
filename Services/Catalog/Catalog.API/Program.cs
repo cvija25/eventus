@@ -8,13 +8,6 @@ using Common.Web;
 var builder = WebApplication.CreateBuilder(args);
 
 builder.Services.AddSwaggerGen();
-builder.Services.AddCors(options =>
-{
-    options.AddPolicy(
-        "Frontend",
-        policy => policy.AllowAnyOrigin().AllowAnyHeader().AllowAnyMethod()
-    );
-});
 
 builder.Services.AddControllers();
 builder.Services.AddCurrentUser();
@@ -38,7 +31,6 @@ if (app.Environment.IsDevelopment())
     app.UseSwaggerUI();
 }
 
-app.UseCors("Frontend");
 app.UseAuthentication();
 app.UseAuthorization();
 app.MapControllers();

@@ -20,13 +20,7 @@ public class AccountController(
     ILogger<AccountController> logger
 ) : ControllerBase
 {
-    [HttpGet]
-    public ActionResult<string> GetGreeting()
-    {
-        return Ok("Hello World, from Account!");
-    }
-
-    [HttpPost("sell-shares")]
+    [HttpPost("sell")]
     [Authorize]
     public async Task<ActionResult<string>> PublishSellShares([FromBody] SellSharesRequest request)
     {
