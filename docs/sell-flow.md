@@ -56,4 +56,4 @@ sequenceDiagram
    the sale in the trade history.
 10. The Catalog API picks up the new price and sends it to the app.
 
-See [system-overview.md](system-overview.md) for how the services connect.
+See [mainDiagram.png](mainDiagram.png) for how the services connect.

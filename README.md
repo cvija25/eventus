@@ -15,11 +15,15 @@ services talk to each other over HTTP, gRPC, and two message brokers
 Install these tools before you start:
 
 - **Docker** and **Docker Compose**. These run all services and their
-  databases. This is the only tool you need to run the full system.
+  databases. This is the only tool you need to run the full system. See the
+  [Docker Desktop installation guide](https://docs.docker.com/get-started/get-docker/),
+  which includes Docker Compose.
 - **.NET SDK 10 (preview)**. Install this only if you want to build the code
-  or run tests outside Docker.
+  or run tests outside Docker. See the
+  [.NET installation guide](https://learn.microsoft.com/dotnet/core/install/).
 - **Flutter SDK 3.22 or later**. Install this only if you want to run the
-  mobile or web app in `frontend/`.
+  mobile or web app in `frontend/`. See the
+  [Flutter installation guide](https://docs.flutter.dev/get-started/install).
 
 ## Setup and run
 
@@ -27,7 +31,7 @@ Install these tools before you start:
 2. Go to the `Services` folder.
 3. Copy `.env.example` to `.env`. Change the values if you need custom
    credentials. The defaults work for local use.
-4. Run this command:
+4. Start the services:
 
    ```
    docker compose up --build
@@ -39,11 +43,18 @@ Install these tools before you start:
 
 ### Run the frontend app
 
+Start the backend first, then:
+
 1. Go to the `frontend` folder.
 2. Run `flutter pub get`.
-3. Run `flutter run`.
+3. Pick where to run it. `flutter devices` lists what Flutter can see on your machine.
+4. Run the app on one of them:
 
-The app expects the API Gateway at `http://localhost:1234`.
+   ```
+   flutter run --release -d chrome     # web
+   flutter run --release -d linux      # desktop, on Linux
+   ```
+5. You're all set! 
 
 ### Run the tests
 
@@ -112,8 +123,8 @@ The same path in raw HTTP calls, all through the API Gateway at
 
 ## Diagrams
 
-- [docs/system-overview.md](docs/system-overview.md) — how the services
-  connect and what they use to talk to each other.
+- [docs/mainDiagram.png](docs/mainDiagram.png) — how the services connect
+  and what they use to talk to each other.
 - [docs/buy-flow.md](docs/buy-flow.md) — the buy flow, step by step.
 - [docs/sell-flow.md](docs/sell-flow.md) — the sell flow, step by step.
 - [docs/resolve-flow.md](docs/resolve-flow.md) — the resolve flow, step by

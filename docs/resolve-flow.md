@@ -40,4 +40,4 @@ sequenceDiagram
 8. The Account service pays each of those users. One winning share pays out
    one unit of credit.
 
-See [system-overview.md](system-overview.md) for how the services connect.
+See [mainDiagram.png](mainDiagram.png) for how the services connect.
