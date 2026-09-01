@@ -250,7 +250,7 @@ class ApiService {
               'stake': stake,
               'outcome': outcome == 'Yes' ? 1 : 2,
               'expectedPrice': expectedPrice,
-              'spotPriceWindow': spotPriceWindow,
+              if (spotPriceWindow != null) 'spotPriceWindow': spotPriceWindow,
               if (slippageDelta != null) 'slippageDelta': slippageDelta,
             }),
           )
@@ -260,12 +260,15 @@ class ApiService {
         throw Exception('Please log in to place a bet.');
       }
 
-      if (response.statusCode == 409) {
-        throw Exception(
-          response.body.isNotEmpty
-              ? response.body
-              : 'This bet could not be placed right now.',
-        );
+      if (response.statusCode == 400 || response.statusCode == 409) {
+        final body = response.body;
+        if (body.contains('SPOT PRICE MOVED')) {
+          throw Exception('SPOT PRICE MOVED');
+        }
+        if (body.contains('SLIPPAGE EXCEEDED')) {
+          throw Exception('SLIPPAGE EXCEEDED');
+        }
+        throw Exception(body.isNotEmpty ? body : 'This bet could not be placed right now.');
       }
 
       if (response.statusCode < 200 || response.statusCode >= 300) {
@@ -323,7 +326,6 @@ class ApiService {
     required double shares,
     required String outcome,
     required double expectedPrice,
-    double? slippageDelta,
   }) async {
     final uri = ApiRoutes.sell;
 
@@ -337,7 +339,6 @@ class ApiService {
               'shares': shares,
               'outcome': outcome == 'Yes' ? 1 : 2,
               'expectedPrice': expectedPrice,
-              if (slippageDelta != null) 'slippageDelta': slippageDelta,
             }),
           )
           .timeout(const Duration(seconds: 10));
