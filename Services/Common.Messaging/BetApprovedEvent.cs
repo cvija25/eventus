@@ -5,6 +5,7 @@ namespace Common.Messaging;
 public class BetApprovedEvent
 {
     public Guid AccId { get; set; }
+    public string? FailureReason { get; set; }
     public decimal Stake { get; set; }
     public bool IsApproved { get; set; }
     public DateTime ApprovedAt { get; set; }

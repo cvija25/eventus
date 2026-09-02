@@ -45,6 +45,7 @@ public class GameCommandHandler(
                 var rejectedEvent = new BetApprovedEvent
                 {
                     IsApproved = false,
+                    FailureReason = "SPOT PRICE MOVED",
                     ApprovedAt = DateTime.UtcNow,
                     AccId = betPlaced.OwnerId,
                     Stake = betPlaced.Stake,
@@ -95,6 +96,7 @@ public class GameCommandHandler(
                 var rejectedEvent = new BetApprovedEvent
                 {
                     IsApproved = false,
+                    FailureReason = "SLIPPAGE EXCEEDED",
                     ApprovedAt = DateTime.UtcNow,
                     AccId = betPlaced.OwnerId,
                     Stake = betPlaced.Stake,
@@ -155,73 +157,7 @@ public class GameCommandHandler(
         var poolNo = decimal.Parse(market.PoolNo, CultureInfo.InvariantCulture);
         var pot = decimal.Parse(market.Pot, CultureInfo.InvariantCulture);
 
-        // Optional Spot Price Window Check
-        if (sellShares.SpotPriceWindow.HasValue)
-        {
-            var spotPriceWindow = sellShares.SpotPriceWindow.Value;
-            var expectedPrice = sellShares.ExpectedPrice;
-            var actualPrice =
-                sellShares.Outcome == MarketOutcome.Yes
-                    ? poolNo / (poolYes + poolNo)
-                    : poolYes / (poolYes + poolNo);
-
-            if (Math.Abs(actualPrice - expectedPrice) > spotPriceWindow)
-            {
-                logger.LogWarning(
-                    "Sell rejected due to Spot Price move: EventId={EventId}, Expected={Expected}, Actual={Actual}, Window={Window}",
-                    eventId,
-                    sellShares.ExpectedPrice,
-                    actualPrice,
-                    sellShares.SpotPriceWindow.Value
-                );
-
-                var rejectedEvent = new SellSharesApprovedEvent
-                {
-                    IsApproved = false,
-                    ApprovedAt = DateTime.UtcNow,
-                    AccId = sellShares.OwnerId,
-                    SellPrice = 0,
-                    EventId = sellShares.EventId,
-                    Outcome = sellShares.Outcome,
-                    ShareAmount = sellShares.Shares,
-                };
-                await commandApprovedPublisher.PublishSellSharesApprovedAsync(rejectedEvent);
-                return;
-            }
-        }
-
         var sellPrice = CalculatePayout(poolYes, poolNo, sellShares.Shares, sellShares.Outcome);
-
-        // Optional slippage check
-        if (sellShares.SlippageDelta.HasValue)
-        {
-            var effectivePrice = sellShares.Shares > 0 ? sellPrice / sellShares.Shares : 0;
-            var expectedPrice = sellShares.ExpectedPrice;
-            var slippageDelta = sellShares.SlippageDelta;
-
-            if (Math.Abs(effectivePrice - expectedPrice) > slippageDelta)
-            {
-                logger.LogWarning(
-                    "Sell rejected due to slippage: EventId={EventId}, ExpectedPrice={ExpectedPrice}, ActualPrice={ActualPrice}",
-                    eventId,
-                    expectedPrice,
-                    effectivePrice
-                );
-
-                var rejectedEvent = new SellSharesApprovedEvent
-                {
-                    IsApproved = false,
-                    ApprovedAt = DateTime.UtcNow,
-                    AccId = sellShares.OwnerId,
-                    SellPrice = 0,
-                    EventId = sellShares.EventId,
-                    Outcome = sellShares.Outcome,
-                    ShareAmount = sellShares.Shares,
-                };
-                await commandApprovedPublisher.PublishSellSharesApprovedAsync(rejectedEvent);
-                return;
-            }
-        }
 
         if (sellShares.Outcome == MarketOutcome.Yes)
         {
